@@ -6,10 +6,12 @@ import Backend from 'react-dnd-html5-backend'
 import GameView from './view/GameView'
 
 import './view/MyStyles.css';
+import Upload from './Upload'
 
 function App() {
     return (
         <div className="App">
+            <Upload></Upload>
             <DndProvider backend={Backend}>
                 <GameView />
             </DndProvider>
