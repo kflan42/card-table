@@ -1,26 +1,27 @@
 import React from 'react'
 
 import './zeStyle.css';
-import { Card } from '../Game';
+import {  Game } from '../Game';
 import CardPresenter from './CardPresenter';
+import { useSelector } from 'react-redux';
 
-interface TPP {
-    cards: { [index: number]: Card }
-    onCardClick: (id: number) => void
-}
 
-const TablePresenter: React.FC<TPP> = (props) => {
+const TablePresenter: React.FC = () => {
+
+    // https://react-redux.js.org/api/hooks#useselector-examples
+    const cards = useSelector((state: Game) => state.cards)
 
     return (
         <>
             <div className="Table">
                 <h1>Table</h1>
-                {Object.values(props.cards).map((value) => (
-                    <CardPresenter key={value.id} card={value} onClick={() => props.onCardClick(value.id)}></CardPresenter>
+                {Object.values(cards).map((value) => (
+                    <CardPresenter key={value.id} card={value}></CardPresenter>
                 ))}
             </div>
         </>
     )
 }
 
+// todo https://react-redux.js.org/api/hooks#performance memoize props to render
 export default TablePresenter

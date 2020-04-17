@@ -16,7 +16,7 @@ import { Clock } from './Clock'
 import { createStore } from 'redux'
 import { Provider } from 'react-redux';
 import gameReducer from '../Reducers';
-import GameContainer from './GameContainer';
+import GamePresenter from './GamePresenter';
 
 const App: React.FC = () => {
 
@@ -30,7 +30,7 @@ const App: React.FC = () => {
                 <Route path="/:gameId">
                     <Provider store={store}>
                         <DndProvider backend={Backend}>
-                            <GameContainer />
+                            <GamePresenter />
                         </DndProvider>
                     </Provider>
                 </Route>

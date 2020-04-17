@@ -4,17 +4,19 @@ import './zeStyle.css';
 import Hand from './Hand';
 import { useParams } from 'react-router-dom';
 import { Card } from '../Game';
-import TableContainer from './TableContainer';
+import TablePresenter from './TablePresenter';
+import { useDispatch } from 'react-redux';
+import { load } from '../Actions';
 
-interface GPP {
-    onNewCards: (arg0: any)=>void
-}
 
-const GamePresenter: React.FC<GPP> = ({onNewCards}) => {
+
+const GamePresenter: React.FC = () => {
 
     const { gameId } = useParams()
 
     const [userName, setUserName] = useState('')
+
+    const dispatch = useDispatch()
 
     useEffect(() => {
         // initial load effect only
@@ -24,6 +26,11 @@ const GamePresenter: React.FC<GPP> = ({onNewCards}) => {
         const u = localStorage.getItem('userName')
         if (u) setUserName(u);
 
+        // todo move this out to a communication file
+        // in that file, consider using https://react-redux.js.org/api/batch#batch when many actions come in from server
+        // server could just be list of actions, tho then on re-join need to apply them all to initial state
+        // optimize by doing a game snapshot occasionally from client to server
+        // server doesn't need a "reducer" this way
         function loadGameStateFromServer() {
             console.log("loading state from server")
             //fetch("https://api.example.com/items")
@@ -31,7 +38,7 @@ const GamePresenter: React.FC<GPP> = ({onNewCards}) => {
             new Promise<{ [index: number]: Card }>(result => result({ 1: { id: 1, tapped: false } }))
                 .then(
                     (result) => {
-                        onNewCards(result)
+                        dispatch(load(result))
                     },
                     // Note: it's important to handle errors here
                     // instead of a catch() block so that we don't swallow
@@ -43,7 +50,7 @@ const GamePresenter: React.FC<GPP> = ({onNewCards}) => {
         }
 
         loadGameStateFromServer();
-    }, [onNewCards, userName]);
+    }, [ dispatch, userName]);
 
 
 
@@ -52,8 +59,7 @@ const GamePresenter: React.FC<GPP> = ({onNewCards}) => {
             
                 <div className="Game">
                     <h1>Game {gameId} as {userName} </h1>
-                    {/* <Table cards={store.getState().cards}></Table> */}
-                    <TableContainer></TableContainer>
+                    <TablePresenter></TablePresenter>
                     <Hand></Hand>
                 </div>
         </>
