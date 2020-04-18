@@ -2,6 +2,7 @@ import React from 'react'
 
 import './myStyle.css';
 import Card from './Card';
+import Playmat from './Playmat';
 
 
 
@@ -9,8 +10,13 @@ const Table: React.FC = () => {
     
     return (
         <div className="Table">
-            {/* todo put cards in zones on table*/}
-            <Card name="Zombie"></Card>
+            <Playmat player = "alice"/>
+            <Playmat player = "bob"/>
+            <Playmat player = "chad"/>
+            <Playmat player = "dude"/>
+            <Playmat player = "erwin"/>
+        
+            
         </div>
     )
 }

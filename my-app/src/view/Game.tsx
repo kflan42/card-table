@@ -14,7 +14,8 @@ const Game: React.FC = () => {
     return (
         <div className="Game">
             
-            <h1>Game {gameId} as {userName} </h1>
+            <h1>	
+&#127922; {/*die*/} Game {gameId} as {userName} </h1>
             <Table></Table>
             <Hand></Hand>
         </div>

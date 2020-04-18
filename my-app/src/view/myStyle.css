@@ -41,6 +41,47 @@
   vertical-align: middle;
   border: 1pt solid black;
   background-color: tan;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+  overflow-x: auto;
+}
+
+.Playmat {
+  margin: 1%;
+  background-color: lightblue;
+  height: 48%;
+  width: 48%; /* make adjustable for 2,4,6 players*/
+  display: flex;
+  flex-direction: column;
+}
+
+.PlayerBox {
+  background-color: whitesmoke;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.PlayerBox > div {
+  margin-top: 1pt;
+  margin-bottom: 1pt;
+  margin-left: 2pt;
+  margin-right: 2pt;
+  border: 1pt solid lightgray;
+  padding: 1pt;
+}
+
+.TextButton {
+  cursor: pointer;
+}
+
+.Battlefield {
+  background-color: lightskyblue;
+  flex-grow: 1;
+  position: relative;
 }
 
 .Hand {
@@ -57,13 +98,56 @@
 }
 
 .Card {
-  border: 1pt solid brown;
+  color: pink;
+  font-size: x-small;
+}
+
+.Hand .Card {
   /* need to scale these together ~ 488 × 680*/
+  border: 1pt solid green;
   border-radius: 4pt;
   height: 85pt;
   min-height: 85pt;
   width: 61pt;
   min-width: 61pt;
-  color: pink;
 }
 
+.Battlefield .Card {
+  position: absolute;
+
+  /* need to scale these together ~ 488 × 680*/
+  /* when zooming, just increase card sizes */
+  border: 0.5pt solid blue;
+  border-radius: 2pt;
+  height: 41pt;
+  min-height: 41pt;
+  width: 30pt;
+  min-width: 30pt;
+}
+
+/* Tooltip container */
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+/* Tooltip text */
+.tooltip .tooltiptext {
+  visibility: hidden;
+  /* width: 120px; */
+  background-color: black;
+  color: #fff;
+  text-align: center;
+  border-radius: 1pt;
+  left:0%;
+  bottom: 100%;
+ 
+  /* Position the tooltip text - see examples below! */
+  position: absolute;
+  z-index: 1;
+}
+
+/* Show the tooltip text when you mouse over the tooltip container */
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+}
