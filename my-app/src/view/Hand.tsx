@@ -14,15 +14,14 @@ const Hand: React.FC = () => {
                 <Card name="Forest" />
                 <Card name="Llanowar Elves" />
                 <Card name="Lightning Greaves" />
-                <Card name="Generated Horizons" />
+                <Card name="Armored Ascension" />
                 <Card name="Rampant Growth" />
-                <Card name="Nissa, Vastwood Seer // Nissa, Sage Animist" />
+                <Card name="Nissa, Vastwood Seer" />
                 <Card name="Forest" />
                 <Card name="Llanowar Elves" />
                 <Card name="Lightning Greaves" />
-                <Card name="Generated Horizons" />
                 <Card name="Rampant Growth" />
-                <Card name="Nissa, Vastwood Seer // Nissa, Sage Animist" />
+                <Card name="Nissa, Vastwood Seer" />
             </div>
     )
 }

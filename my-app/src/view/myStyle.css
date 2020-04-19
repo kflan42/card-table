@@ -98,8 +98,9 @@
 }
 
 .Card {
-  color: pink;
+  color: white;
   font-size: x-small;
+  font-weight: bold;
 }
 
 .Hand .Card {
@@ -119,10 +120,10 @@
   /* when zooming, just increase card sizes */
   border: 0.5pt solid blue;
   border-radius: 2pt;
-  height: 41pt;
-  min-height: 41pt;
-  width: 30pt;
-  min-width: 30pt;
+  height: 46pt;
+  min-height: 46pt;
+  width: 33pt;
+  min-width: 33pt;
 }
 
 /* Tooltip container */

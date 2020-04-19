@@ -1,6 +1,5 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import { Redirect } from "react-router-dom";
 
 // I could re-write this to use https://reactjs.org/docs/hooks-effect.html but it'd be a waste of time.
 

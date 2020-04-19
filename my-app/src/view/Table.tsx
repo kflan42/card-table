@@ -1,7 +1,6 @@
 import React from 'react'
 
 import './myStyle.css';
-import Card from './Card';
 import Playmat from './Playmat';
 
 

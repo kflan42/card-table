@@ -12,12 +12,10 @@ import Backend from 'react-dnd-html5-backend'
 
 import './myStyle.css';
 import LoginForm from './Login'
-import { Clock } from './Clock'
 import { createStore } from 'redux'
 import { Provider } from 'react-redux';
 import gameReducer from '../Reducers';
 import Game from './Game';
-import Hand from './Hand';
 import Log from './Log';
 
 const App: React.FC = () => {

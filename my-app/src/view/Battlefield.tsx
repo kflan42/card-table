@@ -2,7 +2,7 @@ import React from 'react'
 
 import './myStyle.css';
 import Card from './Card';
-import Playmat from './Playmat';
+import { randchoice, randint } from './CardDB';
 
 
 
@@ -10,21 +10,23 @@ const Battlefield: React.FC = () => {
 
     const cards = [
         "Forest",
-        "Nissa, Vastwood Seer // Nissa, Sage Animist",
+        "Nissa, Vastwood Seer",
         "Llanowar Elves",
         "Lightning Greaves",
-        "Generated Horizons",
+        "Armored Ascension",
         "Rampant Growth",
         "Zombie",
     ];
 
-    function randint(m:number) {
-        return Math.floor(Math.random()*m);
-    }
-
     const listItems = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map(n => {
-        const randomCard = cards[randint(cards.length)];
-        return <Card name={randomCard} x={randint(250)} y={randint(300)}></Card>
+        const name = randchoice(cards)
+        return <Card key={n}
+            name={name}
+            x={randint(9)*10} y={randint(9)*10}
+            tapped={randchoice([true, false, false, false])}
+            faceDown={randchoice([true, false, false, false])}
+            transformed={name === "Nissa, Vastwood Seer" ? randchoice([true, false]) : undefined}
+        />
     });
 
     return (

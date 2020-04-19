@@ -1,12 +1,17 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 
 import './myStyle.css';
+import CardDB from './CardDB';
+import { CardData } from './CardDB';
 
 interface CardProps {
     name: string
     location?: string
     x?: number
     y?: number
+    faceDown?: boolean
+    transformed?: boolean
+    tapped?: boolean
 }
 
 const Card: React.FC<CardProps> = (props) => {
@@ -14,17 +19,39 @@ const Card: React.FC<CardProps> = (props) => {
 
     // small is 10.8k (memory cache after 1st). fuzzy text, hard to read
     // normal is 75.7k (memory cache after 1st). readable
-    const urls: { [index: string]: string } =
-    {
-        "Forest": "https://img.scryfall.com/cards/normal/front/e/d/ed6ff6d7-b976-413b-b433-8ebd2f3c2a54.jpg?1576267502",
-        // todo back side "https://img.scryfall.com/cards/normal/front/6/3/63b2b7cd-a51d-4e50-b794-a52731196973.jpg?1562702090"
-        "Nissa, Vastwood Seer // Nissa, Sage Animist": "https://img.scryfall.com/cards/normal/front/6/3/63b2b7cd-a51d-4e50-b794-a52731196973.jpg?1562702090",
-        "Llanowar Elves": "https://img.scryfall.com/cards/normal/front/5/7/57ebd34e-dfe1-4093-a302-db395047a546.jpg?1573514034",
-        "Lightning Greaves": "https://img.scryfall.com/cards/normal/front/e/f/ef5c570d-e415-4ac3-b48f-574ce109303a.jpg?1573517228",
-        "Generated Horizons": "https://img.scryfall.com/cards/normal/front/d/c/dc1ab4f1-5458-46a6-9497-4136d04eb247.jpg?1576467445",
-        "Rampant Growth": "https://img.scryfall.com/cards/normal/front/8/0/8010cf03-754f-40db-805a-842d791aa4b7.jpg?1573514345",
-        "Zombie": "https://img.scryfall.com/cards/normal/front/3/e/3e8a0b96-9add-406a-bf10-bc943141edf5.jpg?1586453313"
+
+    const [isLoading, setIsLoading] = useState(false)
+    const [cardData, setData] = useState<CardData>()
+
+    useEffect(() => {
+        async function fetchData() {
+            setIsLoading(true)
+            const response = await CardDB.getCard(props.name)
+            setData(response)
+            setIsLoading(false)
+        }
+        fetchData()
+    }, [props.name])
+
+
+    const front = () => {
+        if (props.faceDown === true) {
+            return "Magic_card_back.jpg"
+        }
+        if (cardData) {
+            if (props.transformed && cardData.faces) {
+                for (const f in cardData.faces) {
+                    if (f !== props.name) return cardData.faces[f];
+                }
+            }
+            return cardData.face ? cardData.face :
+                cardData.faces ? cardData.faces[props.name] :
+                    "logo192.png" // not found placeholder
+        }
+        else
+            return "logo192.png" // not found placeholder
     }
+
     return (
         <>
             <div
@@ -32,20 +59,23 @@ const Card: React.FC<CardProps> = (props) => {
                 // todo later: border = owner sleeve color
                 style={
                     (props.x && props.y) ? {
-                        top: props.y+"pt",
-                        left: props.x+"pt",
-                        backgroundImage: 'url("' + urls[props.name] + '")',
-                        backgroundSize: 'contain',
-                        backgroundRepeat: "no-repeat"
+                        top: props.y + "%",
+                        left: props.x + "%",
+                        backgroundImage: `url("${front()}")`,
+                        backgroundSize: 'cover',
+                        backgroundRepeat: "no-repeat",
+                        transform: props.tapped ? "rotate(90deg)" : ""
                     }
                         :
                         {
-                            backgroundImage: 'url("' + urls[props.name] + '")',
-                            backgroundSize: 'contain',
+                            backgroundImage: `url("${front()}")`,
+                            backgroundSize: 'cover',
                             backgroundRepeat: "no-repeat"
                         }}
             >
-                <p>{props.name}</p>
+                <p>{props.name}
+                    {props.transformed ? " T" : ""}
+                    {isLoading ? " Loading" : ""}</p>
             </div>
         </>
     )

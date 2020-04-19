@@ -1,7 +1,6 @@
 import React from 'react'
 
 import './myStyle.css';
-import Card from './Card';
 import PlayerCounter from './PlayerCounter';
 
 interface PlayerBoxP {
@@ -12,6 +11,7 @@ const PlayerBox: React.FC<PlayerBoxP> = (props) => {
 
     // todo popup windows for card zones
     return (
+        /* eslint-disable jsx-a11y/accessible-emoji */
         <div className="PlayerBox">
             <div>{props.player} </div>
             <div className="tooltip">✋{/*hand*/} 7

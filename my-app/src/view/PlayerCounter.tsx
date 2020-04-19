@@ -1,10 +1,6 @@
 import React from 'react'
 
 import './myStyle.css';
-import Card from './Card';
-import Playmat from './Playmat';
-import { findByLabelText } from '@testing-library/react';
-import { useParams } from 'react-router-dom';
 
 interface PlayerCounterP {
     kind: string
@@ -13,7 +9,7 @@ interface PlayerCounterP {
 
 const PlayerCounter: React.FC<PlayerCounterP> = (props) => {
 
-    const label = props.kind == "Life" ? "❤️" : props.kind;
+    const label = props.kind === "Life" ? "❤️" : props.kind;
     const value = 40;
 
     function up() {
