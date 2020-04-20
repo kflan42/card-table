@@ -1,21 +1,21 @@
 import React from 'react'
 
-import './myStyle.css';
+import './_style.css';
 import Hand from './Hand';
 import Table from './Table';
+import { useParams } from 'react-router-dom';
 
 
 
 const Game: React.FC = () => {
 
-    const gameId = "1"
+    const { gameId } = useParams()
     const userName = "alice"
     
+    /* eslint-disable jsx-a11y/accessible-emoji */
     return (
         <div className="Game">
-            
-            <h1>	
-&#127922; {/*die*/} Game {gameId} as {userName} </h1>
+            <span>🎲 Game {gameId} as {userName} </span>
             <Table></Table>
             <Hand></Hand>
         </div>

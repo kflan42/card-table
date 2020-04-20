@@ -1,33 +1,25 @@
 import React from 'react'
 
-import './myStyle.css';
+import './_style.css';
 import Card from './Card';
-import { randchoice, randint } from './CardDB';
+import { randchoice, randint, testDeck } from './CardDB';
 
 
 
 const Battlefield: React.FC = () => {
 
-    const cards = [
-        "Forest",
-        "Nissa, Vastwood Seer",
-        "Llanowar Elves",
-        "Lightning Greaves",
-        "Armored Ascension",
-        "Rampant Growth",
-        "Zombie",
-    ];
-
-    const listItems = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map(n => {
-        const name = randchoice(cards)
-        return <Card key={n}
+    const listItems = []
+    for (let n = 0; n < 12; n++){
+        const name = randchoice(testDeck)
+        listItems.push( <Card key={n}
             name={name}
-            x={randint(9)*10} y={randint(9)*10}
+            x={randint(8)*10+5} y={randint(8)*10+5}
             tapped={randchoice([true, false, false, false])}
             faceDown={randchoice([true, false, false, false])}
             transformed={name === "Nissa, Vastwood Seer" ? randchoice([true, false]) : undefined}
         />
-    });
+        )
+    };
 
     return (
         <div className="Battlefield">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 
-import './myStyle.css';
+import './_style.css';
 import CardDB from './CardDB';
 import { CardData } from './CardDB';
 
@@ -46,16 +46,16 @@ const Card: React.FC<CardProps> = (props) => {
             }
             return cardData.face ? cardData.face :
                 cardData.faces ? cardData.faces[props.name] :
-                    "logo192.png" // not found placeholder
+                    "react_logo_skewed.png" // not found placeholder
         }
         else
-            return "logo192.png" // not found placeholder
+            return "react_logo_skewed.png" // not found placeholder
     }
 
     return (
         <>
             <div
-                className={"Card"}
+                className={"Card cardtooltip"}
                 // todo later: border = owner sleeve color
                 style={
                     (props.x && props.y) ? {
@@ -73,9 +73,8 @@ const Card: React.FC<CardProps> = (props) => {
                             backgroundRepeat: "no-repeat"
                         }}
             >
-                <p>{props.name}
-                    {props.transformed ? " T" : ""}
-                    {isLoading ? " Loading" : ""}</p>
+                <span className="cardtooltiptext">{props.name}</span>
+                <p>{isLoading ? `${props.name} ${props.transformed ? " T" : ""}` : ""}</p>
             </div>
         </>
     )

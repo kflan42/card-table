@@ -1,7 +1,8 @@
 import React from 'react'
 
-import './myStyle.css';
+import './_style.css';
 import PlayerCounter from './PlayerCounter';
+import CardStack from './CardStack';
 
 interface PlayerBoxP {
     player: string
@@ -9,31 +10,26 @@ interface PlayerBoxP {
 
 const PlayerBox: React.FC<PlayerBoxP> = (props) => {
 
+
+
     // todo popup windows for card zones
     return (
         /* eslint-disable jsx-a11y/accessible-emoji */
         <div className="PlayerBox">
-            <div>{props.player} </div>
-            <div className="tooltip">✋{/*hand*/} 7
-                <span className="tooltiptext">Hand</span>
+            <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "60pt" }}>
+                <strong>{props.player}</strong>
             </div>
-            <div className="tooltip">📚{/*library*/} 82
-                <span className="tooltiptext">Library</span>
-            </div>
-            <div className="tooltip">🗑️{/*graveyard*/} 10
-                <span className="tooltiptext">Graveyard</span>
-            </div>
-            <div className="tooltip">📒{/*sideboard*/} 0
-                <span className="tooltiptext">Sideboard (Exile)</span>
-            </div>
-            <div className="tooltip">👑{/*hand*/} 1
-                <span className="tooltiptext">Command Zone</span>
-            </div>
+            <CardStack name="Hand" icon="✋" />
+            <CardStack name="Library" icon="📚" />
+            <CardStack name="Graveyard" icon="🗑️" />
+            <CardStack name="Sideboard (Exile)" icon="📒" />
+            <CardStack name="Command Zone" icon="👑" />
             <PlayerCounter kind="Life" />
-            <div className="tooltip">➕
-                <span className="tooltiptext">Add Counter</span>
+            <div className="TextButton buttontooltip">➕
+                <span className="buttontooltiptext">Add Counter</span>
             </div>
         </div>
+        /* todo popup dialog for adding a counter (player/card), delete counters at zero */
     )
 }
 

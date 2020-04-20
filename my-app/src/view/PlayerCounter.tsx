@@ -1,6 +1,6 @@
 import React from 'react'
 
-import './myStyle.css';
+import './_style.css';
 
 interface PlayerCounterP {
     kind: string
@@ -22,12 +22,10 @@ const PlayerCounter: React.FC<PlayerCounterP> = (props) => {
 
     return (
         <div className="PlayerCounter"
-            style={{
-                display: "flex"
-            }}>
-            <div className="tooltip">
+            style={{ display: "flex" }}>
+            <div className="buttontooltip " style={{ cursor: "default" }}>
                 {label} {value}
-                <span className="tooltiptext">{props.kind}</span>
+                <span className="buttontooltiptext">{props.kind}</span>
             </div>
 
             <div className="TextButton" onClick={() => up()}>▲</div>

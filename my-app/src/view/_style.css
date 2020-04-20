@@ -29,7 +29,6 @@
     flex-direction: column;
     text-align: center;
     vertical-align: text-top;
-    border: 1pt solid gray;
     /* these for parent */
     flex-shrink: 1;
     flex-grow: 1;
@@ -39,7 +38,6 @@
   flex-grow: 1;
   text-align: center;
   vertical-align: middle;
-  border: 1pt solid black;
   background-color: tan;
   display: flex;
   flex-direction: column;
@@ -49,18 +47,18 @@
 }
 
 .Playmat {
-  margin: 1%;
+  margin: 2pt;
   background-color: lightblue;
-  height: 48%;
+  height: 48%; /* buffer a pinch for scrollbar */
   width: 48%; /* make adjustable for 2,4,6 players*/
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
 }
 
 .PlayerBox {
   background-color: whitesmoke;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   justify-content: flex-start;
   flex-wrap: wrap;
 }
@@ -78,77 +76,136 @@
   cursor: pointer;
 }
 
+.TextButton:hover {
+  /* outline: 1pt solid black; */
+  box-shadow: 1pt 1pt 1pt black;
+}
+
 .Battlefield {
   background-color: lightskyblue;
   flex-grow: 1;
   position: relative;
+  overflow: auto;
 }
 
 .Hand {
   /* left: 1pt; bottom: 1pt; right: 1pt; */
   text-align: center;
   vertical-align: bottom;
-  border: 1pt solid green;
   display: flex;
   flex-direction: row;
   overflow-x: auto;
+  align-items: center;
   /* these for parent */
   /* flex-shrink: 1; */
-  min-width: 0pt;
+  min-width: 100pt;
+  min-height: fit-content;
 }
 
 .Card {
-  color: white;
-  font-size: x-small;
-  font-weight: bold;
+  font-size: small;
+
+  /* need to scale these together ~ 488 × 680*/
+  /* when zooming, just increase card sizes */
+  border-radius: 2pt;
+  min-height: 71pt;
+  min-width: 51pt;
 }
 
 .Hand .Card {
   /* need to scale these together ~ 488 × 680*/
   border: 1pt solid green;
   border-radius: 4pt;
-  height: 85pt;
-  min-height: 85pt;
-  width: 61pt;
-  min-width: 61pt;
+  min-height: 103pt;
+  min-width: 74pt;
+}
+
+.StackPopUpBox {
+  color: white;
+  /* border: 1pt solid white; */
+  background: black;
+  position: absolute;
+  left: 102%;
+  z-index: 1;
+}
+
+.CardStack {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  overflow-x: auto;
+  align-items: flex-start;
+  padding: 1pt;
+  min-width: 122pt;
+  resize: horizontal;
+  max-height: 255pt;
+  background: black;
+}
+
+.CardStack .Card {
+  border-top-left-radius: 4pt;
+  border-top-right-radius: 4pt;
+  /* cut off to just show top */
+  height: 17pt;
+  min-height: 17pt;
+  flex-shrink: 0;
 }
 
 .Battlefield .Card {
   position: absolute;
-
-  /* need to scale these together ~ 488 × 680*/
-  /* when zooming, just increase card sizes */
-  border: 0.5pt solid blue;
-  border-radius: 2pt;
-  height: 46pt;
-  min-height: 46pt;
-  width: 33pt;
-  min-width: 33pt;
+  border: 1pt solid blue;
 }
 
 /* Tooltip container */
-.tooltip {
+.buttontooltip {
   position: relative;
   display: inline-block;
 }
 
+/* Show the tooltip text when you mouse over the tooltip container */
+.buttontooltip:hover .buttontooltiptext {
+  visibility: visible;
+  transition-delay: 0.5s;
+}
+
 /* Tooltip text */
-.tooltip .tooltiptext {
+.buttontooltip .buttontooltiptext {
   visibility: hidden;
-  /* width: 120px; */
+  background-color: black;
+  padding: 1pt;
+  color: #fff;
+  text-align: center;
+  left:102%;
+  top:0%;
+  /* Position the tooltip text */
+  position: absolute;
+  z-index: 1;
+  cursor: default;
+}
+
+.cardtooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.cardtooltiptext {
+  visibility: hidden;
+}
+
+.cardtooltip:hover .cardtooltiptext {
+  visibility: visible;
+  transition-delay: 0.5s;
+  /* transition: visibility 2s; does not work */
+}
+
+.cardtooltip .cardtooltiptext {
   background-color: black;
   color: #fff;
   text-align: center;
   border-radius: 1pt;
-  left:0%;
-  bottom: 100%;
- 
-  /* Position the tooltip text - see examples below! */
+  left: 0%;
+  top: 0%;
   position: absolute;
   z-index: 1;
-}
-
-/* Show the tooltip text when you mouse over the tooltip container */
-.tooltip:hover .tooltiptext {
-  visibility: visible;
+  cursor: default;
 }

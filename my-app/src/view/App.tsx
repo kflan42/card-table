@@ -10,7 +10,7 @@ import {
 
 import Backend from 'react-dnd-html5-backend'
 
-import './myStyle.css';
+import './_style.css';
 import LoginForm from './Login'
 import { createStore } from 'redux'
 import { Provider } from 'react-redux';
@@ -31,10 +31,7 @@ const App: React.FC = () => {
                     <Route path="/:gameId">
                         <Provider store={store}>    
                             <DndProvider backend={Backend}>
-                            
-                                <Game>
-                                {/* todo build and swap in next component til screen is full */}
-                                </Game>
+                                <Game/>
                             </DndProvider>
                             <Log>
                                 

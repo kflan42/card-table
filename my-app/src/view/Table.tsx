@@ -1,6 +1,6 @@
 import React from 'react'
 
-import './myStyle.css';
+import './_style.css';
 import Playmat from './Playmat';
 
 
