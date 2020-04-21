@@ -1,4 +1,4 @@
-import { Card } from "./Game"
+import { Card } from "./ClientState"
 
 export const TAP_CARD = 'TAP_CARD'
 export const UNTAP_CARD = 'UNTAP_CARD'
@@ -43,3 +43,4 @@ export function toggleTap(id: number): CardAction {
         payload: null,
     }
 }
+

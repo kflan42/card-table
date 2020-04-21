@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
 
 import './_style.css';
-import CardDB from './CardDB';
-import { CardData } from './CardDB';
+import CardDB from '../CardDB';
+import { CardData } from '../CardDB';
 
 interface CardProps {
     name: string

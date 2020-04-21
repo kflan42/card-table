@@ -1,7 +1,7 @@
 import React from 'react'
 
 import './zeStyle.css';
-import {  Game } from '../Game';
+import {  Game } from '../ClientState';
 import CardPresenter from './CardPresenter';
 import { useSelector } from 'react-redux';
 

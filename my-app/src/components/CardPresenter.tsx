@@ -1,7 +1,7 @@
 import React from 'react'
 
 import './zeStyle.css';
-import { Card } from '../Game';
+import { Card } from '../ClientState';
 import { useDispatch } from 'react-redux';
 import { toggleTap } from '../Actions';
 
@@ -17,7 +17,7 @@ const CardPresenter: React.FC<CPP> = (props) => {
     return (
         <>
         <div className="Card" onClick={()=>dispatch(toggleTap(props.card.id))}>
-            <p>Card {props.card.id} {props.card.tapped ? "T" : "UnT"}</p>
+            {/* <p>Card {props.card.id} {props.card.tapped ? "T" : "UnT"}</p> */}
         </div>
         </>
     )

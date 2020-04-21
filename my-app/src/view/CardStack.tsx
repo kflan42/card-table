@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { testDeck, randchoice } from './CardDB'
+import { randchoice } from '../Utilities'
 import Card from './Card'
+import { createTestGame } from '../zzzState'
 
 interface CardStackP {
     name: string
@@ -19,30 +20,29 @@ const CardStack: React.FC<CardStackP> = (props) => {
 
     const label = props.icon ? props.icon : props.name;
 
-    const testSizes: { [index: string]: number } = {
-        "Hand": 7,
-        "Library": 82,
-        "Graveyard": 10,
-        "Command Zone": 1,
-        "Sideboard (Exile)": 0
-    }
+    const game = createTestGame()
+    const player = randchoice(Object.keys(game.players))
+    const testDeck = game.players[player].deck.map(i => game.cards[i].name)
 
-    const size = testSizes[props.name];
+    const size = 7;
 
     const listItems = []
-    for (let n = 0; n < size; n++) {
-        const name = randchoice(testDeck)
-        listItems.push(<Card key={n}
-            name={name}
-        />
-        )
-    };
+    if (shown) {
+        // keep DOM element count down by not rendering cards user can't see
+        for (let n = 0; n < size; n++) {
+            const name = randchoice(testDeck)
+            listItems.push(<Card key={n}
+                name={name}
+            />
+            )
+        }
+    }
 
     return (
         // todo later disable text cursor
         <>
             <div className="buttontooltip">
-                <div style={shown ? { boxShadow: "1pt 1pt 1pt black" } : {}} 
+                <div style={shown ? { boxShadow: "1pt 1pt 1pt black" } : {}}
                     onClick={e => clicked(e)} className="TextButton">
                     {label} {`${size}`}
                 </div>

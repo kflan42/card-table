@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react'
 import './zeStyle.css';
 import Hand from './Hand';
 import { useParams } from 'react-router-dom';
-import { Card } from '../Game';
+import { Card } from '../ClientState';
 import TablePresenter from './TablePresenter';
 import { useDispatch } from 'react-redux';
 import { load } from '../Actions';
@@ -35,18 +35,18 @@ const GamePresenter: React.FC = () => {
             console.log("loading state from server")
             //fetch("https://api.example.com/items")
             //    .then(res => res.json())
-            new Promise<{ [index: number]: Card }>(result => result({ 1: { id: 1, tapped: false } }))
-                .then(
-                    (result) => {
-                        dispatch(load(result))
-                    },
-                    // Note: it's important to handle errors here
-                    // instead of a catch() block so that we don't swallow
-                    // exceptions from actual bugs in components.
-                    (error) => {
-                        console.error(error)
-                    }
-                )
+            // new Promise<{ [index: number]: Card }>(result => result({ 1: { id: 1, tapped: false } }))
+            //     .then(
+            //         (result) => {
+            //             dispatch(load(result))
+            //         },
+            //         // Note: it's important to handle errors here
+            //         // instead of a catch() block so that we don't swallow
+            //         // exceptions from actual bugs in components.
+            //         (error) => {
+            //             console.error(error)
+            //         }
+            //     )
         }
 
         loadGameStateFromServer();

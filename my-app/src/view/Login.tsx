@@ -81,7 +81,7 @@ class Login extends React.Component<LoginP> {
         <input type="submit" value="Join Table"/>
         <br /> <br />
         Deck: <br />
-        <textarea value={this.state.deck} readOnly={true} cols={64} rows={100} />
+        <textarea value={this.state.deck} readOnly={true} cols={64} rows={33} />
       </form>
     );
   }

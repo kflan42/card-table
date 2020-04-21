@@ -8,7 +8,7 @@ import {
   LOAD,
   TOGGLE_TAP_CARD
 } from './Actions'
-import { Card } from './Game'
+import { Card } from './ClientState'
 
 
 function cards(state: { [index: number]: Card } = {}, action: CardAction) {
@@ -29,8 +29,8 @@ function cards(state: { [index: number]: Card } = {}, action: CardAction) {
       //     return v
       //   } )
       // console.log(x,y,z)
-      const z = update(state, { [cardId]: { $toggle: ['tapped'] } })
-      return z
+      //tapped used to be on Card const z = update(state, { [cardId]: { $toggle: ['tapped'] } })
+      //return z
     default:
       return state
   }
