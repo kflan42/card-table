@@ -20,6 +20,7 @@ export interface Game {
     zones: { [index: number]: Zone }
     /** indexed by player name */
     battlefields: { [index: string]: Battlefield }
+    /** index by bfCard bfId */
     battlefieldCards: { [index: number]: BattlefieldCard }
 }
 
@@ -57,6 +58,7 @@ export interface Battlefield {
 }
 
 export interface BattlefieldCard {
+    bfId: number,
     cardId: number,
     x: number,
     y: number,

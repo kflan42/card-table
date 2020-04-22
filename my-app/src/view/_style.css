@@ -137,8 +137,7 @@
   align-items: flex-start;
   padding: 1pt;
   min-width: 122pt;
-  resize: horizontal;
-  max-height: 255pt;
+  resize: both;
   background: black;
 }
 
@@ -146,7 +145,6 @@
   border-top-left-radius: 4pt;
   border-top-right-radius: 4pt;
   /* cut off to just show top */
-  height: 17pt;
   min-height: 17pt;
   flex-shrink: 0;
 }
@@ -165,7 +163,7 @@
 /* Show the tooltip text when you mouse over the tooltip container */
 .buttontooltip:hover .buttontooltiptext {
   visibility: visible;
-  transition-delay: 0.5s;
+  transition-delay: 1s;
 }
 
 /* Tooltip text */
@@ -194,7 +192,7 @@
 
 .cardtooltip:hover .cardtooltiptext {
   visibility: visible;
-  transition-delay: 0.5s;
+  transition-delay: 1s;
   /* transition: visibility 2s; does not work */
 }
 

@@ -1,28 +1,33 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 
 import './_style.css';
 import Card from './Card';
+import { ClientState } from '../ClientState';
+import { useSelector } from 'react-redux';
+import { getZone } from '../zzzState';
 
 
 const Hand: React.FC = () => {
 
-    return (
-            <div className="Hand" style={{
-            }}>
-                <p>Hand</p>
+    const zoneState = useSelector((state: ClientState) => {
+        if (state.playerName) {
+            return getZone(state.game, state.playerName, "Hand")
+        } else {
+            return undefined
+        }
+    })
 
-                <Card name="Forest" />
-                <Card name="Llanowar Elves" />
-                <Card name="Lightning Greaves" />
-                <Card name="Armored Ascension" />
-                <Card name="Rampant Growth" />
-                <Card name="Nissa, Vastwood Seer" />
-                <Card name="Forest" />
-                <Card name="Llanowar Elves" />
-                <Card name="Lightning Greaves" />
-                <Card name="Rampant Growth" />
-                <Card name="Nissa, Vastwood Seer" />
-            </div>
+    const listItems = []
+    if (zoneState) {
+        for (const cardId of zoneState.cards) {
+            listItems.push(<Card key={cardId} cardId={cardId} />)
+        }
+    }
+
+    return (
+        <div className="Hand">
+            {listItems}
+        </div>
     )
 }
 

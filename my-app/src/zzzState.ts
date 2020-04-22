@@ -1,4 +1,5 @@
 import { Game, Card, Player, Zone, Battlefield, BattlefieldCard } from './ClientState'
+import { randint, randchoice } from './Utilities';
 
 
 export function createGame(users: string[], decks: string[][]): Game {
@@ -31,8 +32,10 @@ export function createGame(users: string[], decks: string[][]): Game {
             battlefieldCards: []
         }
 
+        var libraryZoneId = -1
         for (const zoneName in players[playerName].zones) {
             const zoneId = players[playerName].zones[zoneName]
+            if (zoneName === "Library") libraryZoneId = zoneId
             zones[zoneId] = {
                 id: zoneId,
                 name: zoneName,
@@ -46,19 +49,42 @@ export function createGame(users: string[], decks: string[][]): Game {
             if (deckCard === "") {
                 break; // end of deck, start of sideboard
             }
+
+            // previous regex based approach
             // parens and space question mark are finicky
             // assume no cards have () in the name, only un-sets do
-            const cardLine = /(\d+)x? ([^(]+[^( ]) ?(?:\((\w+)?\))? ?(\d+)?/
-            const m = deckCard.match(cardLine)
-            if (!m) {
-                console.error(`Invalid Line in Deck: ${deckCard}`)
-                continue;
+            // const cardLine = /(\d+)x? ([^(]+[^( ]) ?(?:\((\w+)?\))? ?(\d+)?/
+            // const m = deckCard.match(cardLine)
+            // if (!m) {
+            //     console.error(`Invalid Line in Deck: ${deckCard}`)
+            //     continue;
+            // }
+            // const count = Number.parseInt(m[1])
+            // const name = m[2]
+            // // only care about official 3 character sets
+            // const set = m[3] && m[3].length === 3 ? m[3] : undefined
+            // const setNumber = m[4] && m[4] ? m[4] : undefined
+
+            const cardParts = deckCard.split(" ")
+            const count = Number.parseInt(cardParts[0].replace("x", ""))
+            var set = undefined, setNumber = undefined;
+            if (cardParts.length > 3) { // count "name" (set) num // plus spaces in name
+                const m = cardParts[cardParts.length - 2].match(/\((\w+)\)/);
+                if (m) {
+                    set = m[1];
+                    setNumber = cardParts[cardParts.length - 1]; // not always numeric
+                }
             }
-            const count = Number.parseInt(m[1])
-            const name = m[2]
-            // only care about official 3 character sets
-            const set = m[3] && m[3].length === 3 ? m[3] : undefined
-            const setNumber = m[4] && m[4] ? m[4] : undefined
+            if (cardParts.length > 2) { // count "name" (set) // plus spaces in name
+                const m = cardParts[cardParts.length - 1].match(/\((\w+)\)/);
+                if (m) {
+                    set = m[1];
+                    // no set number if set last
+                }
+            }
+            // else just count "name" // plus spaces in name
+            const nameParts = cardParts.length - 1 - (set ? 1 : 0) - (setNumber ? 1 : 0)
+            const name = cardParts.slice(1, nameParts + 1).join(" ")
             for (let i = 0; i < count; i++) {
                 cards[cid] = {
                     id: cid,
@@ -68,6 +94,7 @@ export function createGame(users: string[], decks: string[][]): Game {
                     owner: playerName
                 }
                 players[playerName].deck.push(cid)
+                zones[libraryZoneId].cards.push(cid)
                 cid++
             }
         }
@@ -87,14 +114,56 @@ export function createGame(users: string[], decks: string[][]): Game {
     };
 }
 
+export function getZone(game: Game, player: string, zone: string) {
+    const zoneId = game.players[player].zones[zone]
+    return game.zones[zoneId]
+}
+
 export function createTestGame() {
-    return createGame(["alice", "bob",
+    const initialGame = createGame(["alice", "bob",
         "chad", "dude",
         "erwin"],
         [xMarksTheSpot, kickStartMyHeart,
             xMarksTheSpot, kickStartMyHeart,
             xMarksTheSpot
         ])
+
+    var bfId = 0;
+    for (const pn in initialGame.players) {
+        const library = getZone(initialGame, pn, "Library")
+        const commandZone = getZone(initialGame, pn, "Command Zone")
+        const hand = getZone(initialGame, pn, "Hand")
+        const battlefield = initialGame.battlefields[pn]
+
+        var c = library.cards.pop()
+        if (c) commandZone.cards.push(c)
+
+        for (let i = 0; i < 7; i++) {
+            // drawing a card, ta-da!
+            c = library.cards.pop()
+            if (c) hand.cards.push(c)
+        }
+
+        for (let i = 0; i < 7; i++) {
+            c = library.cards.pop()
+            if (c) {
+                const bfc: BattlefieldCard = {
+                    bfId: ++bfId,
+                    cardId: c,
+                    x: randint(8) * 10 + 5,
+                    y: randint(8) * 10 + 5,
+                    tapped: randchoice([true, false, false, false]),
+                    facedown: randchoice([true, false, false, false]),
+                    transformed: randchoice([true, false]),
+                    counters: randchoice([{}, { "+1/+1": 1 }])
+                }
+                initialGame.battlefieldCards[bfc.bfId] = bfc
+                battlefield.battlefieldCards.push(bfc.bfId)
+            }
+        }
+    }
+
+    return initialGame;
 }
 
 /* mtg arena format */

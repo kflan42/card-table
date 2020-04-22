@@ -7,14 +7,14 @@ export const LOAD = 'LOAD'
 
 export interface CardAction {
     type: string
-    cardId: number
+    bfId: number
     payload: any
 }
 
 export function load(newCards: {[index: number]:Card}): CardAction {
     return {
         type: LOAD,
-        cardId: -1,
+        bfId: -1,
         payload: newCards,
     }
 }
@@ -23,7 +23,7 @@ export function load(newCards: {[index: number]:Card}): CardAction {
 export function tapCard(id: number): CardAction {
     return {
         type: TAP_CARD,
-        cardId: id,
+        bfId: id,
         payload: null,
     }
 }
@@ -31,7 +31,7 @@ export function tapCard(id: number): CardAction {
 export function untapCard(id: number): CardAction {
     return {
         type: UNTAP_CARD,
-        cardId: id,
+        bfId: id,
         payload: null,
     }
 }
@@ -39,7 +39,7 @@ export function untapCard(id: number): CardAction {
 export function toggleTap(id: number): CardAction {
     return {
         type: TOGGLE_TAP_CARD,
-        cardId: id,
+        bfId: id,
         payload: null,
     }
 }

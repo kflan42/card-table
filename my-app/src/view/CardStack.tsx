@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
-import { randchoice } from '../Utilities'
 import Card from './Card'
-import { createTestGame } from '../zzzState'
+import { useSelector } from 'react-redux'
+import { getZone } from '../zzzState'
+import { ClientState } from '../ClientState'
 
 interface CardStackP {
     name: string
@@ -20,26 +21,28 @@ const CardStack: React.FC<CardStackP> = (props) => {
 
     const label = props.icon ? props.icon : props.name;
 
-    const game = createTestGame()
-    const player = randchoice(Object.keys(game.players))
-    const testDeck = game.players[player].deck.map(i => game.cards[i].name)
+    const zoneState = useSelector((state: ClientState) => {
+        if (state.playerName) {
+            return getZone(state.game, state.playerName, props.name)
+        } else {
+            return undefined
+        }
+    })
 
-    const size = 7;
+    const size = zoneState ? zoneState.cards.length : 0
+
+    const heightClip = Math.max(17, Math.min(71 / (size / 5), 71))
+    const boxHeight = Math.min(heightClip * size, 255)
 
     const listItems = []
-    if (shown) {
-        // keep DOM element count down by not rendering cards user can't see
-        for (let n = 0; n < size; n++) {
-            const name = randchoice(testDeck)
-            listItems.push(<Card key={n}
-                name={name}
-            />
-            )
+    if (zoneState && shown) {
+        for (const cardId of zoneState.cards) {
+            listItems.push(<Card key={cardId} cardId={cardId} height={heightClip} />)
         }
     }
 
     return (
-        // todo later disable text cursor
+        // TODO later disable text cursor
         <>
             <div className="buttontooltip">
                 <div style={shown ? { boxShadow: "1pt 1pt 1pt black" } : {}}
@@ -47,12 +50,15 @@ const CardStack: React.FC<CardStackP> = (props) => {
                     {label} {`${size}`}
                 </div>
                 <span className="buttontooltiptext">{props.name}</span>
-                <div className="StackPopUpBox" style={shown ? {} : { display: "none" }}>
-                    {/* <div>{props.name}</div> */}
-                    <div className="CardStack">
-                        {listItems}
+                {shown
+                    ? <div className="StackPopUpBox">
+                        {/* <div>{props.name}</div> */}
+                        <div className="CardStack" style={{ height: `${boxHeight}pt` }}>
+                            {listItems}
+                        </div>
                     </div>
-                </div>
+                    : undefined
+                }
             </div>
         </>
     )

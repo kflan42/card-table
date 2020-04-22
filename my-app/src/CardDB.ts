@@ -4,8 +4,10 @@ export interface CardData {
     name: string
     set: string
     num: string // can have weird chars
-    face?: string
-    faces?: { [index: string]: string }
+    face_small?: string
+    face_normal?: string
+    faces_small?: { [index: string]: string }
+    faces_normal?: { [index: string]: string }
 }
 
 class CardDB {
@@ -17,15 +19,15 @@ class CardDB {
     static buildMap(cds: CardData[]) {
         this.cardMap = new Map()
         for (const cd of cds) {
-            if (cd.face) {
+            if (cd.face_small) {
                 const a = this.cardMap.get(cd.name)
                 if (a) {
                     a.push(cd)
                 } else {
                     this.cardMap.set(cd.name, new Array(cd))
                 }
-            } else if (cd.faces) {
-                for (const f in cd.faces) {
+            } else if (cd.faces_small) {
+                for (const f in cd.faces_small) {
                     const a = this.cardMap.get(f)
                     if (a) {
                         a.push(cd)
@@ -55,7 +57,7 @@ class CardDB {
                 if (setVariants.length > 0)
                     return randchoice(setVariants)
             }
-            return randchoice(variants) // todo, do this once on deck load, not every card render!
+            return randchoice(variants) // TODO, do this once on deck load, not every card render!
         }
         return undefined; // not found, fall through
     }
@@ -65,9 +67,9 @@ class CardDB {
             return CardDB.cards
         else {
             console.log("beginning load")
-            // todo load only necessary cards from server, this 2MB file is slow
-            // todo tho need to pray image caching is good, 50 images was 9MB, tho that's with 60 cards on the field
-            // todo re-run lighthouse with prod server, dev one has huge dev js piles of files, my code negligible
+            // TODO load only necessary cards from server, this 2MB file is slow
+            // TODO tho need to pray image caching is good, 50 images was 9MB, tho that's with 60 cards on the field
+            // TODO re-run lighthouse with prod server, dev one has huge dev js piles of files, my code negligible
             CardDB.cards = fetch('my-cards.json').then(r => { return r.json() })
             CardDB.cards.then((cds) => {
                 console.log(`${cds.length} cards loaded`)

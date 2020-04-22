@@ -1,30 +1,26 @@
 import React from 'react'
 
 import './_style.css';
-import Card from './Card';
-import { randchoice, randint } from '../Utilities';
-import { createTestGame } from '../zzzState';
+import { useSelector } from 'react-redux';
+import { ClientState } from '../ClientState';
+import MemoizedBFCard from './BFCard';
 
+interface BFP {
+    player: string
+}
 
+const Battlefield: React.FC<BFP> = (props) => {
 
-const Battlefield: React.FC = () => {
-
-    const game = createTestGame()
-    const player = randchoice(Object.keys(game.players))
-    const testDeck = game.players[player].deck.map(i => game.cards[i].name)
+    const zoneState = useSelector((state: ClientState) => {
+        return state.game.battlefields[props.player]
+    })
 
     const listItems = []
-    for (let n = 0; n < 12; n++) {
-        const name = randchoice(testDeck)
-        listItems.push(<Card key={n}
-            name={name}
-            x={randint(8) * 10 + 5} y={randint(8) * 10 + 5}
-            tapped={randchoice([true, false, false, false])}
-            faceDown={randchoice([true, false, false, false])}
-            transformed={name === "Nissa, Vastwood Seer" ? randchoice([true, false]) : undefined}
-        />
-        )
-    };
+    if (zoneState) {
+        for (const bfId of zoneState.battlefieldCards) {
+            listItems.push(<MemoizedBFCard key={bfId} bfId={bfId} />)
+        }
+    }
 
     return (
         <div className="Battlefield">

@@ -14,14 +14,14 @@ import './_style.css';
 import LoginForm from './Login'
 import { createStore } from 'redux'
 import { Provider } from 'react-redux';
-import gameReducer from '../Reducers';
 import Game from './Game';
 import Log from './Log';
+import stateReducer from '../Reducers';
 
 const App: React.FC = () => {
 
     // https://redux.js.org/basics/usage-with-react#passing-the-store
-    const store = createStore(gameReducer)
+    const store = createStore(stateReducer)
 
     return (
         <div className="App">

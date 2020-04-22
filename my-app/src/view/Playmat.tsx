@@ -13,7 +13,7 @@ const Playmat: React.FC<PlaymatP> = (props) => {
     return (
         <div className="Playmat">
             <PlayerBox player={props.player}/>
-            <Battlefield/>
+            <Battlefield player={props.player}/>
         </div>
     )
 }
