@@ -9,9 +9,12 @@ import { getZone } from '../zzzState';
 
 const Hand: React.FC = () => {
 
+    const userColor = useSelector((state: ClientState) => state.playerPrefs.color)
+
+
     const zoneState = useSelector((state: ClientState) => {
-        if (state.playerName) {
-            return getZone(state.game, state.playerName, "Hand")
+        if (state.playerPrefs.name) {
+            return getZone(state.game, state.playerPrefs.name, "Hand")
         } else {
             return undefined
         }
@@ -20,7 +23,9 @@ const Hand: React.FC = () => {
     const listItems = []
     if (zoneState) {
         for (const cardId of zoneState.cards) {
-            listItems.push(<Card key={cardId} cardId={cardId} />)
+            listItems.push(
+                <Card key={cardId} cardId={cardId} border={"2pt solid " + userColor} />
+            )
         }
     }
 

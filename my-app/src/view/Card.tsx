@@ -8,7 +8,8 @@ import { useSelector } from 'react-redux';
 
 interface CardProps {
     cardId: number,
-    height?: number
+    height?: number,
+    border?: string
 }
 
 const Card: React.FC<CardProps> = (props) => {
@@ -48,8 +49,10 @@ const Card: React.FC<CardProps> = (props) => {
             style={{
                 backgroundImage: `url("${front()}")`,
                 backgroundSize: 'cover',
+                backgroundPosition: "center top",
                 backgroundRepeat: "no-repeat",
-                minHeight: props.height?  `${props.height}pt` : undefined
+                minHeight: props.height?  `${props.height}em` : undefined,
+                border: props.border
             }}
         >
             <span className="cardtooltiptext">{cardState.name}</span>

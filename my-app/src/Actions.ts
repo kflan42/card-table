@@ -3,7 +3,7 @@ import { Card } from "./ClientState"
 export const TAP_CARD = 'TAP_CARD'
 export const UNTAP_CARD = 'UNTAP_CARD'
 export const TOGGLE_TAP_CARD = 'TOGGLE_TAP_CARD'
-export const LOAD = 'LOAD'
+export const LOCAL_STATE_LOAD = 'LOCAL_STATE_LOAD'
 
 export interface CardAction {
     type: string
@@ -11,9 +11,17 @@ export interface CardAction {
     payload: any
 }
 
+export function localStateLoaded(name: string, color: string){
+    return {
+        type: LOCAL_STATE_LOAD,
+        bfId: -1,
+        payload: {name:name, color:color},
+    }
+}
+
 export function load(newCards: {[index: number]:Card}): CardAction {
     return {
-        type: LOAD,
+        type: LOCAL_STATE_LOAD,
         bfId: -1,
         payload: newCards,
     }

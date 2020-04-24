@@ -6,12 +6,13 @@ import Table from './Table';
 import { useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { ClientState } from '../ClientState';
+import { localStateLoaded } from '../Actions';
 
 const Game: React.FC = () => {
 
     const { gameId } = useParams()
 
-    const userName = useSelector((state: ClientState) => state.playerName)
+    const userName = useSelector((state: ClientState) => state.playerPrefs.name)
 
     const dispatch = useDispatch()
 
@@ -20,7 +21,8 @@ const Game: React.FC = () => {
         if (userName)
             return
         const u = localStorage.getItem('userName')
-        if (u) dispatch({ type: "set name", value: u })
+        const c = localStorage.getItem('userColor')
+        if (u && c) dispatch(localStateLoaded(u, c))
     }, [userName]);
 
     /* eslint-disable jsx-a11y/accessible-emoji */

@@ -1,8 +1,13 @@
 /** state of this client, e.g. popups and options */
 export interface ClientState {
-    playerName: string,
+    playerPrefs: PlayerPrefs,
     cardPopup: CardPopup,
     game: Game,
+}
+
+export interface PlayerPrefs {
+    name: string,
+    color: string
 }
 
 export interface CardPopup {

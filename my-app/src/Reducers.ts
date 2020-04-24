@@ -5,7 +5,8 @@ import update from 'immutability-helper'
 
 import {
   CardAction,
-  TOGGLE_TAP_CARD
+  TOGGLE_TAP_CARD,
+  LOCAL_STATE_LOAD
 } from './Actions'
 import { Game } from './ClientState'
 import { createTestGame } from './zzzState'
@@ -61,8 +62,8 @@ function gameReducer(state: Game = createTestGame(), action: CardAction) {
 //const cp = {x:1, y:1, visible:true, cardId:1}
 
 const stateReducer = combineReducers({
-  playerName: (x = null, y) => {
-    if (y.type === "set name") return y.value;
+  playerPrefs: (x = {name: undefined, color: undefined}, y) => {
+    if (y.type === LOCAL_STATE_LOAD) return y.payload;
     else return x;
   },
   cardPopup: (x = null, y) => x,

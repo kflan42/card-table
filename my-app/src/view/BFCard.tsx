@@ -64,7 +64,9 @@ const BFCard: React.FC<BFCardProps> = (props) => {
                     backgroundImage: `url("${front()}")`,
                     backgroundSize: 'cover',
                     backgroundRepeat: "no-repeat",
-                    transform: bfState.tapped ? "rotate(90deg)" : ""
+                    transform: bfState.tapped ? "rotate(90deg)" : "",
+                    transition: "top 1s, left 1s, transform 0.5s, background-image 1s",
+                    transitionTimingFunction: "ease-in"
                 }}
                 onClick={()=>dispatch(toggleTap(bfState.bfId))}
             >
