@@ -1,20 +1,40 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 
 import './_style.css';
 import CardDB from '../CardDB';
 import { CardData } from '../CardDB';
 import { ClientState } from '../ClientState';
 import { useSelector } from 'react-redux';
+import { ConnectDragSource, ConnectDropTarget, DropTarget, DropTargetMonitor, DragSource, DragSourceMonitor } from 'react-dnd';
+import { CARD } from '../Actions';
 
 interface CardProps {
     cardId: number,
+    moveCard: (id: number, to: number) => void,
+    findCard: (id: number) => number | undefined
     height?: number,
     border?: string
+
+    connectDragSource: ConnectDragSource
+    connectDropTarget: ConnectDropTarget
+    isDragging: boolean
 }
 
-const Card: React.FC<CardProps> = (props) => {
+const Card: React.FC<CardProps> = ({
+    cardId,
+    height,
+    border,
+    isDragging,
+    connectDragSource,
+    connectDropTarget,
+}) => {
+    const opacity = isDragging ? 0 : 1
+    const ref = useRef(null)
 
-    const cardState = useSelector((state: ClientState) => state.game.cards[props.cardId])
+    connectDragSource(ref)
+    connectDropTarget(ref)
+
+    const cardState = useSelector((state: ClientState) => state.game.cards[cardId])
 
     // small is 10.8k (memory cache after 1st). fuzzy text, hard to read
     // normal is 75.7k (memory cache after 1st). readable
@@ -45,20 +65,57 @@ const Card: React.FC<CardProps> = (props) => {
     }
 
     return (
-        <div className={"Card cardtooltip"}
+        <div ref={ref} className={"Card cardtooltip"}
             style={{
                 backgroundImage: `url("${front()}")`,
-                backgroundSize: 'cover',
-                backgroundPosition: "center top",
-                backgroundRepeat: "no-repeat",
-                minHeight: props.height?  `${props.height}em` : undefined,
-                border: props.border
+                minHeight: height ? `${height}em` : undefined,
+                border: border,
+                opacity
             }}
         >
             <span className="cardtooltiptext">{cardState.name}</span>
-            {isLoading ? <p>{cardState.name} </p> : undefined }
+            {isLoading ? <p>{cardState.name} </p> : undefined}
         </div>
     )
 }
 
-export default Card
+export default DropTarget(
+    CARD,
+    {
+        canDrop: () => false,
+        hover(props: CardProps, monitor: DropTargetMonitor) {
+            const { id: draggedId } = monitor.getItem()
+            const { cardId: overId } = props
+
+            if (draggedId !== overId) {
+                const overIndex = props.findCard(overId)
+                if (overIndex !== undefined)
+                    props.moveCard(draggedId, overIndex)
+            }
+        },
+    },
+    (connect) => ({
+        connectDropTarget: connect.dropTarget(),
+    }),
+)(
+    DragSource(
+        CARD,
+        {
+            beginDrag: (props: CardProps) => ({
+                id: props.cardId,
+                originalIndex: props.findCard(props.cardId),
+            }),
+            endDrag(props: CardProps, monitor: DragSourceMonitor) {
+                const { id: droppedId, originalIndex } = monitor.getItem()
+                const didDrop = monitor.didDrop()
+                if (!didDrop) {
+                    props.moveCard(droppedId, originalIndex)
+                }
+            },
+        },
+        (connect, monitor) => ({
+            connectDragSource: connect.dragSource(),
+            isDragging: monitor.isDragging(),
+        }),
+    )(Card),
+)

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect } from 'react'
 
 import './_style.css';
 import Hand from './Hand';
@@ -23,7 +23,7 @@ const Game: React.FC = () => {
         const u = localStorage.getItem('userName')
         const c = localStorage.getItem('userColor')
         if (u && c) dispatch(localStateLoaded(u, c))
-    }, [userName]);
+    }, [userName, dispatch]);
 
     /* eslint-disable jsx-a11y/accessible-emoji */
     return userName

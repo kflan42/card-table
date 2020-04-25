@@ -1,4 +1,4 @@
-import React, { useState, FormEvent, ChangeEvent } from 'react'
+import React, { useState, ChangeEvent } from 'react'
 import Card from './Card'
 import { useSelector } from 'react-redux'
 import { getZone } from '../zzzState'
@@ -43,11 +43,14 @@ const CardStack: React.FC<CardStackP> = (props) => {
     const boxHeight = cardHeight * cards_per_col
     const boxWidth = 6*target_cols;
 
+    const findCard = (i:number)=>undefined
+    const moveCard = (i:number, t:number) => {}
+
     const listItems = []
     if (zoneState && shown) {
         for (const cardId of zoneState.cards) {
             if (!query || cards[cardId].name.toLowerCase().indexOf(query.toLowerCase()) > -1) {
-                listItems.push(<Card key={cardId} cardId={cardId} height={cardHeight} />)
+                listItems.push(<Card key={cardId} cardId={cardId} moveCard={moveCard} findCard={findCard} height={cardHeight} />)
             }
         }
     }

@@ -130,15 +130,20 @@
 
 .Card {
   font-size: small;
-  border-radius: 0.2em;
+  border-radius: 0.35em;
   min-height: 7em;
   min-width: 5em;
+
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
 }
 
 .Hand .Card {
   /* need to scale these together ~ small image is 146 × 204*/
   min-height: 15.3em;
   min-width: 10.95em;
+  border-radius: 0.75em;
 }
 
 .StackPopUpBox {

@@ -1,38 +1,42 @@
-import { Card } from "./ClientState"
 
 export const TAP_CARD = 'TAP_CARD'
 export const UNTAP_CARD = 'UNTAP_CARD'
 export const TOGGLE_TAP_CARD = 'TOGGLE_TAP_CARD'
 export const LOCAL_STATE_LOAD = 'LOCAL_STATE_LOAD'
+export const REORDER_HAND = 'REORDER_HAND'
+
+// item types for react dnd
+export const CARD = "card"
+export const COOUNTER = "counter"
 
 export interface CardAction {
     type: string
-    bfId: number
-    payload: any
+    bfId?: number
+    cardId?: number
+    payload?: any
 }
 
 export function localStateLoaded(name: string, color: string){
     return {
         type: LOCAL_STATE_LOAD,
-        bfId: -1,
         payload: {name:name, color:color},
     }
 }
 
-export function load(newCards: {[index: number]:Card}): CardAction {
+export function reorderHand(owner:string, cardId: number, fromIndex: number, toIndex: number) {
     return {
-        type: LOCAL_STATE_LOAD,
-        bfId: -1,
-        payload: newCards,
+        type: REORDER_HAND,
+        owner: owner,
+        cardId: cardId,
+        fromIndex: fromIndex,
+        toIndex: toIndex,
     }
 }
-
 
 export function tapCard(id: number): CardAction {
     return {
         type: TAP_CARD,
         bfId: id,
-        payload: null,
     }
 }
 
@@ -40,7 +44,6 @@ export function untapCard(id: number): CardAction {
     return {
         type: UNTAP_CARD,
         bfId: id,
-        payload: null,
     }
 }
 
@@ -48,7 +51,6 @@ export function toggleTap(id: number): CardAction {
     return {
         type: TOGGLE_TAP_CARD,
         bfId: id,
-        payload: null,
     }
 }
 

@@ -86,10 +86,10 @@ class Login extends React.Component<LoginP> {
       const b = v & 0x0000ff
       // const s = r.toString(16) + g.toString(16) + b.toString(16)
       if (r < 0xa0 || g < 0xa0 || b < 0xa0) {
-        colorItems.push(<a
-          style={{ backgroundColor: color, color: "white" }}
+        colorItems.push(<span
+          style={{ backgroundColor: color, color: "white", cursor: "pointer" }}
           onClick={() => this.pickColor(color)}
-        >{color}</a>)
+        >{color}</span>)
       }
       //   }
       // }
@@ -114,7 +114,7 @@ class Login extends React.Component<LoginP> {
             <br /> <br />
             Sleeve Color: &nbsp;
             <div className="dropdown">
-              <button style={{ backgroundColor: this.state.color }}>Choose</button>
+              <button style={{ backgroundColor: this.state.color }}>{this.state.color ? "Chosen" : "Choose"}</button>
               <div className="dropdown-content" style={{ maxHeight: colorItems.length * 2 / 5 + "em" }}>
                 {colorItems}
               </div>
