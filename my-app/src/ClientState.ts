@@ -1,20 +1,12 @@
 /** state of this client, e.g. popups and options */
 export interface ClientState {
     playerPrefs: PlayerPrefs,
-    cardPopup: CardPopup,
     game: Game,
+    cardUnderCursor: number | null
 }
 
 export interface PlayerPrefs {
     name: string,
-    color: string
-}
-
-export interface CardPopup {
-    x: number,
-    y: number,
-    visible: boolean,
-    cardId: number
 }
 
 /** state of the game itself, regardless of viewer. shared via server to other clients. */
@@ -46,6 +38,7 @@ export interface Player {
     deck: number[],
     counters: { [index: string]: number }
     zones: {[index: string]: number}
+    color: string,
 }
 
 

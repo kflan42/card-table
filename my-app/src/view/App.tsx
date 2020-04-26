@@ -33,9 +33,7 @@ const App: React.FC = () => {
                             <DndProvider backend={Backend}>
                                 <Game/>
                             </DndProvider>
-                            <Log>
-                                
-                            </Log>
+                            <Log/>
                         </Provider>
                     </Route>
                     <Route path="/">

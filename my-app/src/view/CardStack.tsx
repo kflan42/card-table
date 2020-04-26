@@ -41,16 +41,17 @@ const CardStack: React.FC<CardStackP> = (props) => {
     const cards_per_col = Math.ceil(size / target_cols)
     const cardHeight = Math.max(1.5, Math.ceil(10 / cards_per_col))
     const boxHeight = cardHeight * cards_per_col
-    const boxWidth = 6*target_cols;
-
-    const findCard = (i:number)=>undefined
-    const moveCard = (i:number, t:number) => {}
+    const boxWidth = 6 * target_cols;
 
     const listItems = []
     if (zoneState && shown) {
         for (const cardId of zoneState.cards) {
             if (!query || cards[cardId].name.toLowerCase().indexOf(query.toLowerCase()) > -1) {
-                listItems.push(<Card key={cardId} cardId={cardId} moveCard={moveCard} findCard={findCard} height={cardHeight} />)
+                listItems.push(
+                    <div style={{height:cardHeight+"em"}}>
+                        <Card key={cardId} cardId={cardId} />
+                    </div>
+                )
             }
         }
     }
@@ -67,7 +68,7 @@ const CardStack: React.FC<CardStackP> = (props) => {
                 {shown
                     ? <div className="StackPopUpBox">
                         {size > 10
-                            ? <div>{props.name} Search:<input value={query} type="text" id="query" name="query" onChange={queryChanged}/></div>
+                            ? <div>{props.name} Search:<input value={query} type="text" id="query" name="query" onChange={queryChanged} /></div>
                             : undefined}
                         <div className="CardStack" style={{
                             height: `${boxHeight}em`,

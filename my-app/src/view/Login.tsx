@@ -132,7 +132,7 @@ class Login extends React.Component<LoginP> {
 }
 export default LoginForm
 
-const colors: { [index: string]: number } = {
+export const colors: { [index: string]: number } = {
   "IndianRed": 0xCD5C5C,
   "LightCoral": 0xF08080,
   "Salmon": 0xFA8072,

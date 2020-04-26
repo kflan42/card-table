@@ -1,5 +1,6 @@
 import { Game, Card, Player, Zone, Battlefield, BattlefieldCard } from './ClientState'
 import { randint, randchoice } from './Utilities';
+import { colors } from './view/Login';
 
 
 export function createGame(users: string[], decks: string[][]): Game {
@@ -25,7 +26,8 @@ export function createGame(users: string[], decks: string[][]): Game {
             },
             counters: {
                 "Life": 40
-            }
+            },
+            color: randchoice(Object.keys(colors))
         }
 
         battlefields[playerName] = {
@@ -296,7 +298,8 @@ const xMarksTheSpot = [
     "1 Expedition Map",
     "1 Exsanguinate",
     "1 Feral Hydra",
-    "7 Forest",
+    "1 Nissa, Vastwood Seer",
+    "6 Forest",
     "1 Freed from the Real",
     "1 Fyndhorn Elves",
     "1 Gaea's Cradle",

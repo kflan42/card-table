@@ -7,7 +7,8 @@ import {
   CardAction,
   TOGGLE_TAP_CARD,
   LOCAL_STATE_LOAD,
-  REORDER_HAND
+  REORDER_HAND,
+  HOVERED_CARD
 } from './Actions'
 import { Game } from './ClientState'
 import { createTestGame } from './zzzState'
@@ -80,8 +81,11 @@ const stateReducer = combineReducers({
     if (y.type === LOCAL_STATE_LOAD) return y.payload;
     else return x;
   },
-  cardPopup: (x = null, y) => x,
-  game: gameReducer
+  game: gameReducer,
+  cardUnderCursor: (x = null, y) => {
+    if (y.type === HOVERED_CARD) return y.cardId;
+    else return x;
+  },
 })
 
 export default stateReducer

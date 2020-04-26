@@ -1,86 +1,44 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 
 import './_style.css';
-import CardDB from '../CardDB';
-import { CardData } from '../CardDB';
 import { ClientState } from '../ClientState';
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleTap } from '../Actions';
+import Card from './Card';
 
 interface BFCardProps {
-    bfId: number
+    bfId: number,
 }
 
-const BFCard: React.FC<BFCardProps> = (props) => {
+const BFCard: React.FC<BFCardProps> = ({ bfId }) => {
 
-    const cardState = useSelector((state: ClientState) => {
-        return state.game.cards[state.game.battlefieldCards[props.bfId].cardId]
-    })
-    const bfState = useSelector((state: ClientState) => state.game.battlefieldCards[props.bfId])
+    const bfState = useSelector((state: ClientState) => state.game.battlefieldCards[bfId])
 
     const dispatch = useDispatch()
 
-    const [isLoading, setIsLoading] = useState(false)
-    const [cardData, setData] = useState<CardData>()
+    const cardProps = { cardId: bfState.cardId }
 
-    // TODO move card db load to ClientState
-    useEffect(() => {
-        async function fetchData() {
-            setIsLoading(true)
-            const response = await CardDB.getCard(cardState.name)
-            setData(response)
-            setIsLoading(false)
-        }
-        fetchData()
-    }, [cardState.name])
+    return (
+        <div
+            // TODO later: border = owner sleeve color
+            style={{
+                position: "absolute",
+                top: bfState.y + "%",
+                left: bfState.x + "%",
+                transform: bfState.tapped ? "rotate(90deg)" : "",
+                transition: "top 1s, left 1s, transform 0.5s, background-image 1s",
+                transitionTimingFunction: "ease-in"
+            }}
+            onClick={() => dispatch(toggleTap(bfState.bfId))}
+        >
+            {/* {bfState && bfState.transformed ? " T" : ""} */}
+            <Card cardId={cardProps.cardId}
+                facedown={bfState.facedown}
+                transformed={bfState.transformed}
+                borderStyle="0.15em solid" ></Card>
+        </div>
+    )
 
-
-    const front = () => {
-        if (bfState.facedown === true) {
-            return "Magic_card_back.jpg"
-        }
-        if (cardData) {
-            if (bfState && bfState.transformed && cardData.faces_small) {
-                for (const f in cardData.faces_small) {
-                    if (f !== cardState.name) return cardData.faces_small[f];
-                }
-            }
-            return cardData.face_small ? cardData.face_small :
-                cardData.faces_small ? cardData.faces_small[cardState.name] :
-                    "react_logo_skewed.png" // not found placeholder
-        }
-        else
-            return "react_logo_skewed.png" // not found placeholder
-    }
-
-    try {
-        return (
-            <div
-                className={"Card cardtooltip"}
-                // TODO later: border = owner sleeve color
-                style={{
-                    top: bfState.y + "%",
-                    left: bfState.x + "%",
-                    backgroundImage: `url("${front()}")`,
-                    backgroundSize: 'cover',
-                    backgroundRepeat: "no-repeat",
-                    transform: bfState.tapped ? "rotate(90deg)" : "",
-                    transition: "top 1s, left 1s, transform 0.5s, background-image 1s",
-                    transitionTimingFunction: "ease-in"
-                }}
-                onClick={()=>dispatch(toggleTap(bfState.bfId))}
-            >
-                <span className="cardtooltiptext">{cardState.name}</span>
-                {isLoading ? <p>{`${cardState.name} ${bfState && bfState.transformed ? " T" : ""}`}</p>
-                    : undefined}
-            </div>
-        )
-    } catch (e) {
-        console.error(`${cardState.name} error rendering:`, e)
-        return <div className={"Card"}>
-            {cardState.name} error rendering. See console.
-            </div>
-    }
 }
 
 // avoid re-rendering on every parent re-render https://react-redux.js.org/api/hooks#performance

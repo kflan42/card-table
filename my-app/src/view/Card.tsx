@@ -1,40 +1,32 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 
 import './_style.css';
 import CardDB from '../CardDB';
 import { CardData } from '../CardDB';
 import { ClientState } from '../ClientState';
-import { useSelector } from 'react-redux';
-import { ConnectDragSource, ConnectDropTarget, DropTarget, DropTargetMonitor, DragSource, DragSourceMonitor } from 'react-dnd';
-import { CARD } from '../Actions';
+import { useSelector, useDispatch } from 'react-redux';
+import { hoveredCard } from '../Actions';
 
-interface CardProps {
+
+export interface CardProps {
     cardId: number,
-    moveCard: (id: number, to: number) => void,
-    findCard: (id: number) => number | undefined
-    height?: number,
-    border?: string
-
-    connectDragSource: ConnectDragSource
-    connectDropTarget: ConnectDropTarget
-    isDragging: boolean
+    borderStyle?: string,
+    imageSize?: string,
+    facedown?: boolean,
+    transformed?: boolean,
 }
 
 const Card: React.FC<CardProps> = ({
     cardId,
-    height,
-    border,
-    isDragging,
-    connectDragSource,
-    connectDropTarget,
+    borderStyle,
+    imageSize,
+    facedown,
+    transformed
 }) => {
-    const opacity = isDragging ? 0 : 1
-    const ref = useRef(null)
-
-    connectDragSource(ref)
-    connectDropTarget(ref)
 
     const cardState = useSelector((state: ClientState) => state.game.cards[cardId])
+
+    const userColor = useSelector((state: ClientState) => state.game.players[cardState.owner].color)
 
     // small is 10.8k (memory cache after 1st). fuzzy text, hard to read
     // normal is 75.7k (memory cache after 1st). readable
@@ -55,22 +47,45 @@ const Card: React.FC<CardProps> = ({
 
 
     const front = () => {
+        if (facedown) {
+            return "Magic_card_back.jpg"
+        }
         if (cardData) {
-            return cardData.face_small ? cardData.face_small :
-                cardData.faces_small ? cardData.faces_small[cardState.name] :
-                    "react_logo_skewed.png" // not found placeholder
+            const faces = imageSize === "normal" ? cardData.faces_normal : cardData.faces_small
+            if (transformed && faces) {
+                for (const f in faces) {
+                    if (f !== cardState.name) return faces[f];
+                }
+            }
+            const face = imageSize === "normal" ? cardData.face_normal : cardData.face_small
+            return face ? face : faces ? faces[cardState.name] : "react_logo_skewed.png" // not found placeholder
         }
         else
             return "react_logo_skewed.png" // loading placeholder
     }
 
+    const dispatch = useDispatch()
+
+    const mouseOver = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+        dispatch(hoveredCard(cardId))
+    }
+
+    const mouseOut = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+        dispatch(hoveredCard(null))
+    }
+
+    const click = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+        console.log(event)
+    }
+
     return (
-        <div ref={ref} className={"Card cardtooltip"}
+        <div className={"Card cardtooltip"}
+            onMouseOver={mouseOver}
+            onMouseOut={mouseOut}
+            onClick={click}
             style={{
                 backgroundImage: `url("${front()}")`,
-                minHeight: height ? `${height}em` : undefined,
-                border: border,
-                opacity
+                border: borderStyle ? borderStyle + " " + userColor : undefined,
             }}
         >
             <span className="cardtooltiptext">{cardState.name}</span>
@@ -79,43 +94,4 @@ const Card: React.FC<CardProps> = ({
     )
 }
 
-export default DropTarget(
-    CARD,
-    {
-        canDrop: () => false,
-        hover(props: CardProps, monitor: DropTargetMonitor) {
-            const { id: draggedId } = monitor.getItem()
-            const { cardId: overId } = props
-
-            if (draggedId !== overId) {
-                const overIndex = props.findCard(overId)
-                if (overIndex !== undefined)
-                    props.moveCard(draggedId, overIndex)
-            }
-        },
-    },
-    (connect) => ({
-        connectDropTarget: connect.dropTarget(),
-    }),
-)(
-    DragSource(
-        CARD,
-        {
-            beginDrag: (props: CardProps) => ({
-                id: props.cardId,
-                originalIndex: props.findCard(props.cardId),
-            }),
-            endDrag(props: CardProps, monitor: DragSourceMonitor) {
-                const { id: droppedId, originalIndex } = monitor.getItem()
-                const didDrop = monitor.didDrop()
-                if (!didDrop) {
-                    props.moveCard(droppedId, originalIndex)
-                }
-            },
-        },
-        (connect, monitor) => ({
-            connectDragSource: connect.dragSource(),
-            isDragging: monitor.isDragging(),
-        }),
-    )(Card),
-)
+export default Card
