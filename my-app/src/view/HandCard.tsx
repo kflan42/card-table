@@ -1,52 +1,73 @@
 
-import React from 'react'
+import React, { useEffect } from 'react'
 
 
-import {  DropTargetMonitor, useDrag, useDrop, DragObjectWithType } from 'react-dnd';
-import Card, { CardProps } from './Card';
-import { ItemTypes } from './DnDUtils';
+import { DropTargetMonitor, useDrag, useDrop } from 'react-dnd';
+import Card from './Card';
+import { ItemTypes, DragCard } from './DnDUtils';
+import { useDispatch } from 'react-redux';
+import { MoveCard, MOVE_CARD } from '../Actions';
+import { HAND } from '../ClientState';
+import { getEmptyImage } from 'react-dnd-html5-backend';
 
 
 interface HandCardProps {
-    cardProps: CardProps,
-    moveCard: (id: number, to: number) => void,
-    findCard: (id: number) => number | undefined
+    cardId: number,
+    handIdx: number,
+    owner: string
 }
 
 
 const HandCard: React.FC<HandCardProps> = ({
-    cardProps,
-    moveCard,
-    findCard
+    cardId,
+    handIdx,
+    owner
 }) => {
+    const dispatch = useDispatch()
 
-    const originalIndex = findCard(cardProps.cardId)
-    const [{ isDragging }, drag] = useDrag({
-        item: { type: ItemTypes.CARD, id: cardProps.cardId, originalIndex },
+    const dragCard: DragCard = {
+        type: ItemTypes.CARD, cardId: cardId, srcZone: HAND, srcOwner: owner
+    }
+
+    const [{ isDragging }, drag, preview] = useDrag({
+        item: dragCard,
         collect: (monitor) => ({
             isDragging: monitor.isDragging(),
         }),
-        end: (dropResult, monitor) => {
-            const { id: droppedId, originalIndex } = monitor.getItem()
-            const didDrop = monitor.didDrop()
-            if (!didDrop) {
-                moveCard(droppedId, originalIndex)
-            }
-        },
     })
 
-    const [, drop] = useDrop({
-        accept: ItemTypes.CARD,
-        canDrop: () => false,
-        hover(item: DragObjectWithType, monitor: DropTargetMonitor) {
-            const { id: draggedId } = monitor.getItem()
-            const { cardId: overId } = cardProps
+    useEffect(() => {
+        // hide default html drag preview since we have a custom one based on the card props
+        preview(getEmptyImage(), { captureDraggingState: true })
+    }, [preview])
 
-            if (draggedId !== overId) {
-                const overIndex = findCard(overId)
-                if (overIndex !== undefined)
-                    moveCard(draggedId, overIndex)
+    function moveCard(draggedCard: DragCard) {
+        if (draggedCard.cardId !== cardId) {
+            const cardMove: MoveCard = {
+                ...draggedCard,
+                type: MOVE_CARD,
+                when: Date.now(),
+                tgtZone: HAND,
+                tgtOwner: owner,
+                toIdx: handIdx,
             }
+            dispatch(cardMove)
+        }
+    }
+
+    const [, drop] = useDrop({
+        accept: [ItemTypes.CARD, ItemTypes.BFCARD],
+        canDrop: (item: DragCard, monitor: DropTargetMonitor) => {
+            return item.srcOwner !== owner || item.srcZone !== HAND
+        },
+        hover(item: DragCard, monitor: DropTargetMonitor) {
+            if (item.srcOwner === owner && item.srcZone === HAND) {
+                moveCard(item) // re order hand on hover
+            }
+        },
+        drop(item: DragCard, monitor: DropTargetMonitor) {
+            moveCard(item); // allow cross zone moves on drop
+            return {} // empty object says we handled it
         },
     })
 
@@ -54,9 +75,10 @@ const HandCard: React.FC<HandCardProps> = ({
 
     return (
         <div ref={(node) => drag(drop(node))} style={{ opacity }}>
-            <Card cardId={cardProps.cardId} borderStyle={cardProps.borderStyle} ></Card>
+            <Card cardId={cardId} ></Card>
         </div>
     )
 }
 
-export default HandCard
+const MemoizeHandCard = React.memo(HandCard)
+export default MemoizeHandCard

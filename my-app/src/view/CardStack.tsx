@@ -7,16 +7,17 @@ import { ClientState } from '../ClientState'
 interface CardStackP {
     name: string
     icon?: string
+    player: string
 }
 
 
-const CardStack: React.FC<CardStackP> = (props) => {
+const CardStack: React.FC<CardStackP> = ({name, icon=null, player}) => {
 
     const [shown, setShown] = useState(false)
     const [query, setQuery] = useState('')
 
     function clicked(e: React.MouseEvent<HTMLDivElement, MouseEvent>) {
-        console.log(`clicked ${props.name} ${e}`)
+        console.log(`clicked ${name} ${e}`)
         setShown(!shown)
     }
 
@@ -24,14 +25,10 @@ const CardStack: React.FC<CardStackP> = (props) => {
         setQuery(event.target.value)
     }
 
-    const label = props.icon ? props.icon : props.name;
+    const label = icon ? icon : name;
 
     const zoneState = useSelector((state: ClientState) => {
-        if (state.playerPrefs.name) {
-            return getZone(state.game, state.playerPrefs.name, props.name)
-        } else {
-            return undefined
-        }
+        return getZone(state.game, player, name)
     })
 
     const cards = useSelector((state: ClientState) => state.game.cards)
@@ -64,11 +61,11 @@ const CardStack: React.FC<CardStackP> = (props) => {
                     onClick={e => clicked(e)} className="TextButton">
                     {label} {`${size}`}
                 </div>
-                <span className="buttontooltiptext">{props.name}</span>
+                <span className="buttontooltiptext">{name}</span>
                 {shown
                     ? <div className="StackPopUpBox">
                         {size > 10
-                            ? <div>{props.name} Search:<input value={query} type="text" id="query" name="query" onChange={queryChanged} /></div>
+                            ? <div>{name} Search:<input value={query} type="text" id="query" name="query" onChange={queryChanged} /></div>
                             : undefined}
                         <div className="CardStack" style={{
                             height: `${boxHeight}em`,

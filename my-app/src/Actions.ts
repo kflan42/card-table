@@ -12,7 +12,7 @@ export interface MoveCard {
     type: string
     when: number
     bfId?: number
-    cardId?: number
+    cardId: number
     srcZone: string
     srcOwner: string
     tgtZone: string
@@ -20,18 +20,6 @@ export interface MoveCard {
     toX?: number
     toY?: number
     toIdx?: number
-}
-
-
-export const REORDER_HAND = 'REORDER_HAND'
-export function reorderHand(owner: string, cardId: number, fromIndex: number, toIndex: number) {
-    return {
-        type: REORDER_HAND,
-        owner: owner,
-        cardId: cardId,
-        fromIndex: fromIndex,
-        toIndex: toIndex,
-    }
 }
 
 export const HOVERED_CARD = 'HOVERED_CARD'

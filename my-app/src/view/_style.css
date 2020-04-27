@@ -137,6 +137,9 @@
   background-size: cover;
   background-position: center top;
   background-repeat: no-repeat;
+
+  border-width: 0.15em;
+  border-style: solid;
 }
 
 .CardPopup .Card {
@@ -158,6 +161,13 @@
 }
 
 .Hand .Card {
+  /* need to scale these together ~ small image is 146 × 204*/
+  border-radius: 0.75em;
+  min-height: 15.3em;
+  min-width: 10.95em;
+}
+
+.DragHandCard .Card { /* used for custom drag layer */
   /* need to scale these together ~ small image is 146 × 204*/
   border-radius: 0.75em;
   min-height: 15.3em;

@@ -9,7 +9,7 @@ interface PlayerBoxP {
     player: string
 }
 
-const PlayerBox: React.FC<PlayerBoxP> = (props) => {
+const PlayerBox: React.FC<PlayerBoxP> = ({ player }) => {
 
     // TODO popup windows for card zones
     return (
@@ -19,13 +19,13 @@ const PlayerBox: React.FC<PlayerBoxP> = (props) => {
                 whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                 maxWidth: "6em", cursor: "default"
             }}>
-                <strong>{props.player}</strong>
+                <strong>{player}</strong>
             </div>
-            <CardStack name={HAND} icon="✋" />
-            <CardStack name={LIBRARY} icon="📚" />
-            <CardStack name={GRAVEYARD} icon="🗑️" />
-            <CardStack name={EXILE} icon="📒" />
-            <CardStack name={COMMAND_ZONE} icon="👑" />
+            <CardStack name={HAND} player={player} icon="✋" />
+            <CardStack name={LIBRARY} player={player} icon="📚" />
+            <CardStack name={GRAVEYARD} player={player} icon="🗑️" />
+            <CardStack name={EXILE} player={player} icon="📒" />
+            <CardStack name={COMMAND_ZONE} player={player} icon="👑" />
             <PlayerCounter kind="Life" />
             <div className="TextButton buttontooltip">➕
                 <span className="buttontooltiptext">Add Counter</span>

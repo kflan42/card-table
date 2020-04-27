@@ -8,7 +8,7 @@ export const ItemTypes = {
 export interface DragCard {
     type: string;
     bfId?: number;
-    cardId?: number;
+    cardId: number;
     srcZone: string;
     srcOwner: string;
 }

@@ -35,19 +35,16 @@ const Battlefield: React.FC<BFP> = ({ player }) => {
     const bf = useRef<HTMLDivElement>(null);
 
     const [, drop] = useDrop({
-        accept: [ItemTypes.BFCARD],
+        accept: [ItemTypes.BFCARD, ItemTypes.CARD],
         drop(item: DragCard, monitor) {
             const pos = monitor.getSourceClientOffset() as {
                 x: number
                 y: number
             }
-
             // clientOffset seems to be where mouse pointer is
             // sourceClientOffset seems to be where element dragged is (regardless of where clicked)
-            console.log(monitor.getClientOffset(), monitor.getInitialClientOffset(),
-                monitor.getSourceClientOffset(), monitor.getInitialSourceClientOffset())
-
-
+            // console.log(monitor.getClientOffset(), monitor.getInitialClientOffset(),
+            //     monitor.getSourceClientOffset(), monitor.getInitialSourceClientOffset())
             let left = Math.round(pos.x);
             let top = Math.round(pos.y);
             const c = bf.current
@@ -60,12 +57,9 @@ const Battlefield: React.FC<BFP> = ({ player }) => {
             }
 
             const cardMove: MoveCard = {
+                ...item,
                 type: MOVE_CARD,
                 when: Date.now(),
-                bfId: item.bfId,
-                cardId: item.cardId,
-                srcZone: item.srcZone,
-                srcOwner: item.srcOwner,
                 tgtZone: BATTLEFIELD,
                 tgtOwner: player,
                 toX: left,

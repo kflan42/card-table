@@ -2,6 +2,7 @@ import React from 'react'
 import { XYCoord, useDragLayer } from 'react-dnd'
 import { ItemTypes, DragCard } from './DnDUtils'
 import MemoizedBFCard from './BFCard'
+import Card from './Card'
 
 const layerStyles: React.CSSProperties = {
     position: 'fixed',
@@ -50,11 +51,13 @@ const CustomDragLayer: React.FC = () => {
         item,
         initialOffset,
         currentOffset,
+        pointerOffset
     } = useDragLayer((monitor) => ({
         item: monitor.getItem(),
         itemType: monitor.getItemType(),
         initialOffset: monitor.getInitialSourceClientOffset(),
         currentOffset: monitor.getSourceClientOffset(),
+        pointerOffset: monitor.getClientOffset(),
         isDragging: monitor.isDragging(),
     }))
 
@@ -62,10 +65,21 @@ const CustomDragLayer: React.FC = () => {
         switch (itemType) {
             case ItemTypes.BFCARD:
                 const b = item as DragCard
-                if (b.bfId)
+                if (b.bfId !== undefined)
                     return <MemoizedBFCard bfId={b.bfId} fieldOwner={b.srcOwner} />
                 else
                     return null
+            case ItemTypes.CARD:
+                const c = item as DragCard
+                if (pointerOffset && initialOffset && pointerOffset.y < initialOffset.y) {
+                    // render for table
+                    return <Card cardId={c.cardId} />
+                } else {
+                    // render for hand
+                    return <div className="DragHandCard">
+                        <Card cardId={c.cardId} />
+                    </div>
+                }
             default:
                 return null
         }

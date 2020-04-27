@@ -1,13 +1,13 @@
-import React, { useCallback } from 'react'
+import React from 'react'
 
 import './_style.css';
 import { ClientState, HAND } from '../ClientState';
 import { useSelector, useDispatch } from 'react-redux';
 import { getZone } from '../zzzState';
-import { useDrop } from 'react-dnd';
-import { reorderHand, MoveCard, MOVE_CARD } from '../Actions';
-import HandCard from './HandCard';
-import { ItemTypes } from './DnDUtils';
+import { useDrop, DropTargetMonitor } from 'react-dnd';
+import MemoizeHandCard from './HandCard';
+import { ItemTypes, DragCard } from './DnDUtils';
+import { MoveCard, MOVE_CARD } from '../Actions';
 
 export interface HandProps {
 }
@@ -15,62 +15,46 @@ export interface HandProps {
 const Hand: React.FC<HandProps> = () => {
 
     const zoneState = useSelector((state: ClientState) => {
-        if (state.playerPrefs.name) {
-            return getZone(state.game, state.playerPrefs.name, HAND)
-        } else {
-            return undefined
-        }
+        return getZone(state.game, state.playerPrefs.name, HAND)
     })
 
-    const dispatcher = useDispatch()
+    const dispatch = useDispatch()
 
-    const findCard = useCallback(
-        (cardId: number) => {
-            if (!zoneState) return
-            return zoneState.cards.indexOf(cardId)
+    const [, drop] = useDrop({
+        accept: [ItemTypes.CARD, ItemTypes.BFCARD],
+        canDrop: (item: DragCard, monitor: DropTargetMonitor) => {
+            return item.srcOwner !== zoneState?.owner || item.srcZone !== HAND
         },
-        [zoneState],
-    )
-
-    const moveCard = useCallback(
-        (cardId: number, toIndex: number) => {
-            const fromIndex = findCard(cardId)
-            if (zoneState === undefined || fromIndex === undefined) return
-
+        drop(item: DragCard, monitor: DropTargetMonitor) {
+            if (monitor.didDrop()) {
+                return; // don't duplicate HandCard's efforts
+            }
+            // allow cross zone moves on drop
             const cardMove: MoveCard = {
+                ...item,
                 type: MOVE_CARD,
                 when: Date.now(),
-                cardId: cardId,
-                srcZone: HAND,
-                srcOwner: zoneState.owner,
                 tgtZone: HAND,
-                tgtOwner: zoneState.owner,
-                toIdx: toIndex
+                tgtOwner: zoneState?.owner,
             }
-            //dispatcher(cardMove)
-            dispatcher(reorderHand(zoneState.owner, cardId, fromIndex, toIndex))
+            dispatch(cardMove)
         },
-        [zoneState, dispatcher, findCard],
-    )
+    })
 
 
     const listItems = []
     if (zoneState) {
+        let i = 0;
         for (const cardId of zoneState.cards) {
-            const cardProps = {
-                cardId: cardId,
-                borderStyle: "0.15em solid"
-            }
             listItems.push(
-                <HandCard key={cardId} cardProps={cardProps} moveCard={moveCard} findCard={findCard} />
+                <MemoizeHandCard key={cardId} cardId={cardId} handIdx={i++} owner={zoneState.owner} />
             )
         }
     }
 
-    const [, drop] = useDrop({ accept: ItemTypes.CARD })
-
     return (
         <div ref={drop} className="Hand">
+            <span style={{ writingMode: "vertical-lr", textOrientation: "upright", minHeight: "13em" }}>Hand</span>
             {listItems}
         </div>
     )

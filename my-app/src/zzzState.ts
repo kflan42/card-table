@@ -1,5 +1,5 @@
 import { Game, Card, Player, Zone, Battlefield, BattlefieldCard, LIBRARY, COMMAND_ZONE, HAND, GRAVEYARD, EXILE } from './ClientState'
-import { randint, randchoice } from './Utilities';
+import { randint, randchoice, shuffleArray } from './Utilities';
 import { colors } from './view/Login';
 
 
@@ -28,7 +28,7 @@ export function createGame(users: string[], decks: string[][]): Game {
         for (const z of zs) {
             players[playerName].zones[z] = zid++
         }
-        
+
         battlefields[playerName] = {
             battlefieldCards: []
         }
@@ -138,6 +138,8 @@ export function createTestGame() {
 
         var c = library.cards.pop()
         if (c) commandZone.cards.push(c)
+
+        shuffleArray(library.cards)
 
         for (let i = 0; i < 7; i++) {
             // drawing a card, ta-da!

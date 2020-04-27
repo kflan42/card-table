@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 
 import './_style.css';
 import CardDB from '../CardDB';
@@ -6,7 +6,12 @@ import { CardData } from '../CardDB';
 import { ClientState } from '../ClientState';
 import { useSelector, useDispatch } from 'react-redux';
 import { hoveredCard } from '../Actions';
+import { useAsync, PromiseFn } from "react-async"
 
+
+const loadCardData: PromiseFn<CardData> = async ({ cardName }): Promise<CardData> => {
+    return await CardDB.getCard(cardName)
+}
 
 export interface CardProps {
     cardId: number,
@@ -18,7 +23,6 @@ export interface CardProps {
 
 const Card: React.FC<CardProps> = ({
     cardId,
-    borderStyle,
     imageSize,
     facedown,
     transformed
@@ -26,25 +30,16 @@ const Card: React.FC<CardProps> = ({
 
     const cardState = useSelector((state: ClientState) => state.game.cards[cardId])
 
-    const userColor = useSelector((state: ClientState) => state.game.players[cardState.owner].color)
+    const ownerColor = useSelector((state: ClientState) => state.game.players[cardState.owner].color)
 
     // small is 10.8k (memory cache after 1st). fuzzy text, hard to read
     // normal is 75.7k (memory cache after 1st). readable
 
-    const [isLoading, setIsLoading] = useState(false)
-    const [cardData, setData] = useState<CardData>()
+    const {data, error, isPending} = useAsync(loadCardData, { cardName: cardState.name })
 
     // TODO move card db load to ClientState
-    useEffect(() => {
-        async function fetchData() {
-            setIsLoading(true)
-            const response = await CardDB.getCard(cardState.name)
-            setData(response)
-            setIsLoading(false)
-        }
-        fetchData()
-    }, [cardState.name])
 
+    const cardData = data ? data : null;
 
     const front = () => {
         if (facedown) {
@@ -78,6 +73,10 @@ const Card: React.FC<CardProps> = ({
         console.log(event)
     }
 
+    if(error) {
+        console.error(`Problem loading card ${cardState.name} ${error.message}`)
+    }
+
     return (
         <div className={"Card cardtooltip"}
             onMouseOver={mouseOver}
@@ -85,11 +84,12 @@ const Card: React.FC<CardProps> = ({
             onClick={click}
             style={{
                 backgroundImage: `url("${front()}")`,
-                border: borderStyle ? borderStyle + " " + userColor : undefined,
+                borderColor: ownerColor,
             }}
         >
             <span className="cardtooltiptext">{cardState.name}</span>
-            {isLoading ? <p>{cardState.name} </p> : undefined}
+            {isPending ? <p>{cardState.name} </p> : undefined}
+            {error ? <p>{`${cardState.name} Errored`}  </p> : undefined}
         </div>
     )
 }

@@ -6,7 +6,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { toggleTap } from '../Actions';
 import Card from './Card';
 import { useDrag, DragSourceMonitor } from 'react-dnd';
-import { ItemTypes } from './DnDUtils';
+import { ItemTypes, DragCard } from './DnDUtils';
 import { getEmptyImage } from 'react-dnd-html5-backend';
 
 interface BFCardProps {
@@ -20,40 +20,44 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
 
     const dispatch = useDispatch()
 
-    const cardProps = { cardId: bfState.cardId }
+    const cardProps = { cardId: bfState?.cardId }
+
+    const dragCard: DragCard = {
+        type: ItemTypes.BFCARD, bfId, cardId: cardProps.cardId, srcZone: BATTLEFIELD, srcOwner: fieldOwner
+    }
 
     const [{ isDragging }, drag, preview] = useDrag({
-        item: { type: ItemTypes.BFCARD, bfId, cardId: cardProps.cardId, srcZone: BATTLEFIELD, srcOwner: fieldOwner },
+        item: dragCard,
         collect: (monitor: DragSourceMonitor) => ({
             isDragging: monitor.isDragging(),
         }),
     })
 
     useEffect(() => {
-        // preview(null, { captureDraggingState: true })
         // hide default html drag preview since we have a custom one based on the card props
         preview(getEmptyImage(), { captureDraggingState: true })
     }, [preview])
 
     return (
-        <div
-            ref={drag}
-            style={{
-                position: "absolute",
-                top: bfState.y + "%",
-                left: bfState.x + "%",
-                transform: bfState.tapped ? "rotate(90deg)" : "",
-                transition: "top 0.5s, left 0.5s, transform 0.5s, background-image 1s",
-                transitionTimingFunction: "ease-in",
-                opacity: isDragging ? 0.25 : undefined,
-            }}
-            onClick={() => dispatch(toggleTap(bfState.bfId))}
-        >
-            <Card cardId={cardProps.cardId}
-                facedown={bfState.facedown}
-                transformed={bfState.transformed}
-                borderStyle="0.15em solid" ></Card>
-        </div>
+        !bfState ? null :
+            <div
+                ref={drag}
+                style={{
+                    position: "absolute",
+                    top: bfState.y + "%",
+                    left: bfState.x + "%",
+                    transform: bfState.tapped ? "rotate(90deg)" : "",
+                    transition: "top 0.5s, left 0.5s, transform 0.5s, background-image 1s",
+                    transitionTimingFunction: "ease-in",
+                    opacity: isDragging ? 0.25 : undefined,
+                }}
+                onClick={() => dispatch(toggleTap(bfState.bfId))}
+            >
+                <Card cardId={cardProps.cardId}
+                    facedown={bfState.facedown}
+                    transformed={bfState.transformed}
+                    borderStyle="0.15em solid" ></Card>
+            </div>
     )
 
 }
