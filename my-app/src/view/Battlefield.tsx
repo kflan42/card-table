@@ -53,9 +53,10 @@ const Battlefield: React.FC<BFP> = ({ player }) => {
             const c = bf.current
             if (c) {
                 // convert to relative
-                left = left - c.offsetLeft;
-                top = top - c.offsetTop;
-                [left, top] = snapToGrid(left, top, c.offsetWidth, c.offsetHeight)
+                const r = c.getBoundingClientRect()
+                left = left - r.left;
+                top = top - r.top;
+                [left, top] = snapToGrid(left, top, r.width, r.height)
             }
 
             const cardMove: MoveCard = {
@@ -82,7 +83,7 @@ const Battlefield: React.FC<BFP> = ({ player }) => {
         }
     }
     // sort most recent changes to last so they end up on top
-    listItems.sort((a,b) => bfCardsState[a.props.bfId].changed - bfCardsState[b.props.bfId].changed)
+    listItems.sort((a, b) => bfCardsState[a.props.bfId].changed - bfCardsState[b.props.bfId].changed)
 
     return (
         <div ref={bf} style={{

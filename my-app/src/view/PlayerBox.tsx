@@ -17,7 +17,7 @@ const PlayerBox: React.FC<PlayerBoxP> = (props) => {
         <div className="PlayerBox">
             <div style={{
                 whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                maxWidth: "60pt", cursor: "default"
+                maxWidth: "6em", cursor: "default"
             }}>
                 <strong>{props.player}</strong>
             </div>

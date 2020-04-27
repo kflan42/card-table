@@ -49,7 +49,6 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
             }}
             onClick={() => dispatch(toggleTap(bfState.bfId))}
         >
-            {/* {bfState && bfState.transformed ? " T" : ""} */}
             <Card cardId={cardProps.cardId}
                 facedown={bfState.facedown}
                 transformed={bfState.transformed}
