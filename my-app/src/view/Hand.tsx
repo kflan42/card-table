@@ -1,12 +1,13 @@
 import React, { useCallback, useRef } from 'react'
 
 import './_style.css';
-import { ClientState } from '../ClientState';
+import { ClientState, HAND } from '../ClientState';
 import { useSelector, useDispatch } from 'react-redux';
 import { getZone } from '../zzzState';
 import { DropTarget, ConnectDropTarget } from 'react-dnd';
-import { CARD, reorderHand } from '../Actions';
+import { reorderHand } from '../Actions';
 import HandCard from './HandCard';
+import { ItemTypes } from './DnDUtils';
 
 export interface HandProps {
     connectDropTarget: ConnectDropTarget
@@ -18,7 +19,7 @@ const Hand: React.FC<HandProps> = ({ connectDropTarget }) => {
 
     const zoneState = useSelector((state: ClientState) => {
         if (state.playerPrefs.name) {
-            return getZone(state.game, state.playerPrefs.name, "Hand")
+            return getZone(state.game, state.playerPrefs.name, HAND)
         } else {
             return undefined
         }
@@ -67,6 +68,6 @@ const Hand: React.FC<HandProps> = ({ connectDropTarget }) => {
     )
 }
 
-export default DropTarget(CARD, {}, (connect) => ({
+export default DropTarget(ItemTypes.CARD, {}, (connect) => ({
     connectDropTarget: connect.dropTarget(),
 }))(Hand)

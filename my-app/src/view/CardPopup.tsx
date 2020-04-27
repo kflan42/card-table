@@ -1,9 +1,6 @@
 import React from 'react'
 
 import './_style.css';
-import { ClientState } from '../ClientState';
-import { useSelector, useDispatch } from 'react-redux';
-import { toggleTap } from '../Actions';
 import Card from './Card';
 
 interface CardPopupProps {
@@ -22,7 +19,6 @@ const CardPopup: React.FC<CardPopupProps> = ({ cardId, transformed }) => {
 
     return (
         <div className="CardPopup"
-            // TODO later: bvorder = owner sleeve color
             style={{
                 position: "absolute",
                 left: center - width / 2 + "px",

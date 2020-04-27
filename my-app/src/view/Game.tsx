@@ -8,6 +8,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { ClientState } from '../ClientState';
 import { localStateLoaded } from '../Actions';
 import CardPopup from './CardPopup';
+import CustomDragLayer from './CustomDragLayer';
 
 const Game: React.FC = () => {
 
@@ -45,8 +46,12 @@ const Game: React.FC = () => {
                 }
                 break;
             case 't':
-                setCardPopupTransformed(!cardPopupTransformed)
-                event.preventDefault()
+                if (cardPopupShown === cardUnderCursor) {
+                    setCardPopupTransformed(!cardPopupTransformed)
+                    event.preventDefault()
+                } else if (cardUnderCursor !== null) {
+                    //TODO need bf card under curser dispatch
+                }
                 break;
         }
 
@@ -61,6 +66,7 @@ const Game: React.FC = () => {
                 <Table />
                 <Hand />
                 {cardPopupShown !== null ? <CardPopup cardId={cardPopupShown} transformed={cardPopupTransformed} /> : undefined}
+                <CustomDragLayer/>
             </div>
         )
         : <div />

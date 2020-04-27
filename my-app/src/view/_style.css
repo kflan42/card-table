@@ -75,9 +75,9 @@
 }
 
 .Playmat {
-  margin: 2pt;
+  margin: 0.1em;
   background-color: lightblue;
-  min-height: 250pt;
+  min-height: 20em;
   height: 48%; /* buffer a pinch for scrollbar */
   width: 48%; /* make adjustable for 2,4,6 players*/
   display: flex;
@@ -93,12 +93,9 @@
 }
 
 .PlayerBox > div {
-  margin-top: 0.1em;
-  margin-bottom: 0.1em;
-  margin-left: 0.1em;
-  margin-right: 0.1em;
-  border: 0.1em solid lightgray;
-  padding: 0.1em;
+  margin: 0.05em;
+  border: 0.05em solid lightgray;
+  padding: 0.05em;
 }
 
 .TextButton {
@@ -111,7 +108,8 @@
 
 .Battlefield {
   background-color: lightskyblue;
-  flex-grow: 1;
+  width: 100%;
+  height: 100%;
   position: relative;
   overflow: auto;
 }
@@ -143,6 +141,13 @@
 .CardPopup .Card {
   flex-grow: 1;
   border-radius: 5%;
+}
+
+.DragLayer .Card {
+  border-radius: 0.35em;
+  min-height: 7em;
+  min-width: 5em;
+  opacity: 0.75;
 }
 
 .Battlefield .Card {

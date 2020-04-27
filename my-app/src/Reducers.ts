@@ -4,27 +4,25 @@ import update from 'immutability-helper'
 
 
 import {
-  CardAction,
   TOGGLE_TAP_CARD,
   LOCAL_STATE_LOAD,
   REORDER_HAND,
-  HOVERED_CARD
+  HOVERED_CARD,
+  MOVE_CARD,
+  MoveCard
 } from './Actions'
-import { Game } from './ClientState'
+import { Game, HAND } from './ClientState'
 import { createTestGame } from './zzzState'
 
 
 // TODO generalize actions to cover counters etc
 function gameReducer(state: Game = createTestGame(), action: any) {
-  console.log("applying {} to cards", action)
+  let newState = null
   switch (action.type) {
     case TOGGLE_TAP_CARD:
-      //  const z = update(state.battlefieldCards[bfId], (v) => {
-      //      v.tapped = !v.tapped
-      //      return v
-      //    } ) // returns just card, not whole state
       const bfId = action.bfId
-      return update(state, { battlefieldCards: { [bfId]: { $toggle: ['tapped'] } } })
+      newState = update(state, { battlefieldCards: { [bfId]: { $toggle: ['tapped'] } } })
+      break;
     case REORDER_HAND:
       // update(cards, {
       //   $splice: [
@@ -32,8 +30,8 @@ function gameReducer(state: Game = createTestGame(), action: any) {
       //     [toIndex, 0, card],
       //   ],
       // }),
-      const zoneId = state.players[action.owner].zones["Hand"]
-      return update(state, {
+      const zoneId = state.players[action.owner].zones[HAND]
+      newState = update(state, {
         zones: {
           [zoneId]: {
             cards: {
@@ -45,36 +43,27 @@ function gameReducer(state: Game = createTestGame(), action: any) {
           }
         }
       })
+      break;
+    case MOVE_CARD:
+      const moveCard = action as MoveCard
+      if (moveCard.srcOwner === moveCard.tgtOwner && moveCard.srcZone === moveCard.tgtZone) {
+        // easy case, not changing zones
+        if (moveCard.bfId) {
+          // moving battlefied card
+          newState = update(state, { battlefieldCards: { [moveCard.bfId]: { $merge: { x: moveCard.toX, y: moveCard.toY, changed: moveCard.when } } } })
+        }
+      }
+      break;
+    default:
+      //ignored
+      break;
+  }
+  if (newState) {
+    console.log(`applied ${action}`)
+    return newState
   }
   return state
 }
-
-// function cards(state: { [index: number]: Card } = {}, action: CardAction) {
-//   switch (action.type) {
-//     case LOAD:
-//       console.log("applying {} to cards", action)
-//       return action.payload
-//     case TOGGLE_TAP_CARD:
-//       console.log("applying {} to cards", action)
-//       const cardId = action.cardId
-//       // const x = update(state[cardId], {$toggle: ['tapped']})
-//       // const y = update(state[cardId], {$apply: (v) => {
-//       //   v.tapped = !v.tapped
-//       //   return v
-//       // }})
-//       // const z = update(state[cardId], (v) => {
-//       //     v.tapped = !v.tapped
-//       //     return v
-//       //   } )
-//       // console.log(x,y,z)
-//       //tapped used to be on Card const z = update(state, { [cardId]: { $toggle: ['tapped'] } })
-//       //return z
-//     default:
-//       return state
-//   }
-// }
-
-//const cp = {x:1, y:1, visible:true, cardId:1}
 
 const stateReducer = combineReducers({
   playerPrefs: (x = { name: undefined, color: undefined }, y) => {

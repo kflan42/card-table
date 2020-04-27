@@ -3,8 +3,8 @@ import React, { useRef } from 'react'
 
 
 import { ConnectDragSource, ConnectDropTarget, DropTarget, DropTargetMonitor, DragSource, DragSourceMonitor } from 'react-dnd';
-import { CARD } from '../Actions';
 import Card, { CardProps } from './Card';
+import { ItemTypes } from './DnDUtils';
 
 
 interface HandCardProps {
@@ -32,13 +32,13 @@ const HandCard: React.FC<HandCardProps> = ({
 
     return (
         <div ref={ref} style={{ opacity }}>
-            <Card cardId={cardProps.cardId}  borderStyle={cardProps.borderStyle} ></Card>
+            <Card cardId={cardProps.cardId} borderStyle={cardProps.borderStyle} ></Card>
         </div>
     )
 }
 
 export default DropTarget(
-    CARD,
+    ItemTypes.CARD,
     {
         canDrop: () => false,
         hover(props: HandCardProps, monitor: DropTargetMonitor) {
@@ -57,7 +57,7 @@ export default DropTarget(
     }),
 )(
     DragSource(
-        CARD,
+        ItemTypes.CARD,
         {
             beginDrag: (props: HandCardProps) => ({
                 id: props.cardProps.cardId,

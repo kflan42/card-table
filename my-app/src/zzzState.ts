@@ -1,4 +1,4 @@
-import { Game, Card, Player, Zone, Battlefield, BattlefieldCard } from './ClientState'
+import { Game, Card, Player, Zone, Battlefield, BattlefieldCard, LIBRARY, COMMAND_ZONE, HAND, GRAVEYARD, EXILE } from './ClientState'
 import { randint, randchoice } from './Utilities';
 import { colors } from './view/Login';
 
@@ -17,19 +17,18 @@ export function createGame(users: string[], decks: string[][]): Game {
         players[playerName] = {
             name: users[p],
             deck: [],
-            zones: {
-                "Hand": zid++,
-                "Library": zid++,
-                "Graveyard": zid++,
-                "Command Zone": zid++,
-                "Exile": zid++,
-            },
+            zones: {},
             counters: {
                 "Life": 40
             },
             color: randchoice(Object.keys(colors))
         }
-
+        // constants on left side of map end up as properties instead of their string values
+        const zs = [HAND, LIBRARY, GRAVEYARD, COMMAND_ZONE, EXILE];
+        for (const z of zs) {
+            players[playerName].zones[z] = zid++
+        }
+        
         battlefields[playerName] = {
             battlefieldCards: []
         }
@@ -37,7 +36,7 @@ export function createGame(users: string[], decks: string[][]): Game {
         var libraryZoneId = -1
         for (const zoneName in players[playerName].zones) {
             const zoneId = players[playerName].zones[zoneName]
-            if (zoneName === "Library") libraryZoneId = zoneId
+            if (zoneName === LIBRARY) libraryZoneId = zoneId
             zones[zoneId] = {
                 id: zoneId,
                 name: zoneName,
@@ -132,9 +131,9 @@ export function createTestGame() {
 
     var bfId = 0;
     for (const pn in initialGame.players) {
-        const library = getZone(initialGame, pn, "Library")
-        const commandZone = getZone(initialGame, pn, "Command Zone")
-        const hand = getZone(initialGame, pn, "Hand")
+        const library = getZone(initialGame, pn, LIBRARY)
+        const commandZone = getZone(initialGame, pn, COMMAND_ZONE)
+        const hand = getZone(initialGame, pn, HAND)
         const battlefield = initialGame.battlefields[pn]
 
         var c = library.cards.pop()
@@ -152,12 +151,13 @@ export function createTestGame() {
                 const bfc: BattlefieldCard = {
                     bfId: ++bfId,
                     cardId: c,
-                    x: randint(8) * 10 + 5,
-                    y: randint(8) * 10 + 5,
+                    x: randint(18) * 5 + 5,
+                    y: randint(18) * 5 + 5,
                     tapped: randchoice([true, false, false, false]),
                     facedown: randchoice([true, false, false, false]),
                     transformed: randchoice([true, false]),
-                    counters: randchoice([{}, { "+1/+1": 1 }])
+                    counters: randchoice([{}, { "+1/+1": 1 }]),
+                    changed: Date.now()
                 }
                 initialGame.battlefieldCards[bfc.bfId] = bfc
                 battlefield.battlefieldCards.push(bfc.bfId)

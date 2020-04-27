@@ -3,6 +3,7 @@ import React from 'react'
 import './_style.css';
 import PlayerCounter from './PlayerCounter';
 import CardStack from './CardStack';
+import { EXILE, COMMAND_ZONE, GRAVEYARD, LIBRARY, HAND } from '../ClientState';
 
 interface PlayerBoxP {
     player: string
@@ -20,11 +21,11 @@ const PlayerBox: React.FC<PlayerBoxP> = (props) => {
             }}>
                 <strong>{props.player}</strong>
             </div>
-            <CardStack name="Hand" icon="✋" />
-            <CardStack name="Library" icon="📚" />
-            <CardStack name="Graveyard" icon="🗑️" />
-            <CardStack name="Sideboard (Exile)" icon="📒" />
-            <CardStack name="Command Zone" icon="👑" />
+            <CardStack name={HAND} icon="✋" />
+            <CardStack name={LIBRARY} icon="📚" />
+            <CardStack name={GRAVEYARD} icon="🗑️" />
+            <CardStack name={EXILE} icon="📒" />
+            <CardStack name={COMMAND_ZONE} icon="👑" />
             <PlayerCounter kind="Life" />
             <div className="TextButton buttontooltip">➕
                 <span className="buttontooltiptext">Add Counter</span>

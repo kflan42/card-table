@@ -9,6 +9,13 @@ export interface PlayerPrefs {
     name: string,
 }
 
+export const HAND: string = "Hand"
+export const LIBRARY: string = "Library"
+export const GRAVEYARD: string = "Graveyard"
+export const COMMAND_ZONE: string = "Command Zone"
+export const EXILE: string = "Exile"
+export const BATTLEFIELD: string = "Battlefield"
+
 /** state of the game itself, regardless of viewer. shared via server to other clients. */
 export interface Game {
     cards: { [index: number]: Card }
@@ -37,7 +44,7 @@ export interface Player {
     /** which card ids are in this player's deck. 1st = commander */
     deck: number[],
     counters: { [index: string]: number }
-    zones: {[index: string]: number}
+    zones: { [index: string]: number }
     color: string,
 }
 
@@ -63,5 +70,6 @@ export interface BattlefieldCard {
     tapped: boolean,
     facedown: boolean,
     transformed: boolean,
-    counters: { [index: string]: number }
+    counters: { [index: string]: number },
+    changed: number
 }
