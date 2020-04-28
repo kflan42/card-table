@@ -31,6 +31,15 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
         collect: (monitor: DragSourceMonitor) => ({
             isDragging: monitor.isDragging(),
         }),
+        options: {
+            // copy, link, move, copyMove, copyLink, linkMove, all (Default)
+            // dropEffect: 'link' // arrow icon
+            // dropEffect: 'copy' // plus icon
+            // dropEffect: 'move' // box icon
+            // dropEffect: 'move' // box icon
+            // then in useDrop can match on monitor.getDropResult()
+            // see https://react-dnd.github.io/react-dnd/examples/dustbin/copy-or-move
+        }
     })
 
     useEffect(() => {

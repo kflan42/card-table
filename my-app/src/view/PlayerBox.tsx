@@ -21,11 +21,11 @@ const PlayerBox: React.FC<PlayerBoxP> = ({ player }) => {
             }}>
                 <strong>{player}</strong>
             </div>
-            <CardStack name={HAND} player={player} icon="✋" />
-            <CardStack name={LIBRARY} player={player} icon="📚" />
-            <CardStack name={GRAVEYARD} player={player} icon="🗑️" />
-            <CardStack name={EXILE} player={player} icon="📒" />
-            <CardStack name={COMMAND_ZONE} player={player} icon="👑" />
+            <CardStack name={HAND} owner={player} icon="✋" />
+            <CardStack name={LIBRARY} owner={player} icon="📚" />
+            <CardStack name={GRAVEYARD} owner={player} icon="🗑️" />
+            <CardStack name={EXILE} owner={player} icon="📒" />
+            <CardStack name={COMMAND_ZONE} owner={player} icon="👑" />
             <PlayerCounter kind="Life" />
             <div className="TextButton buttontooltip">➕
                 <span className="buttontooltiptext">Add Counter</span>

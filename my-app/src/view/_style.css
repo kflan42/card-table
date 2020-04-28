@@ -104,7 +104,7 @@
 }
 
 .TextButton:hover {
-  box-shadow: 0.1em 0.1em 0.1em black;
+  box-shadow: 0.1em 0.1em 0.1em gray;
 }
 
 .Battlefield {
@@ -128,57 +128,54 @@
   min-height: fit-content;
 }
 
+.CardPopup {
+  position: absolute;
+  z-index: 2;
+  resize: both;
+  background-color: transparent;
+}
+
 .Card {
   font-size: small;
+  padding: 4%;
+}
 
-  position: absolute;
-  top: 0em; left: 0em; bottom: 0em; right: 0em;
-
-  background-size: cover;
-  background-position: center top;
-  background-repeat: no-repeat;
-
-  border-width: 0.15em;
+.Card > img {
+  border-width: medium;
   border-style: solid;
-}
-
-.CardPopup .Card {
-  flex-grow: 1;
+  object-fit: contain;
+  width: 98%;
+  height: 98%;
   border-radius: 5%;
-}
-
-.DragLayer .Card {
-  border-radius: 0.35em;
-  min-height: 7em;
-  min-width: 5em;
-  opacity: 0.75;
-}
-
-.Battlefield .Card {
-  border-radius: 0.35em;
-  min-height: 7em;
-  min-width: 5em;
 }
 
 .Hand .Card {
   /* need to scale these together ~ small image is 146 × 204*/
-  border-radius: 0.75em;
-  min-height: 15.3em;
-  min-width: 10.95em;
+  height: 15.3em;
+  width: 10.95em;
 }
 
 .DragHandCard .Card { /* used for custom drag layer */
-  /* need to scale these together ~ small image is 146 × 204*/
-  border-radius: 0.75em;
-  min-height: 15.3em;
-  min-width: 10.95em;
+  height: 15.3em;
+  width: 10.95em;
+}
+
+.DragLayer .Card {
+  height: 7em;
+  width: 5em;
+  opacity: 0.75;
+}
+
+.Battlefield .Card {
+  height: 7em;
+  width: 5em;
 }
 
 .StackPopUpBox {
   color: white;
   background: black;
   position: absolute;
-  left: 102%;
+  left: 100%;
   z-index: 1;
 }
 
@@ -188,19 +185,12 @@
   flex-wrap: wrap;
   overflow-x: auto;
   align-items: flex-start;
-  padding: 0.1em;
+  align-content: flex-start;
+  padding: 0.2em;
   background: black;
   resize: both;
 }
 
-.CardStack .Card {
-  border-top-left-radius: 0.4em;;
-  border-top-right-radius: 0.4em;;
-  /* cut off to just show top */
-  min-width: 7.3em;
-  height: 10.2em;
-  flex-shrink: 0;
-}
 
 /* Tooltip container */
 .buttontooltip {

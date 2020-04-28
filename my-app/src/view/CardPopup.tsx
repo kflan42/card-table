@@ -20,13 +20,10 @@ const CardPopup: React.FC<CardPopupProps> = ({ cardId }) => {
     return (
         <div className="CardPopup"
             style={{
-                position: "absolute",
                 left: center - width / 2 + "px",
                 top: middle - height / 2 + "px",
-                minWidth: width + "px",
-                minHeight: height + "px",
-                display: "flex",
-                zIndex: 2,
+                width: width + "px",
+                height: height + "px",
             }}
         >
             <Card cardId={cardId} borderStyle="0.3em solid" imageSize="normal" ></Card>

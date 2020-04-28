@@ -66,7 +66,6 @@ const Battlefield: React.FC<BFP> = ({ player }) => {
                 toY: top
             }
             dispatch(cardMove)
-            return undefined
         },
     })
 

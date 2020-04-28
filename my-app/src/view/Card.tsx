@@ -37,22 +37,26 @@ const Card: React.FC<CardProps> = ({
 
     const cardData = data ? data : null;
 
+    // altText, url
     const front = () => {
         if (cardState.facedown) {
-            return "Magic_card_back.jpg"
+            return ["Card Back", "Magic_card_back.jpg"]
         }
         if (cardData) {
             const faces = imageSize === "normal" ? cardData.faces_normal : cardData.faces_small
             if (cardState.transformed && faces) {
                 for (const f in faces) {
-                    if (f !== cardState.name) return faces[f];
+                    if (f !== cardState.name) return [f, faces[f]];
                 }
             }
-            const face = imageSize === "normal" ? cardData.face_normal : cardData.face_small
-            return face ? face : faces ? faces[cardState.name] : "react_logo_skewed.png" // not found placeholder
+            const face = imageSize === "normal" ? cardData.face_normal
+                : cardData.face_small
+            return face ? [cardState.name, face]
+                : faces ? [cardState.name, faces[cardState.name]]
+                    : ["Card Not Found", "react_logo_skewed.png"]
         }
         else
-            return "react_logo_skewed.png" // loading placeholder
+            return ["Loading Card", "react_logo_skewed.png"]
     }
 
     const dispatch = useDispatch()
@@ -70,14 +74,11 @@ const Card: React.FC<CardProps> = ({
             onMouseOver={() => dispatch(hoveredCard(cardId))}
             onMouseOut={() => dispatch(hoveredCard(null))}
             onClick={click}
-            style={{
-                backgroundImage: `url("${front()}")`,
-                borderColor: ownerColor,
-            }}
         >
-            {cardState.facedown ? null : <span className="cardtooltiptext">{cardState.name}</span>}
+            {cardState.facedown ? null : <span className="cardtooltiptext">{front()[0]}</span>}
             {isPending ? <p>{cardState.name} </p> : null}
             {error ? <p>{`${cardState.name} Errored`}  </p> : null}
+            <img style={{ borderColor: ownerColor }} src={front()[1]} alt={front()[0]} />
         </div>
     )
 }

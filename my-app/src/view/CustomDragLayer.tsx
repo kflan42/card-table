@@ -3,6 +3,7 @@ import { XYCoord, useDragLayer } from 'react-dnd'
 import { ItemTypes, DragCard } from './DnDUtils'
 import MemoizedBFCard from './BFCard'
 import Card from './Card'
+import { HAND } from '../ClientState'
 
 const layerStyles: React.CSSProperties = {
     position: 'fixed',
@@ -43,6 +44,8 @@ function getItemStyles(
     }
 }
 
+// beware, keypress doesn't work here, and only modifier keys can affect actions
+// https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API/Drag_operations
 
 const CustomDragLayer: React.FC = () => {
     const {
@@ -71,14 +74,14 @@ const CustomDragLayer: React.FC = () => {
                     return null
             case ItemTypes.CARD:
                 const c = item as DragCard
-                if (pointerOffset && initialOffset && pointerOffset.y < initialOffset.y) {
-                    // render for table
-                    return <Card cardId={c.cardId} />
-                } else {
+                if (c.srcZone === HAND && pointerOffset && initialOffset && pointerOffset.y > initialOffset.y) {
                     // render for hand
                     return <div className="DragHandCard">
                         <Card cardId={c.cardId} />
                     </div>
+                } else {
+                    // render for table
+                    return <Card cardId={c.cardId} />
                 }
             default:
                 return null
