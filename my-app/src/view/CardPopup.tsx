@@ -8,7 +8,7 @@ interface CardPopupProps {
     transformed: boolean
 }
 
-const CardPopup: React.FC<CardPopupProps> = ({ cardId, transformed }) => {
+const CardPopup: React.FC<CardPopupProps> = ({ cardId }) => {
 
     const center = window.innerWidth / 2
     const middle = window.innerHeight / 2
@@ -29,7 +29,7 @@ const CardPopup: React.FC<CardPopupProps> = ({ cardId, transformed }) => {
                 zIndex: 2,
             }}
         >
-            <Card cardId={cardId} transformed={transformed} borderStyle="0.3em solid" imageSize="normal" ></Card>
+            <Card cardId={cardId} borderStyle="0.3em solid" imageSize="normal" ></Card>
         </div>
     )
 

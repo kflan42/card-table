@@ -2,7 +2,12 @@
 export interface ClientState {
     playerPrefs: PlayerPrefs,
     game: Game,
-    cardUnderCursor: number | null
+    cardUnderCursor: HoveredCard
+}
+
+export interface HoveredCard {
+    cardId: number | null, 
+    bfId: number | null
 }
 
 export interface PlayerPrefs {
@@ -36,7 +41,9 @@ export interface Card {
     set?: string,
     setNumber?: string, // can have weird chars in it
     /** used for sleeve color and some actions */
-    owner: string
+    owner: string,
+    facedown: boolean,
+    transformed: boolean,
 }
 
 export interface Player {
@@ -68,8 +75,6 @@ export interface BattlefieldCard {
     x: number,
     y: number,
     tapped: boolean,
-    facedown: boolean,
-    transformed: boolean,
     counters: { [index: string]: number },
     changed: number
 }

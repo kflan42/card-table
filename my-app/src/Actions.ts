@@ -26,38 +26,26 @@ export const HOVERED_CARD = 'HOVERED_CARD'
 export function hoveredCard(cardId: number | null) {
     return {
         type: HOVERED_CARD,
-        cardId: cardId
+        cardId
     }
 }
 
-export interface CardAction {
-    type: string
-    bfId?: number
-    cardId?: number
-    payload?: any
-}
-
-export const TAP_CARD = 'TAP_CARD'
-export function tapCard(id: number): CardAction {
+export const HOVERED_BFCARD = 'HOVERED_BFCARD'
+export function hoveredBFCard(bfId: number | null, cardId?: number) {
     return {
-        type: TAP_CARD,
-        bfId: id,
-    }
-}
-
-export const UNTAP_CARD = 'UNTAP_CARD'
-export function untapCard(id: number): CardAction {
-    return {
-        type: UNTAP_CARD,
-        bfId: id,
+        type: HOVERED_BFCARD,
+        bfId,
+        cardId
     }
 }
 
 export const TOGGLE_TAP_CARD = 'TOGGLE_TAP_CARD'
-export function toggleTap(id: number): CardAction {
+export const TOGGLE_TRANSFORM_CARD = 'TOGGLE_TRANSFORM_CARD'
+export const TOGGLE_FACEDOWN_CARD = 'TOGGLE_FACEDOWN_CARD'
+export function cardAction(type:string, id: number) {
     return {
-        type: TOGGLE_TAP_CARD,
-        bfId: id,
+        type,
+        id
     }
 }
 

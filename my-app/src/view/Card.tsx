@@ -17,15 +17,11 @@ export interface CardProps {
     cardId: number,
     borderStyle?: string,
     imageSize?: string,
-    facedown?: boolean,
-    transformed?: boolean,
 }
 
 const Card: React.FC<CardProps> = ({
     cardId,
     imageSize,
-    facedown,
-    transformed
 }) => {
 
     const cardState = useSelector((state: ClientState) => state.game.cards[cardId])
@@ -35,19 +31,19 @@ const Card: React.FC<CardProps> = ({
     // small is 10.8k (memory cache after 1st). fuzzy text, hard to read
     // normal is 75.7k (memory cache after 1st). readable
 
-    const {data, error, isPending} = useAsync(loadCardData, { cardName: cardState.name })
+    const { data, error, isPending } = useAsync(loadCardData, { cardName: cardState.name })
 
     // TODO move card db load to ClientState
 
     const cardData = data ? data : null;
 
     const front = () => {
-        if (facedown) {
+        if (cardState.facedown) {
             return "Magic_card_back.jpg"
         }
         if (cardData) {
             const faces = imageSize === "normal" ? cardData.faces_normal : cardData.faces_small
-            if (transformed && faces) {
+            if (cardState.transformed && faces) {
                 for (const f in faces) {
                     if (f !== cardState.name) return faces[f];
                 }
@@ -61,35 +57,27 @@ const Card: React.FC<CardProps> = ({
 
     const dispatch = useDispatch()
 
-    const mouseOver = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-        dispatch(hoveredCard(cardId))
-    }
-
-    const mouseOut = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-        dispatch(hoveredCard(null))
-    }
-
     const click = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
         console.log(event)
     }
 
-    if(error) {
+    if (error) {
         console.error(`Problem loading card ${cardState.name} ${error.message}`)
     }
 
     return (
         <div className={"Card cardtooltip"}
-            onMouseOver={mouseOver}
-            onMouseOut={mouseOut}
+            onMouseOver={() => dispatch(hoveredCard(cardId))}
+            onMouseOut={() => dispatch(hoveredCard(null))}
             onClick={click}
             style={{
                 backgroundImage: `url("${front()}")`,
                 borderColor: ownerColor,
             }}
         >
-            <span className="cardtooltiptext">{cardState.name}</span>
-            {isPending ? <p>{cardState.name} </p> : undefined}
-            {error ? <p>{`${cardState.name} Errored`}  </p> : undefined}
+            {cardState.facedown ? null : <span className="cardtooltiptext">{cardState.name}</span>}
+            {isPending ? <p>{cardState.name} </p> : null}
+            {error ? <p>{`${cardState.name} Errored`}  </p> : null}
         </div>
     )
 }

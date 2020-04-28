@@ -6,7 +6,7 @@ import Table from './Table';
 import { useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { ClientState } from '../ClientState';
-import { localStateLoaded } from '../Actions';
+import { localStateLoaded, cardAction, TOGGLE_TRANSFORM_CARD, TOGGLE_FACEDOWN_CARD } from '../Actions';
 import CardPopup from './CardPopup';
 import CustomDragLayer from './CustomDragLayer';
 
@@ -16,6 +16,8 @@ const Game: React.FC = () => {
 
     const userName = useSelector((state: ClientState) => state.playerPrefs.name)
     const cardUnderCursor = useSelector((state: ClientState) => state.cardUnderCursor)
+    const bfCardUnderCursor = useSelector((state: ClientState) =>
+        state.cardUnderCursor.bfId ? state.game.battlefieldCards[state.cardUnderCursor.bfId] : null)
 
     const [cardPopupShown, setCardPopupShown] = useState<number | null>(null)
     const [cardPopupTransformed, setCardPopupTransformed] = useState(false)
@@ -36,21 +38,23 @@ const Game: React.FC = () => {
 
         switch (event.key) {
             case 'v':
-                if (cardPopupShown === cardUnderCursor) {
+                if (cardPopupShown === cardUnderCursor.cardId) {
                     setCardPopupShown(null) // view again to close
                     event.preventDefault()
                 } else if (cardUnderCursor !== null) {
-                    setCardPopupShown(cardUnderCursor)
+                    setCardPopupShown(cardUnderCursor.cardId)
                     setCardPopupTransformed(false)
                     event.preventDefault()
                 }
                 break;
             case 't':
-                if (cardPopupShown === cardUnderCursor) {
-                    setCardPopupTransformed(!cardPopupTransformed)
-                    event.preventDefault()
-                } else if (cardUnderCursor !== null) {
-                    //TODO need bf card under curser dispatch
+                if (cardUnderCursor.cardId !== null) {
+                    dispatch(cardAction(TOGGLE_TRANSFORM_CARD, cardUnderCursor.cardId))
+                }
+                break;
+            case 'f':
+                if (cardUnderCursor.cardId !== null) {
+                    dispatch(cardAction(TOGGLE_FACEDOWN_CARD, cardUnderCursor.cardId))
                 }
                 break;
         }
@@ -66,7 +70,7 @@ const Game: React.FC = () => {
                 <Table />
                 <Hand />
                 {cardPopupShown !== null ? <CardPopup cardId={cardPopupShown} transformed={cardPopupTransformed} /> : undefined}
-                <CustomDragLayer/>
+                <CustomDragLayer />
             </div>
         )
         : <div />

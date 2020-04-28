@@ -3,7 +3,7 @@ import React, { useEffect } from 'react'
 import './_style.css';
 import { ClientState, BATTLEFIELD } from '../ClientState';
 import { useSelector, useDispatch } from 'react-redux';
-import { toggleTap } from '../Actions';
+import { hoveredBFCard, TOGGLE_TAP_CARD, cardAction } from '../Actions';
 import Card from './Card';
 import { useDrag, DragSourceMonitor } from 'react-dnd';
 import { ItemTypes, DragCard } from './DnDUtils';
@@ -51,11 +51,11 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
                     transitionTimingFunction: "ease-in",
                     opacity: isDragging ? 0.25 : undefined,
                 }}
-                onClick={() => dispatch(toggleTap(bfState.bfId))}
+                onMouseOver={() => dispatch(hoveredBFCard(bfId, cardProps.cardId))}
+                onMouseOut={() => dispatch(hoveredBFCard(null))}
+                onClick={() => dispatch(cardAction(TOGGLE_TAP_CARD, bfState.bfId))}
             >
                 <Card cardId={cardProps.cardId}
-                    facedown={bfState.facedown}
-                    transformed={bfState.transformed}
                     borderStyle="0.15em solid" ></Card>
             </div>
     )

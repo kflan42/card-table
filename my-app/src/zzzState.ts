@@ -92,7 +92,9 @@ export function createGame(users: string[], decks: string[][]): Game {
                     name: name,
                     set: set,
                     setNumber: setNumber,
-                    owner: playerName
+                    owner: playerName,
+                    facedown: randchoice([true, false, false, false]),
+                    transformed: randchoice([true, false]),
                 }
                 players[playerName].deck.push(cid)
                 zones[libraryZoneId].cards.push(cid)
@@ -156,8 +158,6 @@ export function createTestGame() {
                     x: randint(18) * 5 + 5,
                     y: randint(18) * 5 + 5,
                     tapped: randchoice([true, false, false, false]),
-                    facedown: randchoice([true, false, false, false]),
-                    transformed: randchoice([true, false]),
                     counters: randchoice([{}, { "+1/+1": 1 }]),
                     changed: Date.now()
                 }
