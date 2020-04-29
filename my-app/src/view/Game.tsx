@@ -34,8 +34,6 @@ const Game: React.FC = () => {
     }, [userName, dispatch]);
 
     const keyPress = (event: React.KeyboardEvent<HTMLDivElement>) => {
-        console.log(event)
-
         switch (event.key) {
             case 'v':
                 if (cardPopupShown === cardUnderCursor.cardId) {
@@ -58,7 +56,6 @@ const Game: React.FC = () => {
                 }
                 break;
         }
-
     }
 
     /* eslint-disable jsx-a11y/accessible-emoji */

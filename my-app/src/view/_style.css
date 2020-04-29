@@ -128,7 +128,7 @@
   min-height: fit-content;
 }
 
-.CardPopup {
+.Popup {
   position: absolute;
   z-index: 2;
   resize: both;

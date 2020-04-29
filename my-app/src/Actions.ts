@@ -3,9 +3,18 @@ export const LOCAL_STATE_LOAD = 'LOCAL_STATE_LOAD'
 export function localStateLoaded(name: string, color: string) {
     return {
         type: LOCAL_STATE_LOAD,
-        payload: { name: name, color: color },
+        payload: { name, color },
     }
 }
+
+export const SHUFFLE_LIBRARY = 'SHUFFLE_LIBRARY'
+export function shuffleLibrary(owner: string) {
+    return {
+        type: SHUFFLE_LIBRARY,
+        owner
+    }
+}
+
 
 export const MOVE_CARD = 'MOVE_CARD'
 export interface MoveCard {
@@ -42,7 +51,7 @@ export function hoveredBFCard(bfId: number | null, cardId?: number) {
 export const TOGGLE_TAP_CARD = 'TOGGLE_TAP_CARD'
 export const TOGGLE_TRANSFORM_CARD = 'TOGGLE_TRANSFORM_CARD'
 export const TOGGLE_FACEDOWN_CARD = 'TOGGLE_FACEDOWN_CARD'
-export function cardAction(type:string, id: number) {
+export function cardAction(type: string, id: number) {
     return {
         type,
         id

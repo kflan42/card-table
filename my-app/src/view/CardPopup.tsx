@@ -18,7 +18,7 @@ const CardPopup: React.FC<CardPopupProps> = ({ cardId }) => {
     /* normal image is 488 x 680 */
 
     return (
-        <div className="CardPopup"
+        <div className="Popup"
             style={{
                 left: center - width / 2 + "px",
                 top: middle - height / 2 + "px",

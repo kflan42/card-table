@@ -11,35 +11,47 @@ import {
     MOVE_CARD,
     MoveCard,
     TOGGLE_TRANSFORM_CARD,
-    TOGGLE_FACEDOWN_CARD
+    TOGGLE_FACEDOWN_CARD,
+    SHUFFLE_LIBRARY,
 } from './Actions'
-import { Game, HAND, BATTLEFIELD, BattlefieldCard, HoveredCard } from './ClientState'
+import { Game, HAND, BATTLEFIELD, BattlefieldCard, HoveredCard, LIBRARY } from './ClientState'
 import { createTestGame } from './zzzState'
+import { shuffleArray } from './Utilities'
 
 
 // TODO generalize actions to cover counters etc
-function gameReducer(state: Game = createTestGame(), action: { type: string, id: number } | MoveCard) {
+function gameReducer(
+    state: Game = createTestGame(),
+    gameAction: { type: string }
+) {
     let newState = state
-    const cardAction = action as { type: string, id: number }
-    switch (action.type) {
+    let action = null
+    switch (gameAction.type) {
         case MOVE_CARD:
-            newState = handleMoveCard(state, action as MoveCard)
+            newState = handleMoveCard(state, gameAction as MoveCard)
+            break;
+        case SHUFFLE_LIBRARY:
+            action = gameAction as { type: string, owner: string }
+            const zoneId = newState.players[action.owner].zones[LIBRARY]
+            newState = update(state, { zones: { [zoneId]: { cards: a => { shuffleArray(a); return a; } } } })
             break;
         case TOGGLE_TAP_CARD:
-            newState = update(state, { battlefieldCards: { [cardAction.id]: { $toggle: ['tapped'] } } })
+            action = gameAction as { type: string, id: number }
+            newState = update(state, { battlefieldCards: { [action.id]: { $toggle: ['tapped'] } } })
             break;
         case TOGGLE_TRANSFORM_CARD:
-            newState = update(state, { cards: { [cardAction.id]: { $toggle: ['transformed'] } } })
+            action = gameAction as { type: string, id: number }
+            newState = update(state, { cards: { [action.id]: { $toggle: ['transformed'] } } })
             break;
         case TOGGLE_FACEDOWN_CARD:
-            newState = update(state, { cards: { [cardAction.id]: { $toggle: ['facedown'] } } })
+            action = gameAction as { type: string, id: number }
+            newState = update(state, { cards: { [action.id]: { $toggle: ['facedown'] } } })
             break;
         default:
             //ignored
             break;
     }
     if (newState !== state) {
-        console.log(`applied `, action)
         return newState
     }
     return state

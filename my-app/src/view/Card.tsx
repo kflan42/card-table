@@ -76,8 +76,8 @@ const Card: React.FC<CardProps> = ({
             onClick={click}
         >
             {cardState.facedown ? null : <span className="cardtooltiptext">{front()[0]}</span>}
-            {isPending ? <p>{cardState.name} </p> : null}
-            {error ? <p>{`${cardState.name} Errored`}  </p> : null}
+            {isPending ? <p>{`${cardState.name} Pending`}</p> : null}
+            {error ? <p>{`${cardState.name} Error`}</p> : null}
             <img style={{ borderColor: ownerColor }} src={front()[1]} alt={front()[0]} />
         </div>
     )

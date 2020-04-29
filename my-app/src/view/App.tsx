@@ -17,6 +17,7 @@ import { Provider } from 'react-redux';
 import Game from './Game';
 import Log from './Log';
 import stateReducer from '../Reducers';
+import { ConfirmationServiceProvider } from './ConfirmationService';
 
 const App: React.FC = () => {
 
@@ -29,11 +30,13 @@ const App: React.FC = () => {
 
                 <Switch>
                     <Route path="/:gameId">
-                        <Provider store={store}>    
+                        <Provider store={store}>
                             <DndProvider backend={Backend}>
-                                <Game/>
+                                <ConfirmationServiceProvider>
+                                    <Game />
+                                </ConfirmationServiceProvider>
                             </DndProvider>
-                            <Log/>
+                            <Log />
                         </Provider>
                     </Route>
                     <Route path="/">

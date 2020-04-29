@@ -93,8 +93,8 @@ export function createGame(users: string[], decks: string[][]): Game {
                     set: set,
                     setNumber: setNumber,
                     owner: playerName,
-                    facedown: randchoice([true, false, false, false]),
-                    transformed: randchoice([true, false]),
+                    facedown: false,
+                    transformed: false
                 }
                 players[playerName].deck.push(cid)
                 zones[libraryZoneId].cards.push(cid)
@@ -152,6 +152,8 @@ export function createTestGame() {
         for (let i = 0; i < 7; i++) {
             c = library.cards.pop()
             if (c) {
+                initialGame.cards[c].facedown = randchoice([true, false, false, false])
+                initialGame.cards[c].transformed = randchoice([true, false])
                 const bfc: BattlefieldCard = {
                     bfId: ++bfId,
                     cardId: c,
