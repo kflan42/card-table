@@ -39,7 +39,7 @@ const App: React.FC = () => {
                             <Log />
                         </Provider>
                     </Route>
-                    <Route path="/">
+                    <Route path="">
                         <LoginForm />
                     </Route>
                 </Switch>

@@ -54,7 +54,9 @@ const Hand: React.FC<HandProps> = () => {
 
     return (
         <div ref={drop} className="Hand">
-            <span style={{ writingMode: "vertical-lr", textOrientation: "upright", minHeight: "13em" }}>Hand</span>
+            <span style={{ writingMode: "vertical-lr", textOrientation: "upright", minHeight: "13em" }}>
+                Hand
+            </span>
             {listItems}
         </div>
     )

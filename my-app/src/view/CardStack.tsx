@@ -28,25 +28,26 @@ const CardStack: React.FC<CardStackP> = ({ name, icon = null, owner }) => {
     const cards = useSelector((state: ClientState) => state.game.cards)
 
     const dispatch = useDispatch()
-    const confirm = useConfirmation();
+    const confirmation = useConfirmation();
 
     function stackButtonClicked(e: React.MouseEvent<HTMLDivElement, MouseEvent>) {
         if (!shown) {
             if (zoneState.name === LIBRARY) {
-                confirm({
-                    choices: ["Search", "Look at Top 1", "Cancel"], // TODO prompt for how many
+                confirmation({
+                    choices: ["Search", "Look at Top _", "Cancel"],
                     catchOnCancel: true,
                     title: `Look at ${zoneState.name}?`,
                     description: "",
                     location: { x: e.clientX, y: e.clientY }
                 })
-                    .then((s: string) => {
-                        switch (s) {
+                    .then((s: [string, number?]) => {
+                        switch (s[0]) {
                             case "Search":
                                 setTopN([]);
                                 break;
-                            case "Look at Top 1":
-                                setTopN(zoneState.cards.slice(0, 1))
+                            case "Look at Top _":
+                                const n = s[1] as number
+                                setTopN(zoneState.cards.slice(0, n))
                                 break;
                             case "Cancel":
                                 return;
@@ -85,24 +86,27 @@ const CardStack: React.FC<CardStackP> = ({ name, icon = null, owner }) => {
                 return //nothing to do if in same zone, not doing order here like that
             }
             let i = zoneState.cards.length;
-            confirm({
-                choices: ["Top", "1 From Top", "Bottom"], // TODO prompt for how deep
+            // TODO only these choices for library
+            confirmation({
+                choices: ["Top", "_ From Top", "Bottom", "Cancel"],
                 catchOnCancel: true,
                 title: `Put Card Where?`,
                 description: "",
                 location: { x: monitor.getClientOffset()?.x || 0, y: monitor.getClientOffset()?.y || 0 }
             })
-                .then((s: string) => {
-                    switch (s) {
+                .then((s: [string, number?]) => {
+                    switch (s[0]) {
                         case "Top":
                             i = 0;
                             break;
-                        case "1 From Top":
-                            i = 1;
+                        case "_ From Top":
+                            i = s[1] as number; // 0 based indexing
                             break;
                         case "Bottom":
                             i = zoneState.cards.length;
                             break;
+                        case "Cancel":
+                            return;
                     }
                     if (i > -1) {
                         const cardMove: MoveCard = {
@@ -127,11 +131,13 @@ const CardStack: React.FC<CardStackP> = ({ name, icon = null, owner }) => {
     const cardsShown = topN.length > 0 ? topN.length : size
 
     function renderPopupBox() {
-        const target_cols = Math.ceil(Math.log(cardsShown + 1));
+        const target_cols = cardsShown < 8 ? 1 : Math.floor(Math.log2(cardsShown))
         const cards_per_col = Math.ceil(cardsShown / target_cols)
-        const cardHeight = Math.max(1.5, Math.ceil(10 / cards_per_col))
+        const cardClip = Math.min(8, Math.ceil(cards_per_col / 2))
+        const cardHeight = 15.3 / cardClip
+        const cardWidth = (cardHeight * cardClip * 146) / 204 // show top 1/7th, use small image ratio
         const boxHeight = cardHeight * cards_per_col
-        const boxWidth = 7.3 * target_cols;
+        const boxWidth = cardWidth * Math.min(target_cols, 4) 
         const listItems = []
         if (zoneState) {
             const cardsToShow = topN.length > 0 ? topN : zoneState.cards
@@ -142,7 +148,7 @@ const CardStack: React.FC<CardStackP> = ({ name, icon = null, owner }) => {
                     || cards[cardId].facedown
                     || cards[cardId].name.toLowerCase().indexOf(query.toLowerCase()) > -1) {
                     listItems.push(
-                        <StackCard key={cardId} cardId={cardId} height={cardHeight}
+                        <StackCard key={cardId} cardId={cardId} height={cardHeight} width={cardWidth}
                             zone={name} owner={owner} />
                     )
                 }
@@ -150,7 +156,7 @@ const CardStack: React.FC<CardStackP> = ({ name, icon = null, owner }) => {
         }
 
         return (<div className="StackPopUpBox">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "stretch" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "0.1em" }}>
                 <span>{name}</span>
                 {cardsShown > 7
                     ? <span>Search:<input value={query} type="text" id="query" name="query" onChange={queryChanged} /></span>
@@ -163,6 +169,7 @@ const CardStack: React.FC<CardStackP> = ({ name, icon = null, owner }) => {
                     Close </button>
             </div>
             <div className="CardStack" style={{
+                fontSize: "small", // match Card
                 height: `${boxHeight}em`,
                 width: `${boxWidth}em`
             }}>
@@ -177,9 +184,9 @@ const CardStack: React.FC<CardStackP> = ({ name, icon = null, owner }) => {
             <div ref={drop} className="buttontooltip"
                 style={{
                     backgroundColor: isOver ? "darkGray" : undefined,
-                    border: shown ? "0.05em solid black" : undefined,
+                    border: shown ? "0.1em solid black" : undefined,
                 }}>
-                <div onClick={e => stackButtonClicked(e)} className="TextButton">
+                <div onClick={e => stackButtonClicked(e)} className="DivButton">
                     {label} {`${size}`}
                 </div>
                 <span className="buttontooltiptext" style={{ visibility: isOver ? "visible" : undefined }}>

@@ -18,4 +18,5 @@ const Playmat: React.FC<PlaymatP> = (props) => {
     )
 }
 
-export default Playmat
+const MemoizedPlaymat = React.memo(Playmat)
+export default MemoizedPlaymat

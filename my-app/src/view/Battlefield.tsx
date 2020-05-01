@@ -3,7 +3,7 @@ import React, { useRef } from 'react'
 import './_style.css';
 import { useSelector, useDispatch } from 'react-redux';
 import { ClientState, BATTLEFIELD } from '../ClientState';
-import MemoizedBFCard from './BFCard';
+import BFCard from './BFCard';
 import { useDrop } from 'react-dnd';
 import { ItemTypes, DragCard } from "./DnDUtils";
 import { MoveCard, MOVE_CARD } from '../Actions';
@@ -72,7 +72,7 @@ const Battlefield: React.FC<BFP> = ({ player }) => {
     const listItems = []
     if (zoneState) {
         for (const bfId of zoneState.battlefieldCards) {
-            listItems.push(<MemoizedBFCard key={bfId} bfId={bfId} fieldOwner={player} />)
+            listItems.push(<BFCard key={bfId} bfId={bfId} fieldOwner={player} />)
         }
     }
     // sort most recent changes to last so they end up on top

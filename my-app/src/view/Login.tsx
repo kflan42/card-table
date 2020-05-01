@@ -59,14 +59,16 @@ class Login extends React.Component<LoginP> {
   }
 
   handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if(this.state.color === '') {
+      return;
+    }
 
     console.log(this.state.name, this.state.table, this.state.deck)
     localStorage.setItem('userName', this.state.name)
     localStorage.setItem('userColor', this.state.color)
     // TODO send name and deck to server here
     this.props.cb(this.state.table)
-
-    event.preventDefault();
   }
 
   pickColor(color: string) {
@@ -110,7 +112,7 @@ class Login extends React.Component<LoginP> {
             <input type="text" value={this.state.table} required={true} onChange={this.handleTableChange} />
             <br /> <br />
             Deck File:  &nbsp;
-            <input accept=".txt,.dek,*" type="file" required={true} onChange={this.handleFileChange} />
+            <input className="DivButton" accept=".txt,.dek,*" type="file" required={true} onChange={this.handleFileChange} />
             <br /> <br />
             Sleeve Color: &nbsp;
             <div className="dropdown">
@@ -120,7 +122,7 @@ class Login extends React.Component<LoginP> {
               </div>
             </div>
             <br /> <br />
-            <input type="submit" value="Join Table" />
+            <input className="DivButton" type="submit" value="Join Table" />
             <br /> <br />
             Deck: <br />
             <textarea value={this.state.deck} readOnly={true} cols={30} rows={25} />

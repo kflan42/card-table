@@ -3,7 +3,8 @@ import React from 'react'
 import './_style.css';
 import PlayerCounter from './PlayerCounter';
 import CardStack from './CardStack';
-import { EXILE, COMMAND_ZONE, GRAVEYARD, LIBRARY, HAND } from '../ClientState';
+import { EXILE, COMMAND_ZONE, GRAVEYARD, LIBRARY, HAND, ClientState } from '../ClientState';
+import { useSelector } from 'react-redux';
 
 interface PlayerBoxP {
     player: string
@@ -11,7 +12,15 @@ interface PlayerBoxP {
 
 const PlayerBox: React.FC<PlayerBoxP> = ({ player }) => {
 
-    // TODO popup windows for card zones
+    const playerState = useSelector((state: ClientState) => {
+        return state.game.players[player];
+    });
+
+    const counters = []
+    for (const kind in playerState.counters) {
+        counters.push(<PlayerCounter player={player} kind={kind} />)
+    }
+
     return (
         /* eslint-disable jsx-a11y/accessible-emoji */
         <div className="PlayerBox">
@@ -26,8 +35,9 @@ const PlayerBox: React.FC<PlayerBoxP> = ({ player }) => {
             <CardStack name={GRAVEYARD} owner={player} icon="🗑️" />
             <CardStack name={EXILE} owner={player} icon="📒" />
             <CardStack name={COMMAND_ZONE} owner={player} icon="👑" />
-            <PlayerCounter kind="Life" />
-            <div className="TextButton buttontooltip">➕
+            {counters}
+            <div className=" buttontooltip">
+                <div className="DivButton">➕</div>
                 <span className="buttontooltiptext">Add Counter</span>
             </div>
         </div>

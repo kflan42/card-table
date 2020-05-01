@@ -2,20 +2,25 @@ import React from 'react'
 
 import './_style.css';
 import Playmat from './Playmat';
+import { useSelector } from 'react-redux';
+import { ClientState } from '../ClientState';
 
 
 
 const Table: React.FC = () => {
-    
+
+    const playersState = useSelector((state: ClientState) => {
+        return state.game.players;
+    });
+
+    const mats = []
+    for (const player in playersState) {
+        mats.push(<Playmat player={player} />)
+    }
+
     return (
         <div className="Table">
-            <Playmat player = "alice"/>
-            <Playmat player = "bob"/>
-            <Playmat player = "chad"/>
-            <Playmat player = "dude"/>
-            <Playmat player = "erwin"/>
-        
-            
+            {mats}
         </div>
     )
 }

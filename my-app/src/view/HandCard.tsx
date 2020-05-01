@@ -74,7 +74,7 @@ const HandCard: React.FC<HandCardProps> = ({
     const opacity = isDragging ? 0 : 1
 
     return (
-        <div ref={(node) => drag(drop(node))} style={{ opacity }}>
+        <div ref={(node) => drag(drop(node))} style={{ opacity, margin:"0.25em" }}>
             <Card cardId={cardId} ></Card>
         </div>
     )

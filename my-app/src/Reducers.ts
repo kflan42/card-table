@@ -13,6 +13,7 @@ import {
     TOGGLE_TRANSFORM_CARD,
     TOGGLE_FACEDOWN_CARD,
     SHUFFLE_LIBRARY,
+    SET_PLAYER_COUNTER,
 } from './Actions'
 import { Game, HAND, BATTLEFIELD, BattlefieldCard, HoveredCard, LIBRARY } from './ClientState'
 import { createTestGame } from './zzzState'
@@ -46,6 +47,14 @@ function gameReducer(
         case TOGGLE_FACEDOWN_CARD:
             action = gameAction as { type: string, id: number }
             newState = update(state, { cards: { [action.id]: { $toggle: ['facedown'] } } })
+            break;
+        case SET_PLAYER_COUNTER:
+            action = gameAction as { type: string, player: string, kind: string, value: number }
+            if (action.value !== 0) {
+                newState = update(state, { players: { [action.player]: { counters: { $merge: { [action.kind]: action.value } } } } })
+            } else {
+                newState = update(state, { players: { [action.player]: { counters: { $unset: [action.kind] } } } })
+            }
             break;
         default:
             //ignored

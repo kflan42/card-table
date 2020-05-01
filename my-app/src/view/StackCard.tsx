@@ -8,12 +8,13 @@ import { getEmptyImage } from "react-dnd-html5-backend"
 interface StackCardP {
     cardId: number,
     height: number,
+    width: number,
     zone: string,
     owner: string,
 }
 
 
-const StackCard: React.FC<StackCardP> = ({ cardId, height, zone, owner }) => {
+const StackCard: React.FC<StackCardP> = ({ cardId, height, width, zone, owner }) => {
 
     const dragCard: DragCard = {
         type: ItemTypes.CARD, cardId: cardId, srcZone: zone, srcOwner: owner
@@ -34,7 +35,12 @@ const StackCard: React.FC<StackCardP> = ({ cardId, height, zone, owner }) => {
     const opacity = isDragging ? 0 : 1
 
     return (
-        <div ref={drag} style={{ height: height + "em", width:"7.3em", overflowY: "hidden", opacity }}>
+        <div ref={drag}
+            style={{
+                fontSize: "small", // match Card
+                height: height + "em", width: width + "em", overflowY: "hidden", opacity, border: "none",
+                margin:"0.1em",
+            }}>
             <Card cardId={cardId} />
         </div>
     )

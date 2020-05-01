@@ -58,3 +58,12 @@ export function cardAction(type: string, id: number) {
     }
 }
 
+export const SET_PLAYER_COUNTER = 'SET_PLAYER_COUNTER'
+export function setPlayerCounter(player:string, kind:string, value:number){
+    return {
+        type: SET_PLAYER_COUNTER,
+        player,
+        kind,
+        value,
+    }
+}

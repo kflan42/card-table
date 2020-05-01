@@ -4,7 +4,7 @@ import { ConfirmationDialog, ConfirmationOptions } from "./ConfirmationDialog";
 // based on https://dev.to/dmtrkovalenko/the-neatest-way-to-handle-alert-dialogs-in-react-1aoe
 
 const ConfirmationServiceContext = React.createContext<
-    (options: ConfirmationOptions) => Promise<string>
+    (options: ConfirmationOptions) => Promise<[string, number?]>
 >(Promise.reject);
 
 export const useConfirmation = () =>
@@ -17,13 +17,13 @@ export const ConfirmationServiceProvider = ({ children }: { children: React.Reac
     ] = React.useState<ConfirmationOptions | null>(null);
 
     const awaitingPromiseRef = React.useRef<{
-        resolve: (c:string) => void;
+        resolve: (r:[string, number?]) => void;
         reject: () => void;
     }>();
 
     const openConfirmation = (options: ConfirmationOptions) => {
         setConfirmationState(options);
-        return new Promise<string>((resolve, reject) => {
+        return new Promise<[string, number?]>((resolve, reject) => {
             awaitingPromiseRef.current = { resolve, reject };
         });
     };
@@ -36,7 +36,7 @@ export const ConfirmationServiceProvider = ({ children }: { children: React.Reac
     //     setConfirmationState(null);
     // };
 
-    const handleSubmit = (choice: string)  => {
+    const handleSubmit = (choice: [string, number?])  => {
         if (awaitingPromiseRef.current) {
             awaitingPromiseRef.current.resolve(choice);
         }

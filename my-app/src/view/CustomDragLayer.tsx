@@ -1,7 +1,7 @@
 import React from 'react'
 import { XYCoord, useDragLayer } from 'react-dnd'
 import { ItemTypes, DragCard } from './DnDUtils'
-import MemoizedBFCard from './BFCard'
+import BFCard from './BFCard'
 import Card from './Card'
 import { HAND } from '../ClientState'
 
@@ -69,7 +69,7 @@ const CustomDragLayer: React.FC = () => {
             case ItemTypes.BFCARD:
                 const b = item as DragCard
                 if (b.bfId !== undefined)
-                    return <MemoizedBFCard bfId={b.bfId} fieldOwner={b.srcOwner} />
+                    return <BFCard bfId={b.bfId} fieldOwner={b.srcOwner} />
                 else
                     return null
             case ItemTypes.CARD:
