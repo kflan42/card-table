@@ -67,3 +67,13 @@ export function setPlayerCounter(player:string, kind:string, value:number){
         value,
     }
 }
+
+export const SET_CARD_COUNTER = 'SET_CARD_COUNTER'
+export function setCardCounter(bfId:number, kind:string, value:number){
+    return {
+        type: SET_CARD_COUNTER,
+        bfId,
+        kind,
+        value,
+    }
+}

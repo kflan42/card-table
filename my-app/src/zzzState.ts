@@ -160,7 +160,8 @@ export function createTestGame() {
                     x: randint(18) * 5 + 5,
                     y: randint(18) * 5 + 5,
                     tapped: randchoice([true, false, false, false]),
-                    counters: randchoice([{}, { "+1/+1": 1 }]),
+                    counters: randchoice([{}, { "+1/+1": 1 }, { "+1/+1": 2 },
+                    { "+1/+0": 1, "+1/+1": 2 }]),
                     changed: Date.now()
                 }
                 initialGame.battlefieldCards[bfc.bfId] = bfc

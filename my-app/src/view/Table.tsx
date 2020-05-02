@@ -15,7 +15,7 @@ const Table: React.FC = () => {
 
     const mats = []
     for (const player in playersState) {
-        mats.push(<Playmat player={player} />)
+        mats.push(<Playmat key={player} player={player} />)
     }
 
     return (

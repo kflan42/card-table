@@ -3,11 +3,12 @@ import React, { useEffect } from 'react'
 import './_style.css';
 import { ClientState, BATTLEFIELD } from '../ClientState';
 import { useSelector, useDispatch } from 'react-redux';
-import { hoveredBFCard, TOGGLE_TAP_CARD, cardAction } from '../Actions';
+import { hoveredBFCard, TOGGLE_TAP_CARD, cardAction, setCardCounter } from '../Actions';
 import Card from './Card';
 import { useDrag, DragSourceMonitor } from 'react-dnd';
 import { ItemTypes, DragCard } from './DnDUtils';
 import { getEmptyImage } from 'react-dnd-html5-backend';
+import { useConfirmation } from './ConfirmationService';
 
 interface BFCardProps {
     bfId: number,
@@ -47,6 +48,69 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
         preview(getEmptyImage(), { captureDraggingState: true })
     }, [preview])
 
+    const confirmation = useConfirmation();
+
+    function counterClick(e: React.MouseEvent<HTMLDivElement, MouseEvent>, kind: string, current: number) {
+        confirmation({
+            choices: ["▲", "Set to x_", "▼"],
+            catchOnCancel: true,
+            title: `Adjust ${kind} x${current}`,
+            description: "",
+            location: { x: e.clientX, y: e.clientY }
+        })
+            .then((s: [string, number?]) => {
+                switch (s[0]) {
+                    case "▲":
+                        dispatch(setCardCounter(bfId, kind, current + 1));
+                        break;
+                    case "Set to x_":
+                        const n = s[1] as number
+                        dispatch(setCardCounter(bfId, kind, n));
+                        break;
+                    case "▼":
+                        dispatch(setCardCounter(bfId, kind, current - 1));
+                        break;
+                    case "Cancel":
+                        return;
+                }
+            })
+            .catch(() => null);
+        e.preventDefault();
+    }
+
+    const counters = [];
+    for (const counterLabel in bfState.counters) {
+        const count = bfState.counters[counterLabel];
+        const m = counterLabel.match(/([+-])(\d+)\/([+-])(\d+)/)
+        let label = <> counterLabel </>
+        if (m) {
+            const left = Number.parseInt(m[2]) * count
+            const right = Number.parseInt(m[4]) * count
+            label = <> <sup>{m[1]}{left}</sup>/<sub>{m[3]}{right}</sub> </>
+        }
+        const labelmultiplier = m ? null
+            : count > 1 ? "x" + count
+                : null
+        counters.push(
+            <div
+                key={counterLabel}
+                style={{
+                    fontSize: "smaller",
+                    fontFamily: "Arial",
+                    backgroundColor: "goldenrod",
+                    color: "black",
+                    borderRadius: "25%",
+                    width: "fit-content",
+                    height: "fit-content",
+                    paddingLeft: "0.1em", paddingRight: "0.1em",
+                }}
+                onClick={(e) => counterClick(e, counterLabel, count)}
+            >
+                {label} {labelmultiplier}
+            </div>
+        );
+    }
+
     return (
         !bfState ? null :
             <div
@@ -62,10 +126,21 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
                 }}
                 onMouseOver={() => dispatch(hoveredBFCard(bfId, cardProps.cardId))}
                 onMouseOut={() => dispatch(hoveredBFCard(null))}
-                onClick={() => dispatch(cardAction(TOGGLE_TAP_CARD, bfState.bfId))}
+                onClick={(e) => {
+                    if (!e.isDefaultPrevented()) dispatch(cardAction(TOGGLE_TAP_CARD, bfState.bfId))
+                }}
             >
-                <Card cardId={cardProps.cardId}
-                    borderStyle="0.15em solid" ></Card>
+                <Card cardId={cardProps.cardId} borderStyle="0.15em solid" ></Card>
+                <div style={{
+                    // for counters
+                    position: "absolute",
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    display: "flex",
+                    flexWrap: "wrap",
+                    padding: "1em",
+                }}>
+                    {counters}
+                </div>
             </div>
     )
 

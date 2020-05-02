@@ -80,8 +80,6 @@ const Battlefield: React.FC<BFP> = ({ player }) => {
 
     return (
         <div ref={bf} style={{
-            width: "100%",
-            height: "100%",
             flexGrow: 1,
         }}>
             <div ref={drop} className="Battlefield">
@@ -91,4 +89,5 @@ const Battlefield: React.FC<BFP> = ({ player }) => {
     )
 }
 
-export default Battlefield
+const MemoizedBF = React.memo(Battlefield)
+export default MemoizedBF

@@ -14,13 +14,13 @@ import {
     TOGGLE_FACEDOWN_CARD,
     SHUFFLE_LIBRARY,
     SET_PLAYER_COUNTER,
+    SET_CARD_COUNTER,
 } from './Actions'
 import { Game, HAND, BATTLEFIELD, BattlefieldCard, HoveredCard, LIBRARY } from './ClientState'
 import { createTestGame } from './zzzState'
 import { shuffleArray } from './Utilities'
 
 
-// TODO generalize actions to cover counters etc
 function gameReducer(
     state: Game = createTestGame(),
     gameAction: { type: string }
@@ -54,6 +54,14 @@ function gameReducer(
                 newState = update(state, { players: { [action.player]: { counters: { $merge: { [action.kind]: action.value } } } } })
             } else {
                 newState = update(state, { players: { [action.player]: { counters: { $unset: [action.kind] } } } })
+            }
+            break;
+        case SET_CARD_COUNTER:
+            action = gameAction as { type: string, bfId: number, kind: string, value: number }
+            if (action.value !== 0) {
+                newState = update(state, { battlefieldCards: { [action.bfId]: { counters: { $merge: { [action.kind]: action.value } } } } })
+            } else {
+                newState = update(state, { battlefieldCards: { [action.bfId]: { counters: { $unset: [action.kind] } } } })
             }
             break;
         default:

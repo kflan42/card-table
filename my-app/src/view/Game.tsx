@@ -55,8 +55,19 @@ const Game: React.FC = () => {
                     dispatch(cardAction(TOGGLE_FACEDOWN_CARD, cardUnderCursor.cardId))
                 }
                 break;
+            case 'C':
+                if (cardUnderCursor !== null) {
+                    // TODO create token of card
+                }
+                break;
+            case 'c':
+                if (bfCardUnderCursor !== null) {
+                    // TODO confirmation popup with text prompt for new card counter and default choices, then dispatch
+                }
+                break;
         }
     }
+
 
     /* eslint-disable jsx-a11y/accessible-emoji */
     //tabIndex means it can recieve focus which means it can receive keyboard events
