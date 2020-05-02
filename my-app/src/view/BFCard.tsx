@@ -9,6 +9,7 @@ import { useDrag, DragSourceMonitor } from 'react-dnd';
 import { ItemTypes, DragCard } from './DnDUtils';
 import { getEmptyImage } from 'react-dnd-html5-backend';
 import { useConfirmation } from './ConfirmationService';
+import { ConfirmationResult } from './ConfirmationDialog';
 
 interface BFCardProps {
     bfId: number,
@@ -52,26 +53,23 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
 
     function counterClick(e: React.MouseEvent<HTMLDivElement, MouseEvent>, kind: string, current: number) {
         confirmation({
-            choices: ["▲", "Set to x_", "▼"],
+            choices: ["▲", "Set Count _", "▼"],
             catchOnCancel: true,
             title: `Adjust ${kind} x${current}`,
             description: "",
             location: { x: e.clientX, y: e.clientY }
         })
-            .then((s: [string, number?]) => {
-                switch (s[0]) {
+            .then((s: ConfirmationResult) => {
+                switch (s.choice) {
                     case "▲":
                         dispatch(setCardCounter(bfId, kind, current + 1));
                         break;
-                    case "Set to x_":
-                        const n = s[1] as number
-                        dispatch(setCardCounter(bfId, kind, n));
+                    case "Set Count _":
+                        dispatch(setCardCounter(bfId, kind, s.n));
                         break;
                     case "▼":
                         dispatch(setCardCounter(bfId, kind, current - 1));
                         break;
-                    case "Cancel":
-                        return;
                 }
             })
             .catch(() => null);
@@ -82,7 +80,7 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
     for (const counterLabel in bfState.counters) {
         const count = bfState.counters[counterLabel];
         const m = counterLabel.match(/([+-])(\d+)\/([+-])(\d+)/)
-        let label = <> counterLabel </>
+        let label = <> {counterLabel} </>
         if (m) {
             const left = Number.parseInt(m[2]) * count
             const right = Number.parseInt(m[4]) * count
@@ -102,7 +100,8 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
                     borderRadius: "25%",
                     width: "fit-content",
                     height: "fit-content",
-                    paddingLeft: "0.1em", paddingRight: "0.1em",
+                    paddingLeft: "0.05em", paddingRight: "0.05em",
+                    margin: "0.05em",
                 }}
                 onClick={(e) => counterClick(e, counterLabel, count)}
             >
@@ -111,6 +110,7 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
         );
     }
 
+    const borderWidth = "0.15em";
     return (
         !bfState ? null :
             <div
@@ -130,14 +130,16 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
                     if (!e.isDefaultPrevented()) dispatch(cardAction(TOGGLE_TAP_CARD, bfState.bfId))
                 }}
             >
-                <Card cardId={cardProps.cardId} borderStyle="0.15em solid" ></Card>
+                <Card cardId={cardProps.cardId} borderStyle={borderWidth + " solid"} ></Card>
                 <div style={{
                     // for counters
                     position: "absolute",
-                    top: 0, left: 0, right: 0, bottom: 0,
+                    top: 0, left: borderWidth,
+                    width:"100%",
                     display: "flex",
                     flexWrap: "wrap",
-                    padding: "1em",
+                    justifyContent: "center",
+                    paddingTop: "1em"
                 }}>
                     {counters}
                 </div>

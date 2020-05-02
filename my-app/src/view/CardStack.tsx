@@ -7,6 +7,7 @@ import { useDrop, DropTargetMonitor } from 'react-dnd'
 import { ItemTypes, DragCard } from './DnDUtils'
 import { MoveCard, MOVE_CARD, shuffleLibrary } from '../Actions'
 import { useConfirmation } from './ConfirmationService'
+import { ConfirmationResult } from './ConfirmationDialog'
 
 interface CardStackP {
     name: string
@@ -34,23 +35,20 @@ const CardStack: React.FC<CardStackP> = ({ name, icon = null, owner }) => {
         if (!shown) {
             if (zoneState.name === LIBRARY) {
                 confirmation({
-                    choices: ["Search", "Look at Top _", "Cancel"],
+                    choices: ["Search", "Look at Top _"],
                     catchOnCancel: true,
                     title: `Look at ${zoneState.name}?`,
                     description: "",
                     location: { x: e.clientX, y: e.clientY }
                 })
-                    .then((s: [string, number?]) => {
-                        switch (s[0]) {
+                    .then((s: ConfirmationResult) => {
+                        switch (s.choice) {
                             case "Search":
                                 setTopN([]);
                                 break;
                             case "Look at Top _":
-                                const n = s[1] as number
-                                setTopN(zoneState.cards.slice(0, n))
+                                setTopN(zoneState.cards.slice(0, s.n))
                                 break;
-                            case "Cancel":
-                                return;
                         }
                         setShown(true)
                         setQuery('')
@@ -86,41 +84,41 @@ const CardStack: React.FC<CardStackP> = ({ name, icon = null, owner }) => {
                 return //nothing to do if in same zone, not doing order here like that
             }
             let i = zoneState.cards.length;
-            // TODO only these choices for library
-            confirmation({
-                choices: ["Top", "_ From Top", "Bottom", "Cancel"],
-                catchOnCancel: true,
-                title: `Put Card Where?`,
-                description: "",
-                location: { x: monitor.getClientOffset()?.x || 0, y: monitor.getClientOffset()?.y || 0 }
-            })
-                .then((s: [string, number?]) => {
-                    switch (s[0]) {
-                        case "Top":
-                            i = 0;
-                            break;
-                        case "_ From Top":
-                            i = s[1] as number; // 0 based indexing
-                            break;
-                        case "Bottom":
-                            i = zoneState.cards.length;
-                            break;
-                        case "Cancel":
-                            return;
-                    }
-                    if (i > -1) {
-                        const cardMove: MoveCard = {
-                            ...item,
-                            type: MOVE_CARD,
-                            when: Date.now(),
-                            tgtZone: name,
-                            tgtOwner: owner,
-                            toIdx: i
-                        }
-                        dispatch(cardMove)
-                    }
+            if (zoneState.name === LIBRARY) {
+                confirmation({
+                    choices: ["Top", "Insert _ From Top", "Bottom"],
+                    catchOnCancel: true,
+                    title: `Put Card Where?`,
+                    description: "",
+                    location: { x: monitor.getClientOffset()?.x || 0, y: monitor.getClientOffset()?.y || 0 }
                 })
-                .catch(() => i = -1);
+                    .then((s: ConfirmationResult) => {
+                        switch (s.choice) {
+                            case "Top":
+                                i = 0;
+                                break;
+                            case "Insert _ From Top":
+                                i = s.n; // 0 based indexing
+                                break;
+                            case "Bottom":
+                                i = zoneState.cards.length;
+                                break;
+                        }
+
+                    })
+                    .catch(() => i = -1);
+            }
+            if (i > -1) {
+                const cardMove: MoveCard = {
+                    ...item,
+                    type: MOVE_CARD,
+                    when: Date.now(),
+                    tgtZone: name,
+                    tgtOwner: owner,
+                    toIdx: i
+                }
+                dispatch(cardMove)
+            }
         },
         collect: (monitor: DropTargetMonitor) => ({
             isOver: monitor.isOver()
@@ -131,13 +129,13 @@ const CardStack: React.FC<CardStackP> = ({ name, icon = null, owner }) => {
     const cardsShown = topN.length > 0 ? topN.length : size
 
     function renderPopupBox() {
-        const target_cols = cardsShown < 8 ? 1 : Math.floor(Math.log2(cardsShown))
-        const cards_per_col = Math.ceil(cardsShown / target_cols)
-        const cardClip = Math.min(8, Math.ceil(cards_per_col / 2))
-        const cardHeight = 15.3 / cardClip
-        const cardWidth = (cardHeight * cardClip * 146) / 204 // show top 1/7th, use small image ratio
-        const boxHeight = cardHeight * cards_per_col
-        const boxWidth = cardWidth * Math.min(target_cols, 4) 
+        const target_cols = 1 + Math.floor(cardsShown / 8)
+        const cards_per_col = Math.round(cardsShown / target_cols)
+        const cardPortionShown = Math.max(1 / 8, Math.min(2 / cards_per_col, 1))
+        const cardHeight = 15.3 * cardPortionShown
+        const cardWidth = (cardHeight / cardPortionShown * 146) / 204 // show top 1/7th, use small image ratio
+        const boxHeight = cardHeight * cards_per_col * 1.1; // .1 margins, scrollbar
+        const boxWidth = cardWidth * Math.min(target_cols, 4)
         const listItems = []
         if (zoneState) {
             const cardsToShow = topN.length > 0 ? topN : zoneState.cards

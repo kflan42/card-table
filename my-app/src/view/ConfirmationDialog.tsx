@@ -5,11 +5,14 @@ export interface ConfirmationOptions {
     title: string;
     description: string;
     choices: string[];
-    location: { x: number, y: number }
+    location?: { x: number, y: number }
 }
 
+export interface ConfirmationResult { choice: string, n: number, s: string }
+
 interface ConfirmationDialogProps extends ConfirmationOptions {
-    onSubmit: (c: [string, number?]) => void;
+    onSubmit: (c: ConfirmationResult) => void;
+    onCancel: () => void;
 }
 
 export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
@@ -18,46 +21,76 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
     choices,
     location,
     onSubmit,
+    onCancel,
 }) => {
 
     // shift towards center to ensure user can see it
-    const left = (location.x + window.innerWidth / 2) / 2
-    const top = (location.y + window.innerHeight / 2) / 2
+    const left = (location ? location.x : 0 + window.innerWidth / 2) / 2
+    const top = (location ? location.y : 0 + window.innerHeight / 2) / 2
 
-    // can use 1 input thing
-    const [value, setValue] = React.useState(1)
+    const [valueN, setValueN] = React.useState(1)
+    const [valueS, setValueS] = React.useState("")
 
     const elements = []
     for (const c of choices) {
-        const blankFirst = c.startsWith("_")
-        const blankLast = c.endsWith("_")
-        if (blankFirst || blankLast) {
-            const label = c.split('_').join('')
-            const blank = <input className="DivButton"
-                style={{ marginLeft: "0.5em", marginRight: "0.5em", marginTop: "1em", marginBottom: "1em" }}
-                type="number" id="x" name="x" min="0" max="1000"
-                value={value} onChange={e => setValue(e.currentTarget.valueAsNumber)} />
-            elements.push(<div key={label}>
-                {blankFirst ? blank : null}
+        const parts = c.split(' ')
+        const elementParts = []
+        if (parts.indexOf('_') > -1 || parts.indexOf('*') > -1) {
+            // use first word as button, rest as label(s) for input field(s)
+            elementParts.push(
                 <button
                     style={{
                         marginLeft: "0.5em", marginRight: "0.5em", marginTop: "1em", marginBottom: "1em"
                     }}
-                    onClick={() => onSubmit([c, value])}>
-                    {label}
-                </button>
-                {blankLast ? blank : null}
-            </div >)
+                    onClick={() => onSubmit({ choice: c, n: valueN, s: valueS })}>
+                    {parts[0]}
+                </button>)
+            parts.splice(0, 1)
+            for (let i = 0; i < parts.length; i++) {
+                let p = parts[i];
+                switch (p) {
+                    case '_':
+                        elementParts.push(
+                            <input className="DivButton"
+                                style={{ marginLeft: "0.5em", marginRight: "0.5em", marginTop: "1em", marginBottom: "1em" }}
+                                type="number" id="x" name="x" min="0" max="1000"
+                                value={valueN} onChange={e => setValueN(e.currentTarget.valueAsNumber)} />)
+                        break;
+                    case '*':
+                        elementParts.push(
+                            <input className="DivButton"
+                                style={{ marginLeft: "0.5em", marginRight: "0.5em", marginTop: "1em", marginBottom: "1em" }}
+                                type="text" id="x" name="x"
+                                value={valueS} onChange={e => setValueS(e.currentTarget.value)} />)
+                        break;
+                    default:
+                        elementParts.push(
+                            <span>{p}</span>
+                        )
+                        break;
+                }
+            }
         } else {
-            elements.push(
-                <button key={c}
-                    style={{ margin: "1em", width: "80%" }}
-                    onClick={() => onSubmit([c, undefined])}>
+            elementParts.push(
+                <button
+                    style={{
+                        marginLeft: "0.5em", marginRight: "0.5em", marginTop: "1em", marginBottom: "1em"
+                    }}
+                    onClick={() => onSubmit({ choice: c, n: valueN, s: valueS })}>
                     {c}
-                </button>
-            )
+                </button>)
         }
+        elements.push(<div key={c}>{elementParts}</div>)
     }
+    elements.push(<div key={"Cancel"}>
+        <button
+            style={{
+                marginLeft: "0.5em", marginRight: "0.5em", marginTop: "1em", marginBottom: "1em"
+            }}
+            onClick={() => onCancel()}>
+            Cancel
+                </button>
+    </div>)
 
 
     return (

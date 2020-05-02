@@ -5,6 +5,7 @@ import { useConfirmation } from './ConfirmationService';
 import { useDispatch, useSelector } from 'react-redux';
 import { setPlayerCounter } from '../Actions';
 import { ClientState } from '../ClientState';
+import { ConfirmationResult } from './ConfirmationDialog';
 
 interface PlayerCounterP {
     player: string,
@@ -19,14 +20,6 @@ const PlayerCounter: React.FC<PlayerCounterP> = ({ player, kind }) => {
         return state.game.players[player].counters[kind];
     });
 
-    // function up() {
-    //     console.log(props.kind + " up")
-    // }
-
-    // function down() {
-    //     console.log(props.kind + " down")
-    // }
-
     const dispatch = useDispatch()
 
     const confirmation = useConfirmation();
@@ -39,20 +32,17 @@ const PlayerCounter: React.FC<PlayerCounterP> = ({ player, kind }) => {
             description: "",
             location: { x: e.clientX, y: e.clientY }
         })
-            .then((s: [string, number?]) => {
-                switch (s[0]) {
+            .then((s: ConfirmationResult) => {
+                switch (s.choice) {
                     case "▲":
                         dispatch(setPlayerCounter(player, kind, value + 1));
                         break;
                     case "Set to _":
-                        const n = s[1] as number
-                        dispatch(setPlayerCounter(player, kind, n));
+                        dispatch(setPlayerCounter(player, kind, s.n));
                         break;
                     case "▼":
                         dispatch(setPlayerCounter(player, kind, value - 1));
                         break;
-                    case "Cancel":
-                        return;
                 }
             })
             .catch(() => null);

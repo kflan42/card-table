@@ -1,10 +1,10 @@
 import * as React from "react";
-import { ConfirmationDialog, ConfirmationOptions } from "./ConfirmationDialog";
+import { ConfirmationDialog, ConfirmationOptions, ConfirmationResult } from "./ConfirmationDialog";
 
 // based on https://dev.to/dmtrkovalenko/the-neatest-way-to-handle-alert-dialogs-in-react-1aoe
 
 const ConfirmationServiceContext = React.createContext<
-    (options: ConfirmationOptions) => Promise<[string, number?]>
+    (options: ConfirmationOptions) => Promise<ConfirmationResult>
 >(Promise.reject);
 
 export const useConfirmation = () =>
@@ -17,26 +17,26 @@ export const ConfirmationServiceProvider = ({ children }: { children: React.Reac
     ] = React.useState<ConfirmationOptions | null>(null);
 
     const awaitingPromiseRef = React.useRef<{
-        resolve: (r:[string, number?]) => void;
+        resolve: (r: ConfirmationResult) => void;
         reject: () => void;
     }>();
 
     const openConfirmation = (options: ConfirmationOptions) => {
         setConfirmationState(options);
-        return new Promise<[string, number?]>((resolve, reject) => {
+        return new Promise<ConfirmationResult>((resolve, reject) => {
             awaitingPromiseRef.current = { resolve, reject };
         });
     };
 
-    // const handleClose = () => {
-    //     if (confirmationState && confirmationState.catchOnCancel && awaitingPromiseRef.current) {
-    //         awaitingPromiseRef.current.reject();
-    //     }
+    const handleClose = () => {
+        if (confirmationState && confirmationState.catchOnCancel && awaitingPromiseRef.current) {
+            awaitingPromiseRef.current.reject();
+        }
 
-    //     setConfirmationState(null);
-    // };
+        setConfirmationState(null);
+    };
 
-    const handleSubmit = (choice: [string, number?])  => {
+    const handleSubmit = (choice: ConfirmationResult) => {
         if (awaitingPromiseRef.current) {
             awaitingPromiseRef.current.resolve(choice);
         }
@@ -53,6 +53,7 @@ export const ConfirmationServiceProvider = ({ children }: { children: React.Reac
                 <ConfirmationDialog
                     {...confirmationState as ConfirmationOptions}
                     onSubmit={handleSubmit}
+                    onCancel={handleClose}
                 />
                 : null}
         </>
