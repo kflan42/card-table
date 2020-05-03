@@ -38,7 +38,7 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
         if (parts.indexOf('_') > -1 || parts.indexOf('*') > -1) {
             // use first word as button, rest as label(s) for input field(s)
             elementParts.push(
-                <button
+                <button key={c}
                     style={{
                         marginLeft: "0.5em", marginRight: "0.5em", marginTop: "1em", marginBottom: "1em"
                     }}
@@ -51,28 +51,28 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
                 switch (p) {
                     case '_':
                         elementParts.push(
-                            <input className="DivButton"
+                            <input className="DivButton" key={p}
                                 style={{ marginLeft: "0.5em", marginRight: "0.5em", marginTop: "1em", marginBottom: "1em" }}
                                 type="number" id="x" name="x" min="0" max="1000"
                                 value={valueN} onChange={e => setValueN(e.currentTarget.valueAsNumber)} />)
                         break;
                     case '*':
                         elementParts.push(
-                            <input className="DivButton"
+                            <input className="DivButton" key={p}
                                 style={{ marginLeft: "0.5em", marginRight: "0.5em", marginTop: "1em", marginBottom: "1em" }}
-                                type="text" id="x" name="x"
+                                type="text" id="x" name="x" autoFocus={true}
                                 value={valueS} onChange={e => setValueS(e.currentTarget.value)} />)
                         break;
                     default:
                         elementParts.push(
-                            <span>{p}</span>
+                            <span key={p}>{p}</span>
                         )
                         break;
                 }
             }
         } else {
             elementParts.push(
-                <button
+                <button key={c}
                     style={{
                         marginLeft: "0.5em", marginRight: "0.5em", marginTop: "1em", marginBottom: "1em"
                     }}

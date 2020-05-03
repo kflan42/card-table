@@ -38,7 +38,7 @@ const Card: React.FC<CardProps> = ({
     const cardData = data ? data : null;
 
     // altText, url
-    const front = () => {
+    const getFront = () => {
         if (cardState.facedown) {
             return ["Card Back", "Magic_card_back.jpg"]
         }
@@ -59,14 +59,12 @@ const Card: React.FC<CardProps> = ({
             return ["Loading Card", "react_logo_skewed.png"]
     }
 
+    const front = getFront()
+
     const dispatch = useDispatch()
 
     const click = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
         console.log(event)
-    }
-
-    if (error) {
-        console.error(`Problem loading card ${cardState.name} ${error.message}`)
     }
 
     return (
@@ -75,10 +73,14 @@ const Card: React.FC<CardProps> = ({
             onMouseOut={() => dispatch(hoveredCard(null))}
             onClick={click}
         >
-            {cardState.facedown ? null : <span className="cardtooltiptext">{front()[0]}</span>}
-            {isPending ? <p>{`${cardState.name} Pending`}</p> : null}
-            {error ? <p>{`${cardState.name} Error`}</p> : null}
-            <img style={{ borderColor: ownerColor }} src={front()[1]} alt={front()[0]} />
+            {cardState.facedown ? null
+                : <span className="cardtooltiptext">
+                    {(isPending || error ? cardState.name : front[0]) + (cardState.token ? " (Token)" : "")} </span>}
+            <img style={{ borderColor: ownerColor }} src={front[1]} alt={front[0]} />
+            {isPending ? <span style={{ position: "absolute", top: "5%", left: "5%", color: "white", backgroundColor: ownerColor }}>
+                {`${cardState.name}`}</span> : null}
+            {error ? <span style={{ position: "absolute", top: "5%", left: "5%", color: "white", backgroundColor: ownerColor }}>
+                {`${cardState.name}`}</span> : null}
         </div>
     )
 }

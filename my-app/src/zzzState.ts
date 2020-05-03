@@ -94,7 +94,8 @@ export function createGame(users: string[], decks: string[][]): Game {
                     setNumber: setNumber,
                     owner: playerName,
                     facedown: false,
-                    transformed: false
+                    transformed: false,
+                    token: false,
                 }
                 players[playerName].deck.push(cid)
                 zones[libraryZoneId].cards.push(cid)

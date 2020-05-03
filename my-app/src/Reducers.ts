@@ -15,8 +15,9 @@ import {
     SHUFFLE_LIBRARY,
     SET_PLAYER_COUNTER,
     SET_CARD_COUNTER,
+    CREATE_TOKEN,
 } from './Actions'
-import { Game, HAND, BATTLEFIELD, BattlefieldCard, HoveredCard, LIBRARY } from './ClientState'
+import { Game, HAND, BATTLEFIELD, BattlefieldCard, HoveredCard, LIBRARY, Card } from './ClientState'
 import { createTestGame } from './zzzState'
 import { shuffleArray } from './Utilities'
 
@@ -64,11 +65,34 @@ function gameReducer(
                 newState = update(state, { battlefieldCards: { [action.bfId]: { counters: { $unset: [action.kind] } } } })
             }
             break;
+        case CREATE_TOKEN:
+            action = gameAction as { type: string, owner: string, copyOfCardId?: number, name?: string }
+            // create card for it
+            const maxId = Object.keys(newState.cards).map(k => Number.parseInt(k)).reduce((p, c) => Math.max(p, c))
+            const sourceCard = action.copyOfCardId ? state.cards[action.copyOfCardId] : {
+                name: action.name as string,
+                facedown: false,
+                transformed: false
+            }
+            const newCard: Card = { ...sourceCard, id: maxId + 1, owner: action.owner, token: true }
+            newState = update(newState, { cards: { $merge: { [newCard.id]: newCard } } })
+            // create bfCard
+            newState = newBfCard(newState, action.owner, newCard.id)
+            break;
         default:
             //ignored
             break;
     }
     if (newState !== state) {
+        switch(gameAction.type) {
+            case MOVE_CARD:
+                const action = gameAction as MoveCard
+                console.log(`${gameAction.type} from ${action.srcOwner}'s ${action.srcZone} to ${action.tgtOwner}'s ${action.tgtZone} applied`)
+                break;
+            default:
+                console.log(`${gameAction.type} applied`)
+                break;
+        }
         return newState
     }
     return state
@@ -120,11 +144,7 @@ function handleMoveCard(newState: Game, moveCard: MoveCard) {
             newState = update(newState, { battlefields: { [moveCard.srcOwner]: { battlefieldCards: { $splice: [[srcBfCardIdx, 1]] } } } })
             if (moveCard.tgtZone !== BATTLEFIELD) {
                 // if destination isn't battlefield, need to destry bf card
-                newState = update(newState, {
-                    battlefieldCards: {
-                        $unset: [moveCard.bfId]
-                    }
-                })
+                newState = update(newState, { battlefieldCards: { $unset: [moveCard.bfId] } })
             }
         }
         else {
@@ -148,26 +168,8 @@ function handleMoveCard(newState: Game, moveCard: MoveCard) {
                 newState = update(newState, { battlefields: { [moveCard.tgtOwner]: { battlefieldCards: { $push: [moveCard.bfId] } } } })
             }
             else {
-                let maxId = 0
-                for (const bfId in newState.battlefieldCards) {
-                    maxId = Math.max(maxId, Number.parseInt(bfId))
-                }
                 // create a BFCard
-                const bfc: BattlefieldCard = {
-                    bfId: ++maxId,
-                    cardId: moveCard.cardId,
-                    x: moveCard.toX ? moveCard.toX : 5,
-                    y: moveCard.toY ? moveCard.toY : 5,
-                    tapped: false,
-                    counters: {},
-                    changed: Date.now()
-                }
-                newState = update(newState, {
-                    battlefieldCards: {
-                        $merge: { [bfc.bfId]: bfc }
-                    }
-                })
-                newState = update(newState, { battlefields: { [moveCard.tgtOwner]: { battlefieldCards: { $push: [bfc.bfId] } } } })
+                newState = newBfCard(newState, moveCard.tgtOwner, moveCard.cardId, moveCard.toX, moveCard.toY)
             }
         }
         else {
@@ -193,3 +195,20 @@ function handleMoveCard(newState: Game, moveCard: MoveCard) {
     }
     return newState
 }
+
+function newBfCard(newState: Game, owner: string, cardId: number, toX?: number, toY?: number, ) {
+    const maxId = Object.keys(newState.battlefieldCards).map(k => Number.parseInt(k)).reduce((p, c) => Math.max(p, c))
+    const bfc: BattlefieldCard = {
+        bfId: maxId + 1,
+        cardId: cardId,
+        x: toX ? toX : 5,
+        y: toY ? toY : 5,
+        tapped: false,
+        counters: {},
+        changed: Date.now()
+    }
+    newState = update(newState, { battlefieldCards: { $merge: { [bfc.bfId]: bfc } } })
+    newState = update(newState, { battlefields: { [owner]: { battlefieldCards: { $push: [bfc.bfId] } } } })
+    return newState
+}
+

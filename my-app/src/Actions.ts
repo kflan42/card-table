@@ -78,10 +78,11 @@ export function setCardCounter(bfId:number, kind:string, value:number){
     }
 }
 
-export const CREATE_TOKEN = 'CREATE_TOKEN' // TODO handle in reducer
+export const CREATE_TOKEN = 'CREATE_TOKEN'
 export function createTokenCopy(owner:string, copyOfCardId:number){
     return {
         type: CREATE_TOKEN,
+        owner,
         copyOfCardId,
         name:null,
     }
@@ -89,6 +90,7 @@ export function createTokenCopy(owner:string, copyOfCardId:number){
 export function createTokenNew(owner:string, name:string){
     return {
         type: CREATE_TOKEN,
+        owner,
         copyOfCardId:null,
         name,
     }

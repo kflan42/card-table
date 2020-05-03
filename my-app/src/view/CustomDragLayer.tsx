@@ -32,7 +32,7 @@ function getItemStyles(
 
     // x -= initialOffset.x
     // y -= initialOffset.y
-    // //TODO requires width x height of BF we're over. Snaps on actual move anyway though. ;[x, y] = snapToGrid(x, y)
+    // //requires width x height of BF we're over. Snaps on actual move anyway though. ;[x, y] = snapToGrid(x, y)
     // x += initialOffset.x
     // y += initialOffset.y
 

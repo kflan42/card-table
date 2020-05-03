@@ -73,7 +73,7 @@ const Game: React.FC = () => {
                         dispatch(setCardCounter(bfCard.bfId, s.s, s.n));
                         break;
                     default:
-                        dispatch(setCardCounter(bfCard.bfId, s.s, s.n));
+                        dispatch(setCardCounter(bfCard.bfId, s.choice, s.n));
                         return;
                 }
             })

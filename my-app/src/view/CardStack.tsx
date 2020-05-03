@@ -83,7 +83,7 @@ const CardStack: React.FC<CardStackP> = ({ name, icon = null, owner }) => {
             if (item.srcOwner === owner && item.srcZone === zoneState.name) {
                 return //nothing to do if in same zone, not doing order here like that
             }
-            let i = zoneState.cards.length;
+            let i = -1;
             if (zoneState.name === LIBRARY) {
                 confirmation({
                     choices: ["Top", "Insert _ From Top", "Bottom"],
@@ -107,6 +107,8 @@ const CardStack: React.FC<CardStackP> = ({ name, icon = null, owner }) => {
 
                     })
                     .catch(() => i = -1);
+            } else {
+                i = zoneState.cards.length // drop on bottom
             }
             if (i > -1) {
                 const cardMove: MoveCard = {

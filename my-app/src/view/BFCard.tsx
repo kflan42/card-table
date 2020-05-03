@@ -76,6 +76,11 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
         e.preventDefault();
     }
 
+    if (!bfState) {
+        // if we just moved the card this might re-render for the field it's on removes it
+        return null
+    }
+
     const counters = [];
     for (const counterLabel in bfState.counters) {
         const count = bfState.counters[counterLabel];
@@ -112,38 +117,37 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
 
     const borderWidth = "0.15em";
     return (
-        !bfState ? null :
-            <div
-                ref={drag}
-                style={{
-                    position: "absolute",
-                    top: bfState.y + "%",
-                    left: bfState.x + "%",
-                    transform: bfState.tapped ? "rotate(90deg)" : "",
-                    transition: "top 0.5s, left 0.5s, transform 0.5s, background-image 1s",
-                    transitionTimingFunction: "ease-in",
-                    opacity: isDragging ? 0.25 : undefined,
-                }}
-                onMouseOver={() => dispatch(hoveredBFCard(bfId, cardProps.cardId))}
-                onMouseOut={() => dispatch(hoveredBFCard(null))}
-                onClick={(e) => {
-                    if (!e.isDefaultPrevented()) dispatch(cardAction(TOGGLE_TAP_CARD, bfState.bfId))
-                }}
-            >
-                <Card cardId={cardProps.cardId} borderStyle={borderWidth + " solid"} ></Card>
-                <div style={{
-                    // for counters
-                    position: "absolute",
-                    top: 0, left: borderWidth,
-                    width:"100%",
-                    display: "flex",
-                    flexWrap: "wrap",
-                    justifyContent: "center",
-                    paddingTop: "1em"
-                }}>
-                    {counters}
-                </div>
+        <div
+            ref={drag}
+            style={{
+                position: "absolute",
+                top: bfState.y + "%",
+                left: bfState.x + "%",
+                transform: bfState.tapped ? "rotate(90deg)" : "",
+                transition: "top 0.5s, left 0.5s, transform 0.5s, background-image 1s",
+                transitionTimingFunction: "ease-in",
+                opacity: isDragging ? 0.25 : undefined,
+            }}
+            onMouseOver={() => dispatch(hoveredBFCard(bfId, cardProps.cardId))}
+            onMouseOut={() => dispatch(hoveredBFCard(null))}
+            onClick={(e) => {
+                if (!e.isDefaultPrevented()) dispatch(cardAction(TOGGLE_TAP_CARD, bfState.bfId))
+            }}
+        >
+            <Card cardId={cardProps.cardId} borderStyle={borderWidth + " solid"} ></Card>
+            <div style={{
+                // for counters
+                position: "absolute",
+                top: 0, left: borderWidth,
+                width: "100%",
+                display: "flex",
+                flexWrap: "wrap",
+                justifyContent: "center",
+                paddingTop: "1em"
+            }}>
+                {counters}
             </div>
+        </div>
     )
 
 }

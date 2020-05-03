@@ -1,5 +1,7 @@
 import { randchoice } from "./Utilities"
 
+// image caching seems good, with most hitting memory or disk cache when refreshing a game with same cards
+
 export interface CardData {
     name: string
     set: string
@@ -68,8 +70,7 @@ class CardDB {
         else {
             console.log("beginning load")
             // TODO load only necessary cards from server, this 2MB file is slow
-            // TODO tho need to pray image caching is good, 50 images was 9MB, tho that's with 60 cards on the field
-            // TODO re-run lighthouse with prod server, dev one has huge dev js piles of files, my code negligible
+            // re-run lighthouse with prod server, dev one has huge dev js piles of files, my code negligible
             CardDB.cards = fetch('my-cards.json').then(r => { return r.json() })
             CardDB.cards.then((cds) => {
                 console.log(`${cds.length} cards loaded`)
@@ -88,7 +89,8 @@ class CardDB {
         // fast path
         const c2 = CardDB.getCardFromMap(name)
         if (c2) return c2;
-        throw Error(`no CardData found for ${name}`)
+        console.warn(`CardDB card not found for ${name}`)
+        throw Error(`CardDB card not found for ${name}`)
     }
 
 }

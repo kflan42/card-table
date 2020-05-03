@@ -44,6 +44,7 @@ export interface Card {
     owner: string,
     facedown: boolean,
     transformed: boolean,
+    token: boolean,
 }
 
 export interface Player {
