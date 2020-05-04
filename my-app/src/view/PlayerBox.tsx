@@ -4,10 +4,11 @@ import './_style.css';
 import PlayerCounter from './PlayerCounter';
 import CardStack from './CardStack';
 import { EXILE, COMMAND_ZONE, GRAVEYARD, LIBRARY, HAND, ClientState } from '../ClientState';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { useConfirmation } from './ConfirmationService';
 import { setPlayerCounter } from '../Actions';
 import { ConfirmationResult } from './ConfirmationDialog';
+import { usePlayerDispatch } from '../PlayerDispatch';
 
 interface PlayerBoxP {
     player: string
@@ -24,7 +25,7 @@ const PlayerBox: React.FC<PlayerBoxP> = ({ player }) => {
         counters.push(<PlayerCounter key={kind} player={player} kind={kind} />)
     }
 
-    const dispatch = useDispatch()
+    const playerDispatch = usePlayerDispatch()
     const confirmation = useConfirmation();
 
     const addCounter = () => {
@@ -37,7 +38,7 @@ const PlayerBox: React.FC<PlayerBoxP> = ({ player }) => {
             .then((s: ConfirmationResult) => {
                 switch (s.choice) {
                     case "Create Name * Count _":
-                        dispatch(setPlayerCounter(player, s.s, s.n));
+                        playerDispatch(setPlayerCounter(player, s.s, s.n));
                         break;
                 }
             })
@@ -46,10 +47,10 @@ const PlayerBox: React.FC<PlayerBoxP> = ({ player }) => {
 
     return (
         /* eslint-disable jsx-a11y/accessible-emoji */
-        <div className="PlayerBox">
+        <div className="PlayerBox" style={{ backgroundColor: playerState.color }}>
             <div style={{
                 whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                maxWidth: "6em", cursor: "default"
+                maxWidth: "6em",
             }}>
                 <strong>{player}</strong>
             </div>

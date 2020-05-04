@@ -47,8 +47,8 @@
 .Log {
   display: flex;
   flex-direction: column;
-  background-color: black;
-  color: beige;
+  color: black;
+  border-left: 0.1em solid black;
   flex-shrink: 0;
   flex-grow: 0;
 }
@@ -69,40 +69,41 @@
   flex-grow: 1;
   text-align: center;
   vertical-align: middle;
-  background-color: tan;
+  background-color: saddlebrown;
   display: flex;
   flex-direction: column;
   flex-wrap: wrap;
-  justify-content: space-evenly;
+  justify-content: flex-start;
   overflow-x: auto;
+  padding: 0.1em;
 }
 
 .Playmat {
   margin: 0.1em;
-  background-color: lightblue;
   min-height: 20em;
-  height: 48%; /* buffer a pinch for scrollbar */
-  width: 48%; /* make adjustable for 2,4,6 players*/
+  height: 49%; /* buffer a pinch for scrollbar */
+  width: 40%; /* make adjustable for 2,4,6 players*/
   display: flex;
   flex-direction: row;
 }
 
 .PlayerBox {
-  background-color: whitesmoke;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   user-select: none;
   min-width: 5em;
+  padding: 0.05em;
 }
 
 .PlayerBox > div {
+  background-color: Gainsboro;
   margin: 0.05em;
+  border: 0.1em solid darkgray;
 }
 
 .DivButton, button {
   cursor: pointer;
-  border: 0.1em solid darkgray;
 }
 
 .DivButton:hover, button:hover {
@@ -110,7 +111,7 @@
 }
 
 .Battlefield {
-  background-color: lightskyblue;
+  background-color: burlywood;
   width: 100%;
   height: 100%;
   position: relative;

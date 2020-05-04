@@ -15,11 +15,15 @@ export function shuffleLibrary(owner: string) {
     }
 }
 
+export interface PlayerAction {
+    type: string,
+    who: string,
+    when: number
+}
+
 
 export const MOVE_CARD = 'MOVE_CARD'
-export interface MoveCard {
-    type: string
-    when: number
+export interface MoveCard extends PlayerAction {
     bfId?: number
     cardId: number
     srcZone: string
@@ -51,15 +55,17 @@ export function hoveredBFCard(bfId: number | null, cardId?: number) {
 export const TOGGLE_TAP_CARD = 'TOGGLE_TAP_CARD'
 export const TOGGLE_TRANSFORM_CARD = 'TOGGLE_TRANSFORM_CARD'
 export const TOGGLE_FACEDOWN_CARD = 'TOGGLE_FACEDOWN_CARD'
-export function cardAction(type: string, id: number) {
+export interface CardAction { type: string, id: number, silent?:boolean }
+export function cardAction(type: string, id: number, silent?:boolean) : CardAction {
     return {
         type,
-        id
+        id,
+        silent
     }
 }
 
 export const SET_PLAYER_COUNTER = 'SET_PLAYER_COUNTER'
-export function setPlayerCounter(player:string, kind:string, value:number){
+export function setPlayerCounter(player: string, kind: string, value: number) {
     return {
         type: SET_PLAYER_COUNTER,
         player,
@@ -69,7 +75,7 @@ export function setPlayerCounter(player:string, kind:string, value:number){
 }
 
 export const SET_CARD_COUNTER = 'SET_CARD_COUNTER'
-export function setCardCounter(bfId:number, kind:string, value:number){
+export function setCardCounter(bfId: number, kind: string, value: number) {
     return {
         type: SET_CARD_COUNTER,
         bfId,
@@ -79,19 +85,27 @@ export function setCardCounter(bfId:number, kind:string, value:number){
 }
 
 export const CREATE_TOKEN = 'CREATE_TOKEN'
-export function createTokenCopy(owner:string, copyOfCardId:number){
+export function createTokenCopy(owner: string, copyOfCardId: number) {
     return {
         type: CREATE_TOKEN,
         owner,
         copyOfCardId,
-        name:null,
+        name: null,
     }
 }
-export function createTokenNew(owner:string, name:string){
+export function createTokenNew(owner: string, name: string) {
     return {
         type: CREATE_TOKEN,
         owner,
-        copyOfCardId:null,
+        copyOfCardId: null,
         name,
+    }
+}
+
+export const ADD_LOG_LINE = 'ADD_LOG_LINE'
+export function addLogLine(line: string) {
+    return {
+        type: ADD_LOG_LINE,
+        line
     }
 }

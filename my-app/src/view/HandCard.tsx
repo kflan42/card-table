@@ -5,10 +5,10 @@ import React, { useEffect } from 'react'
 import { DropTargetMonitor, useDrag, useDrop } from 'react-dnd';
 import Card from './Card';
 import { ItemTypes, DragCard } from './DnDUtils';
-import { useDispatch } from 'react-redux';
-import { MoveCard, MOVE_CARD } from '../Actions';
+import { MOVE_CARD } from '../Actions';
 import { HAND } from '../ClientState';
 import { getEmptyImage } from 'react-dnd-html5-backend';
+import { usePlayerDispatch } from '../PlayerDispatch';
 
 
 interface HandCardProps {
@@ -23,7 +23,7 @@ const HandCard: React.FC<HandCardProps> = ({
     handIdx,
     owner
 }) => {
-    const dispatch = useDispatch()
+    const playerDispatch = usePlayerDispatch()
 
     const dragCard: DragCard = {
         type: ItemTypes.CARD, cardId: cardId, srcZone: HAND, srcOwner: owner
@@ -43,15 +43,14 @@ const HandCard: React.FC<HandCardProps> = ({
 
     function moveCard(draggedCard: DragCard) {
         if (draggedCard.cardId !== cardId) {
-            const cardMove: MoveCard = {
+            const cardMove = {
                 ...draggedCard,
                 type: MOVE_CARD,
-                when: Date.now(),
                 tgtZone: HAND,
                 tgtOwner: owner,
                 toIdx: handIdx,
             }
-            dispatch(cardMove)
+            playerDispatch(cardMove)
         }
     }
 

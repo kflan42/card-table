@@ -10,6 +10,7 @@ import { ItemTypes, DragCard } from './DnDUtils';
 import { getEmptyImage } from 'react-dnd-html5-backend';
 import { useConfirmation } from './ConfirmationService';
 import { ConfirmationResult } from './ConfirmationDialog';
+import { usePlayerDispatch } from '../PlayerDispatch';
 
 interface BFCardProps {
     bfId: number,
@@ -21,6 +22,7 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
     const bfState = useSelector((state: ClientState) => state.game.battlefieldCards[bfId])
 
     const dispatch = useDispatch()
+    const playerDispatch = usePlayerDispatch()
 
     const cardProps = { cardId: bfState?.cardId }
 
@@ -62,13 +64,13 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
             .then((s: ConfirmationResult) => {
                 switch (s.choice) {
                     case "▲":
-                        dispatch(setCardCounter(bfId, kind, current + 1));
+                        playerDispatch(setCardCounter(bfId, kind, current + 1));
                         break;
                     case "Set Count _":
-                        dispatch(setCardCounter(bfId, kind, s.n));
+                        playerDispatch(setCardCounter(bfId, kind, s.n));
                         break;
                     case "▼":
-                        dispatch(setCardCounter(bfId, kind, current - 1));
+                        playerDispatch(setCardCounter(bfId, kind, current - 1));
                         break;
                 }
             })
@@ -124,14 +126,14 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
                 top: bfState.y + "%",
                 left: bfState.x + "%",
                 transform: bfState.tapped ? "rotate(90deg)" : "",
-                transition: "top 0.5s, left 0.5s, transform 0.5s, background-image 1s",
+                transition: "top 0.5s, left 0.5s, transform 0.5s, background-image 0.5s",
                 transitionTimingFunction: "ease-in",
                 opacity: isDragging ? 0.25 : undefined,
             }}
             onMouseOver={() => dispatch(hoveredBFCard(bfId, cardProps.cardId))}
             onMouseOut={() => dispatch(hoveredBFCard(null))}
             onClick={(e) => {
-                if (!e.isDefaultPrevented()) dispatch(cardAction(TOGGLE_TAP_CARD, bfState.bfId))
+                if (!e.isDefaultPrevented()) playerDispatch(cardAction(TOGGLE_TAP_CARD, bfState.bfId))
             }}
         >
             <Card cardId={cardProps.cardId} borderStyle={borderWidth + " solid"} ></Card>

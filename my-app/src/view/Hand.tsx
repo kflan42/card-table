@@ -2,12 +2,13 @@ import React from 'react'
 
 import './_style.css';
 import { ClientState, HAND } from '../ClientState';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { getZone } from '../zzzState';
 import { useDrop, DropTargetMonitor } from 'react-dnd';
 import MemoizeHandCard from './HandCard';
 import { ItemTypes, DragCard } from './DnDUtils';
-import { MoveCard, MOVE_CARD } from '../Actions';
+import { MOVE_CARD } from '../Actions';
+import { usePlayerDispatch } from '../PlayerDispatch';
 
 export interface HandProps {
 }
@@ -18,7 +19,7 @@ const Hand: React.FC<HandProps> = () => {
         return getZone(state.game, state.playerPrefs.name, HAND)
     })
 
-    const dispatch = useDispatch()
+    const playerDispatch = usePlayerDispatch()
 
     const [, drop] = useDrop({
         accept: [ItemTypes.CARD, ItemTypes.BFCARD],
@@ -30,14 +31,13 @@ const Hand: React.FC<HandProps> = () => {
                 return; // don't duplicate HandCard's efforts
             }
             // allow cross zone moves on drop
-            const cardMove: MoveCard = {
+            const cardMove = {
                 ...item,
                 type: MOVE_CARD,
-                when: Date.now(),
                 tgtZone: HAND,
                 tgtOwner: zoneState?.owner,
             }
-            dispatch(cardMove)
+            playerDispatch(cardMove)
         },
     })
 
@@ -54,7 +54,7 @@ const Hand: React.FC<HandProps> = () => {
 
     return (
         <div ref={drop} className="Hand">
-            <span style={{ writingMode: "vertical-lr", textOrientation: "upright", minHeight: "13em" }}>
+            <span style={{ userSelect: "none", writingMode: "vertical-lr", textOrientation: "upright", minHeight: "13em" }}>
                 Hand
             </span>
             {listItems}

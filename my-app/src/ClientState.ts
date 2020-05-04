@@ -14,6 +14,12 @@ export interface PlayerPrefs {
     name: string,
 }
 
+export interface LogLine {
+    who: string,
+    when: number,
+    line: string
+}
+
 export const HAND: string = "Hand"
 export const LIBRARY: string = "Library"
 export const GRAVEYARD: string = "Graveyard"
@@ -31,6 +37,7 @@ export interface Game {
     battlefields: { [index: string]: Battlefield }
     /** index by bfCard bfId */
     battlefieldCards: { [index: number]: BattlefieldCard }
+    actionLog: LogLine[]
 }
 
 export interface Card {

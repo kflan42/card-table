@@ -1,13 +1,14 @@
 import React, { useState, ChangeEvent } from 'react'
-import { useSelector, useDispatch } from 'react-redux'
+import { useSelector } from 'react-redux'
 import { getZone } from '../zzzState'
-import { ClientState, LIBRARY } from '../ClientState'
+import { ClientState, LIBRARY, HAND } from '../ClientState'
 import StackCard from './StackCard'
 import { useDrop, DropTargetMonitor } from 'react-dnd'
 import { ItemTypes, DragCard } from './DnDUtils'
-import { MoveCard, MOVE_CARD, shuffleLibrary } from '../Actions'
+import { MOVE_CARD, shuffleLibrary, addLogLine } from '../Actions'
 import { useConfirmation } from './ConfirmationService'
 import { ConfirmationResult } from './ConfirmationDialog'
+import { usePlayerDispatch } from '../PlayerDispatch'
 
 interface CardStackP {
     name: string
@@ -27,22 +28,35 @@ const CardStack: React.FC<CardStackP> = ({ name, icon = null, owner }) => {
     })
 
     const cards = useSelector((state: ClientState) => state.game.cards)
+    const playerName = useSelector((state: ClientState) => state.playerPrefs.name)
 
-    const dispatch = useDispatch()
+    const playerDispatch = usePlayerDispatch()
     const confirmation = useConfirmation();
 
     function stackButtonClicked(e: React.MouseEvent<HTMLDivElement, MouseEvent>) {
         if (!shown) {
             if (zoneState.name === LIBRARY) {
                 confirmation({
-                    choices: ["Search", "Look at Top _"],
+                    choices: ["Draw 1", "Search", "Look at Top _"],
                     catchOnCancel: true,
-                    title: `Look at ${zoneState.name}?`,
+                    title: `${zoneState.name} Action?`,
                     description: "",
                     location: { x: e.clientX, y: e.clientY }
                 })
                     .then((s: ConfirmationResult) => {
                         switch (s.choice) {
+                            case "Draw 1":
+                                const cardMove = {
+                                    type: MOVE_CARD,
+                                    cardId:zoneState.cards[0],
+                                    srcZone: zoneState.name,
+                                    srcOwner: owner,
+                                    tgtZone: HAND,
+                                    tgtOwner: owner,
+                                    toIdx: 0 // put first
+                                }
+                                playerDispatch(cardMove)
+                                return; // don't want to show
                             case "Search":
                                 setTopN([]);
                                 break;
@@ -52,9 +66,15 @@ const CardStack: React.FC<CardStackP> = ({ name, icon = null, owner }) => {
                         }
                         setShown(true)
                         setQuery('')
+                        playerDispatch(addLogLine(
+                            ` ${s.choice.replace("_", `${s.n} of`)} ${playerName === owner ? "their" : `${owner}'s`} Library`))
                     })
                     .catch(() => setShown(false));
             } else {
+                if(zoneState.name === HAND) {
+                    playerDispatch(addLogLine(
+                        ` looked at ${playerName === owner ? "their" : `${owner}'s`} Hand`))
+                }
                 setShown(true)
                 setQuery('')
             }
@@ -68,7 +88,7 @@ const CardStack: React.FC<CardStackP> = ({ name, icon = null, owner }) => {
         if (!shown) {
             setQuery('')
         }
-        dispatch(shuffleLibrary(owner))
+        playerDispatch(shuffleLibrary(owner))
     }
 
     function queryChanged(event: ChangeEvent<HTMLInputElement>) {
@@ -83,7 +103,13 @@ const CardStack: React.FC<CardStackP> = ({ name, icon = null, owner }) => {
             if (item.srcOwner === owner && item.srcZone === zoneState.name) {
                 return //nothing to do if in same zone, not doing order here like that
             }
-            let i = -1;
+            const cardMove = {
+                ...item,
+                type: MOVE_CARD,
+                tgtZone: name,
+                tgtOwner: owner,
+                toIdx: zoneState.cards.length // drop on bottom
+            }
             if (zoneState.name === LIBRARY) {
                 confirmation({
                     choices: ["Top", "Insert _ From Top", "Bottom"],
@@ -95,31 +121,20 @@ const CardStack: React.FC<CardStackP> = ({ name, icon = null, owner }) => {
                     .then((s: ConfirmationResult) => {
                         switch (s.choice) {
                             case "Top":
-                                i = 0;
+                                cardMove.toIdx = 0;
                                 break;
                             case "Insert _ From Top":
-                                i = s.n; // 0 based indexing
+                                cardMove.toIdx = s.n; // 0 based indexing
                                 break;
                             case "Bottom":
-                                i = zoneState.cards.length;
+                                cardMove.toIdx = zoneState.cards.length;
                                 break;
                         }
-
+                        playerDispatch(cardMove)
                     })
-                    .catch(() => i = -1);
+                    .catch(() => null);
             } else {
-                i = zoneState.cards.length // drop on bottom
-            }
-            if (i > -1) {
-                const cardMove: MoveCard = {
-                    ...item,
-                    type: MOVE_CARD,
-                    when: Date.now(),
-                    tgtZone: name,
-                    tgtOwner: owner,
-                    toIdx: i
-                }
-                dispatch(cardMove)
+                playerDispatch(cardMove)
             }
         },
         collect: (monitor: DropTargetMonitor) => ({

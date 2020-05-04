@@ -14,8 +14,9 @@ const Table: React.FC = () => {
     });
 
     const mats = []
+    const width = 1.0/Math.ceil(Object.keys(playersState).length/2)
     for (const player in playersState) {
-        mats.push(<Playmat key={player} player={player} />)
+        mats.push(<Playmat key={player} player={player} width={width} />)
     }
 
     return (

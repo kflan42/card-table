@@ -114,7 +114,8 @@ export function createGame(users: string[], decks: string[][]): Game {
         battlefields: battlefields,
         zones: zones,
         cards: cards,
-        battlefieldCards: battlefieldCards
+        battlefieldCards: battlefieldCards,
+        actionLog: [{who:users[0], when: Date.now(), line:"Test Game Begun"}]
     };
 }
 
@@ -124,9 +125,11 @@ export function getZone(game: Game, player: string, zone: string) {
 }
 
 export function createTestGame() {
-    const initialGame = createGame(["alice", "bob",
+    const initialGame = createGame([
+        "alice", "bob",
         "chad", "dude",
-        "erwin"],
+        "erwin"
+    ],
         [xMarksTheSpot, kickStartMyHeart,
             xMarksTheSpot, kickStartMyHeart,
             xMarksTheSpot

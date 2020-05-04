@@ -1,12 +1,13 @@
 import React, { useRef } from 'react'
 
 import './_style.css';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { ClientState, BATTLEFIELD } from '../ClientState';
 import BFCard from './BFCard';
 import { useDrop } from 'react-dnd';
 import { ItemTypes, DragCard } from "./DnDUtils";
-import { MoveCard, MOVE_CARD } from '../Actions';
+import { MOVE_CARD } from '../Actions';
+import { usePlayerDispatch } from '../PlayerDispatch';
 
 /** Takes px and returns %. */
 export function snapToGrid(x: number, y: number, width: number, height: number) {
@@ -30,7 +31,7 @@ const Battlefield: React.FC<BFP> = ({ player }) => {
         return state.game.battlefieldCards
     })
 
-    const dispatch = useDispatch()
+    const playerDispatch = usePlayerDispatch()
 
     const bf = useRef<HTMLDivElement>(null);
 
@@ -56,7 +57,7 @@ const Battlefield: React.FC<BFP> = ({ player }) => {
                 [left, top] = snapToGrid(left, top, r.width, r.height)
             }
 
-            const cardMove: MoveCard = {
+            const cardMove = {
                 ...item,
                 type: MOVE_CARD,
                 when: Date.now(),
@@ -65,7 +66,7 @@ const Battlefield: React.FC<BFP> = ({ player }) => {
                 toX: left,
                 toY: top
             }
-            dispatch(cardMove)
+            playerDispatch(cardMove)
         },
     })
 

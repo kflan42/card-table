@@ -1,28 +1,54 @@
-import React from 'react'
+import React, { useRef, useEffect } from 'react'
 
 import './_style.css';
-import { Clock } from './Clock';
+import Clock from './Clock';
+import { useSelector } from 'react-redux';
+import { ClientState, LogLine } from '../ClientState';
 
 
 
 const Log: React.FC = () => {
 
-    let logLines = "hello world";
+    const logLines = useSelector((state: ClientState) => state.game.actionLog)
 
-    for (let index = 0; index < 100; index++) {
-        logLines = `${logLines}\n${index} alice did a thing`
+    const players = useSelector((state: ClientState) => Object.keys(state.game.players))
 
+    const linesEndRef: React.MutableRefObject<HTMLDivElement | null> = useRef(null)
+
+    const scrollToBottom = () => {
+        if (linesEndRef.current) {
+            linesEndRef.current.scrollIntoView({ behavior: "auto" })
+        }
+    }
+    useEffect(scrollToBottom, [logLines]);
+
+    let i = 0;
+
+    function renderLogLine(logLine: LogLine) {
+        const words = logLine.line.split(/[ ']/)
+        let otherPlayers = players.filter(p => p !== logLine.who)
+        const crossPlayer = words.filter(w => otherPlayers.includes(w)).length > 0
+
+        return <div key={i++} style={{ margin: "0.1em", color: crossPlayer ? "DarkRed" : undefined }}>
+            <strong>{logLine.who}</strong> {logLine.line}
+        </div>
     }
 
     return (
         <div className="Log">
             <Clock></Clock>
-            <textarea style={{
-                flexGrow: 1
-            }}
-                value={logLines}
-                readOnly={true}
-            ></textarea>
+            <div style={{
+                flexGrow: 1,
+                overflowY: "scroll",
+                padding: "0.1em",
+                width: "15em",
+                maxWidth: "15em",
+                fontSize: "small",
+
+            }}>
+                {logLines.map(renderLogLine)}
+                <div ref={linesEndRef}>----</div>
+            </div>
         </div>
     )
 }

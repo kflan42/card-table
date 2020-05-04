@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react'
 import './_style.css';
 import Hand from './Hand';
 import Table from './Table';
-import { useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { ClientState, BattlefieldCard } from '../ClientState';
 import { localStateLoaded, cardAction, TOGGLE_TRANSFORM_CARD, TOGGLE_FACEDOWN_CARD, setCardCounter, createTokenCopy, createTokenNew } from '../Actions';
@@ -11,11 +10,9 @@ import CardPopup from './CardPopup';
 import CustomDragLayer from './CustomDragLayer';
 import { useConfirmation } from './ConfirmationService';
 import { ConfirmationResult } from './ConfirmationDialog';
+import { usePlayerDispatch } from '../PlayerDispatch';
 
 const Game: React.FC = () => {
-
-    const { gameId } = useParams()
-
     const userName = useSelector((state: ClientState) => state.playerPrefs.name)
     const cardUnderCursor = useSelector((state: ClientState) => state.cardUnderCursor)
     const bfCardUnderCursor = useSelector((state: ClientState) =>
@@ -27,6 +24,7 @@ const Game: React.FC = () => {
     const [cardPopupTransformed, setCardPopupTransformed] = useState(false)
 
     const dispatch = useDispatch()
+    const playerDispatch = usePlayerDispatch()
 
     useEffect(() => {
         // initial load effect only, prevents "too many re-renders error"
@@ -50,10 +48,10 @@ const Game: React.FC = () => {
         }).then((s: ConfirmationResult) => {
             switch (s.choice.split(' ')[0]) {
                 case "Copy":
-                    dispatch(createTokenCopy(userName, cardUnderCursor.cardId as number));
+                    playerDispatch(createTokenCopy(userName, cardUnderCursor.cardId as number));
                     break;
                 case "New":
-                    dispatch(createTokenNew(userName, s.s))
+                    playerDispatch(createTokenNew(userName, s.s))
                     break;
             }
         })
@@ -70,10 +68,10 @@ const Game: React.FC = () => {
             .then((s: ConfirmationResult) => {
                 switch (s.choice) {
                     case "Create * _":
-                        dispatch(setCardCounter(bfCard.bfId, s.s, s.n));
+                        playerDispatch(setCardCounter(bfCard.bfId, s.s, s.n));
                         break;
                     default:
-                        dispatch(setCardCounter(bfCard.bfId, s.choice, s.n));
+                        playerDispatch(setCardCounter(bfCard.bfId, s.choice, s.n));
                         return;
                 }
             })
@@ -94,13 +92,13 @@ const Game: React.FC = () => {
                 break;
             case 't':
                 if (cardUnderCursor.cardId !== null) {
-                    dispatch(cardAction(TOGGLE_TRANSFORM_CARD, cardUnderCursor.cardId))
+                    playerDispatch(cardAction(TOGGLE_TRANSFORM_CARD, cardUnderCursor.cardId, bfCardUnderCursor === null))
                     event.preventDefault()
                 }
                 break;
             case 'f':
                 if (cardUnderCursor.cardId !== null) {
-                    dispatch(cardAction(TOGGLE_FACEDOWN_CARD, cardUnderCursor.cardId))
+                    playerDispatch(cardAction(TOGGLE_FACEDOWN_CARD, cardUnderCursor.cardId, bfCardUnderCursor === null))
                     event.preventDefault()
                 }
                 break;
@@ -118,12 +116,10 @@ const Game: React.FC = () => {
     }
 
 
-    /* eslint-disable jsx-a11y/accessible-emoji */
     //tabIndex means it can recieve focus which means it can receive keyboard events
     return userName
         ? (
             <div className="Game" onKeyPress={keyPress} tabIndex={0}>
-                <span>🎲 Game {gameId} as {userName} </span>
                 <Table />
                 <Hand />
                 {cardPopupShown !== null ? <CardPopup cardId={cardPopupShown} transformed={cardPopupTransformed} /> : undefined}

@@ -87,7 +87,7 @@ class Login extends React.Component<LoginP> {
       const g = (v & 0x00ff00) >> 8
       const b = v & 0x0000ff
       // const s = r.toString(16) + g.toString(16) + b.toString(16)
-      if (r < 0xa0 || g < 0xa0 || b < 0xa0) {
+      if ((r < 0xa0 || g < 0xa0 || b < 0xa0) /* && (r > 0x40 || g > 0x40 || b > 0x40) */) {
         colorItems.push(<span
           style={{ backgroundColor: color, color: "white", cursor: "pointer" }}
           onClick={() => this.pickColor(color)}
@@ -236,7 +236,7 @@ export const colors: { [index: string]: number } = {
   "Bisque": 0xFFE4C4,
   "NavajoWhite": 0xFFDEAD,
   "Wheat": 0xF5DEB3,
-  "BurlyWood": 0xDEB887,
+  // used for Battlefield "BurlyWood": 0xDEB887,
   "Tan": 0xD2B48C,
   "RosyBrown": 0xBC8F8F,
   "SandyBrown": 0xF4A460,

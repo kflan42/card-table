@@ -36,7 +36,9 @@ const App: React.FC = () => {
                                     <Game />
                                 </ConfirmationServiceProvider>
                             </DndProvider>
-                            <Log />
+                            <ConfirmationServiceProvider>
+                                <Log />
+                            </ConfirmationServiceProvider>
                         </Provider>
                     </Route>
                     <Route path="">

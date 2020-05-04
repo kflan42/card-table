@@ -2,10 +2,11 @@ import React from 'react'
 
 import './_style.css';
 import { useConfirmation } from './ConfirmationService';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { setPlayerCounter } from '../Actions';
 import { ClientState } from '../ClientState';
 import { ConfirmationResult } from './ConfirmationDialog';
+import { usePlayerDispatch } from '../PlayerDispatch';
 
 interface PlayerCounterP {
     player: string,
@@ -20,7 +21,7 @@ const PlayerCounter: React.FC<PlayerCounterP> = ({ player, kind }) => {
         return state.game.players[player].counters[kind];
     });
 
-    const dispatch = useDispatch()
+    const playerDispatch = usePlayerDispatch()
 
     const confirmation = useConfirmation();
 
@@ -35,13 +36,13 @@ const PlayerCounter: React.FC<PlayerCounterP> = ({ player, kind }) => {
             .then((s: ConfirmationResult) => {
                 switch (s.choice) {
                     case "▲":
-                        dispatch(setPlayerCounter(player, kind, value + 1));
+                        playerDispatch(setPlayerCounter(player, kind, value + 1));
                         break;
                     case "Set to _":
-                        dispatch(setPlayerCounter(player, kind, s.n));
+                        playerDispatch(setPlayerCounter(player, kind, s.n));
                         break;
                     case "▼":
-                        dispatch(setPlayerCounter(player, kind, value - 1));
+                        playerDispatch(setPlayerCounter(player, kind, value - 1));
                         break;
                 }
             })

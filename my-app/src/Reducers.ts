@@ -16,6 +16,9 @@ import {
     SET_PLAYER_COUNTER,
     SET_CARD_COUNTER,
     CREATE_TOKEN,
+    ADD_LOG_LINE,
+    PlayerAction,
+    CardAction,
 } from './Actions'
 import { Game, HAND, BATTLEFIELD, BattlefieldCard, HoveredCard, LIBRARY, Card } from './ClientState'
 import { createTestGame } from './zzzState'
@@ -24,74 +27,96 @@ import { shuffleArray } from './Utilities'
 
 function gameReducer(
     state: Game = createTestGame(),
-    gameAction: { type: string }
+    gameAction: PlayerAction
 ) {
-    let newState = state
+    let [newState, logLine]: [Game?, string?] = [undefined, undefined]
     let action = null
+
+    function getBfCardName(g: Game, bfId: number) {
+        const bfCard = g.battlefieldCards[bfId]
+        const card = g.cards[bfCard.cardId]
+        return card.facedown ? "a facedown card" : card.name
+    }
+
     switch (gameAction.type) {
         case MOVE_CARD:
-            newState = handleMoveCard(state, gameAction as MoveCard)
+            [newState, logLine] = handleMoveCard(state, gameAction as MoveCard)
             break;
         case SHUFFLE_LIBRARY:
-            action = gameAction as { type: string, owner: string }
-            const zoneId = newState.players[action.owner].zones[LIBRARY]
+            action = gameAction as { type: string, who: string, when: number, owner: string }
+            const zoneId = state.players[action.owner].zones[LIBRARY]
             newState = update(state, { zones: { [zoneId]: { cards: a => { shuffleArray(a); return a; } } } })
+            logLine = ` shuffled ${action.who === action.owner ? "their" : `${action.owner}'s`} Library`
             break;
         case TOGGLE_TAP_CARD:
-            action = gameAction as { type: string, id: number }
+            action = gameAction as unknown as CardAction
             newState = update(state, { battlefieldCards: { [action.id]: { $toggle: ['tapped'] } } })
+            logLine = ` tapped ${getBfCardName(state, action.id)}`
             break;
         case TOGGLE_TRANSFORM_CARD:
-            action = gameAction as { type: string, id: number }
+            action = gameAction as unknown as CardAction
             newState = update(state, { cards: { [action.id]: { $toggle: ['transformed'] } } })
+            logLine = action.silent ? undefined : ` transformed ${newState.cards[action.id].name}`
             break;
         case TOGGLE_FACEDOWN_CARD:
-            action = gameAction as { type: string, id: number }
+            action = gameAction as unknown as CardAction
             newState = update(state, { cards: { [action.id]: { $toggle: ['facedown'] } } })
+            logLine = action.silent ? undefined : ` flipped ${newState.cards[action.id].name}`
             break;
         case SET_PLAYER_COUNTER:
-            action = gameAction as { type: string, player: string, kind: string, value: number }
+            action = gameAction as { type: string, who: string, when: number, player: string, kind: string, value: number }
             if (action.value !== 0) {
                 newState = update(state, { players: { [action.player]: { counters: { $merge: { [action.kind]: action.value } } } } })
             } else {
                 newState = update(state, { players: { [action.player]: { counters: { $unset: [action.kind] } } } })
             }
+            logLine = ` set ${action.player}'s ${action.kind} counter to ${action.value}`
             break;
         case SET_CARD_COUNTER:
-            action = gameAction as { type: string, bfId: number, kind: string, value: number }
+            action = gameAction as { type: string, who: string, when: number, bfId: number, kind: string, value: number }
             if (action.value !== 0) {
                 newState = update(state, { battlefieldCards: { [action.bfId]: { counters: { $merge: { [action.kind]: action.value } } } } })
             } else {
                 newState = update(state, { battlefieldCards: { [action.bfId]: { counters: { $unset: [action.kind] } } } })
             }
+            logLine = ` set ${getBfCardName(newState, action.bfId)}'s ${action.kind} counter to ${action.value}`
             break;
         case CREATE_TOKEN:
-            action = gameAction as { type: string, owner: string, copyOfCardId?: number, name?: string }
+            action = gameAction as { type: string, who: string, when: number, owner: string, copyOfCardId?: number, name?: string }
             // create card for it
-            const maxId = Object.keys(newState.cards).map(k => Number.parseInt(k)).reduce((p, c) => Math.max(p, c))
+            const maxId = Object.keys(state.cards).map(k => Number.parseInt(k)).reduce((p, c) => Math.max(p, c))
             const sourceCard = action.copyOfCardId ? state.cards[action.copyOfCardId] : {
                 name: action.name as string,
                 facedown: false,
                 transformed: false
             }
             const newCard: Card = { ...sourceCard, id: maxId + 1, owner: action.owner, token: true }
-            newState = update(newState, { cards: { $merge: { [newCard.id]: newCard } } })
+            newState = update(state, { cards: { $merge: { [newCard.id]: newCard } } })
             // create bfCard
             newState = newBfCard(newState, action.owner, newCard.id)
+            logLine = ` created  ${newCard.name}`
+            break;
+        case ADD_LOG_LINE:
+            action = gameAction as { type: string, who: string, when: number, line: string }
+            const actionLine = { who: action.who, when: action.when, line: action.line }
+            newState = update(state, { actionLog: { $push: [actionLine] } })
+            logLine = undefined // already added a line
             break;
         default:
-            //ignored
+            // ignored, e.g. all non-game state affecting actions, since all go through all combined reducers
             break;
     }
-    if (newState !== state) {
-        switch(gameAction.type) {
-            case MOVE_CARD:
-                const action = gameAction as MoveCard
-                console.log(`${gameAction.type} from ${action.srcOwner}'s ${action.srcZone} to ${action.tgtOwner}'s ${action.tgtZone} applied`)
-                break;
-            default:
-                console.log(`${gameAction.type} applied`)
-                break;
+
+    if (newState !== undefined) {
+        console.log(`${JSON.stringify(gameAction)} applied`)
+        if (logLine) {
+            // record to user visible game log
+            if (newState.actionLog.length > 256) {
+                // drop first (oldest)
+                newState = update(newState, { actionLog: { $splice: [[0, 1]] } })
+            }
+            const actionLine = { who: gameAction.who, when: gameAction.when, line: logLine }
+            newState = update(newState, { actionLog: { $push: [actionLine] } })
         }
         return newState
     }
@@ -114,14 +139,15 @@ const stateReducer = combineReducers({
 
 export default stateReducer
 
-function handleMoveCard(newState: Game, moveCard: MoveCard) {
+function handleMoveCard(newState: Game, moveCard: MoveCard): [Game, string?] {
+    const sameOwner = moveCard.tgtOwner === moveCard.srcOwner
+    const sameZone = moveCard.tgtZone === moveCard.srcZone
     // set things if moving around field
     if (moveCard.bfId !== undefined && moveCard.toX !== undefined && moveCard.toY !== undefined) {
         newState = update(newState, { battlefieldCards: { [moveCard.bfId]: { $merge: { x: moveCard.toX, y: moveCard.toY, changed: moveCard.when } } } })
     }
     // re ordering hand
-    if (moveCard.tgtZone === HAND && moveCard.srcZone === HAND && moveCard.tgtOwner === moveCard.srcOwner
-        && moveCard.toIdx !== undefined) {
+    if (moveCard.tgtZone === HAND && moveCard.srcZone === HAND && sameOwner && moveCard.toIdx !== undefined) {
         const zoneId = newState.players[moveCard.tgtOwner].zones[HAND]
         const originalIdx = newState.zones[zoneId].cards.indexOf(moveCard.cardId)
         newState = update(newState, {
@@ -137,7 +163,7 @@ function handleMoveCard(newState: Game, moveCard: MoveCard) {
             }
         })
     }
-    if (moveCard.tgtZone !== moveCard.srcZone || moveCard.tgtOwner !== moveCard.srcOwner) {
+    if (!sameZone || !sameOwner) {
         // need to remove from src zone
         if (moveCard.srcZone === BATTLEFIELD && moveCard.bfId !== undefined) {
             const srcBfCardIdx = newState.battlefields[moveCard.srcOwner].battlefieldCards.indexOf(moveCard.bfId)
@@ -193,7 +219,10 @@ function handleMoveCard(newState: Game, moveCard: MoveCard) {
             }
         }
     }
-    return newState
+    const draw = sameOwner && moveCard.srcZone === LIBRARY && moveCard.tgtZone === HAND
+    const line = draw ? 'drew a card'
+        : `moved a card from ${moveCard.srcOwner}'s ${moveCard.srcZone} to ${moveCard.tgtOwner}'s ${moveCard.tgtZone}`
+    return [newState, sameOwner && sameZone ? undefined : line]
 }
 
 function newBfCard(newState: Game, owner: string, cardId: number, toX?: number, toY?: number, ) {
