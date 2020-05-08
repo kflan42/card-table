@@ -1,3 +1,4 @@
+import {Game} from "./ClientState";
 
 export const LOCAL_STATE_LOAD = 'LOCAL_STATE_LOAD'
 export function localStateLoaded(name: string, color: string) {
@@ -108,4 +109,12 @@ export function addLogLine(line: string) {
         type: ADD_LOG_LINE,
         line
     }
+}
+
+export interface GameSet extends PlayerAction {
+    game: Game
+}
+export const SET_GAME = 'SET_GAME';
+export function setGame(game: Game): GameSet {
+    return {type: SET_GAME, who: 'Table', when: Date.now(), game: game}
 }

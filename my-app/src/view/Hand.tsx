@@ -1,9 +1,8 @@
 import React from 'react'
 
 import './_style.css';
-import { ClientState, HAND } from '../ClientState';
+import {ClientState, getZone, HAND} from '../ClientState';
 import { useSelector } from 'react-redux';
-import { getZone } from '../zzzState';
 import { useDrop, DropTargetMonitor } from 'react-dnd';
 import MemoizeHandCard from './HandCard';
 import { ItemTypes, DragCard } from './DnDUtils';

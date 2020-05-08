@@ -1,7 +1,6 @@
 import React, { useState, ChangeEvent } from 'react'
 import { useSelector } from 'react-redux'
-import { getZone } from '../zzzState'
-import { ClientState, LIBRARY, HAND } from '../ClientState'
+import {ClientState, LIBRARY, HAND, getZone, Zone} from '../ClientState'
 import StackCard from './StackCard'
 import { useDrop, DropTargetMonitor } from 'react-dnd'
 import { ItemTypes, DragCard } from './DnDUtils'
@@ -24,7 +23,7 @@ const CardStack: React.FC<CardStackP> = ({ name, icon = null, owner }) => {
     const [topN, setTopN] = useState<number[]>([])
 
     const zoneState = useSelector((state: ClientState) => {
-        return getZone(state.game, owner, name)
+        return getZone(state.game, owner, name) as Zone
     })
 
     const cards = useSelector((state: ClientState) => state.game.cards)

@@ -1,6 +1,19 @@
-import { Game, Card, Player, Zone, Battlefield, BattlefieldCard, LIBRARY, COMMAND_ZONE, HAND, GRAVEYARD, EXILE } from './ClientState'
-import { randint, randchoice, shuffleArray } from './Utilities';
-import { colors } from './view/Login';
+import {
+    Battlefield,
+    BattlefieldCard,
+    Card,
+    COMMAND_ZONE,
+    EXILE,
+    Game,
+    getZone,
+    GRAVEYARD,
+    HAND,
+    LIBRARY,
+    Player,
+    Zone
+} from './ClientState'
+import {randchoice, randint, shuffleArray} from './Utilities';
+import {colors} from './view/Login';
 
 
 export function createGame(users: string[], decks: string[][]): Game {
@@ -115,13 +128,8 @@ export function createGame(users: string[], decks: string[][]): Game {
         zones: zones,
         cards: cards,
         battlefieldCards: battlefieldCards,
-        actionLog: [{who:users[0], when: Date.now(), line:"Test Game Begun"}]
+        actionLog: [{who:users[0], when: Date.now(), line:"Test game created."}]
     };
-}
-
-export function getZone(game: Game, player: string, zone: string) {
-    const zoneId = game.players[player].zones[zone]
-    return game.zones[zoneId]
 }
 
 export function createTestGame() {
@@ -135,14 +143,14 @@ export function createTestGame() {
             xMarksTheSpot
         ])
 
-    var bfId = 0;
+    let bfId = 0;
     for (const pn in initialGame.players) {
-        const library = getZone(initialGame, pn, LIBRARY)
-        const commandZone = getZone(initialGame, pn, COMMAND_ZONE)
-        const hand = getZone(initialGame, pn, HAND)
+        const library = getZone(initialGame, pn, LIBRARY) as Zone
+        const commandZone = getZone(initialGame, pn, COMMAND_ZONE) as Zone
+        const hand = getZone(initialGame, pn, HAND) as Zone
         const battlefield = initialGame.battlefields[pn]
 
-        var c = library.cards.pop()
+        let c = library.cards.pop()
         if (c) commandZone.cards.push(c)
 
         shuffleArray(library.cards)

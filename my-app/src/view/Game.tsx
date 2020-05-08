@@ -5,12 +5,23 @@ import Hand from './Hand';
 import Table from './Table';
 import { useDispatch, useSelector } from 'react-redux';
 import { ClientState, BattlefieldCard } from '../ClientState';
-import { localStateLoaded, cardAction, TOGGLE_TRANSFORM_CARD, TOGGLE_FACEDOWN_CARD, setCardCounter, createTokenCopy, createTokenNew } from '../Actions';
+import {
+    localStateLoaded,
+    cardAction,
+    TOGGLE_TRANSFORM_CARD,
+    TOGGLE_FACEDOWN_CARD,
+    setCardCounter,
+    createTokenCopy,
+    createTokenNew,
+    setGame
+} from '../Actions';
 import CardPopup from './CardPopup';
 import CustomDragLayer from './CustomDragLayer';
 import { useConfirmation } from './ConfirmationService';
 import { ConfirmationResult } from './ConfirmationDialog';
 import { usePlayerDispatch } from '../PlayerDispatch';
+import {createTestGame} from "../zzzState";
+import {useParams} from "react-router-dom";
 
 const Game: React.FC = () => {
     const userName = useSelector((state: ClientState) => state.playerPrefs.name)
@@ -25,6 +36,7 @@ const Game: React.FC = () => {
 
     const dispatch = useDispatch()
     const playerDispatch = usePlayerDispatch()
+    const { gameId } = useParams()
 
     useEffect(() => {
         // initial load effect only, prevents "too many re-renders error"
@@ -33,7 +45,10 @@ const Game: React.FC = () => {
         const u = localStorage.getItem('userName')
         const c = localStorage.getItem('userColor')
         if (u && c) dispatch(localStateLoaded(u, c))
-    }, [userName, dispatch]);
+        if (gameId === 'test') {
+            dispatch(setGame(createTestGame()))
+        }
+    }, [userName, gameId, dispatch]);
 
     const confirmation = useConfirmation();
 

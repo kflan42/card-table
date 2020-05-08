@@ -86,3 +86,11 @@ export interface BattlefieldCard {
     counters: { [index: string]: number },
     changed: number
 }
+
+export function getZone(game: Game, player: string, zone: string): Zone|undefined {
+    const zoneId = game.players[player]?.zones[zone]
+    if (zoneId !== undefined) {
+        return game.zones[zoneId]
+    }
+    return undefined
+}

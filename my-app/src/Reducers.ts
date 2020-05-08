@@ -18,15 +18,14 @@ import {
     CREATE_TOKEN,
     ADD_LOG_LINE,
     PlayerAction,
-    CardAction,
+    CardAction, SET_GAME, GameSet,
 } from './Actions'
 import { Game, HAND, BATTLEFIELD, BattlefieldCard, HoveredCard, LIBRARY, Card } from './ClientState'
-import { createTestGame } from './zzzState'
 import { shuffleArray } from './Utilities'
 
 
 function gameReducer(
-    state: Game = createTestGame(),
+    state: Game = {players:{}, cards:{}, zones:{}, battlefields:{}, battlefieldCards:{}, actionLog:[]},
     gameAction: PlayerAction
 ) {
     let [newState, logLine]: [Game?, string?] = [undefined, undefined]
@@ -39,6 +38,10 @@ function gameReducer(
     }
 
     switch (gameAction.type) {
+        case SET_GAME:
+            newState = (gameAction as GameSet).game
+            logLine = "Game set."
+            break;
         case MOVE_CARD:
             [newState, logLine] = handleMoveCard(state, gameAction as MoveCard)
             break;

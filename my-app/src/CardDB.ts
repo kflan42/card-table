@@ -69,7 +69,7 @@ class CardDB {
             return CardDB.cards
         else {
             console.log("beginning load")
-            // TODO load only necessary cards from server, this 2MB file is slow
+            // TODO load only necessary cards from server, this 2MB file is slow. split cards vs tokens.
             // re-run lighthouse with prod server, dev one has huge dev js piles of files, my code negligible
             CardDB.cards = fetch('my-cards.json').then(r => { return r.json() })
             CardDB.cards.then((cds) => {
