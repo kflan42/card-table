@@ -12,6 +12,8 @@ from markupsafe import escape
 import logging
 
 # note that flask logs to stderr by default
+from magic_table import MagicTable, load_cards
+
 logging.basicConfig(format='%(asctime)s %(message)s', stream=sys.stdout, level=logging.DEBUG)
 logging.info("hello from logging")
 
@@ -21,12 +23,7 @@ socketio = SocketIO(app)
 logging.info("hello from logging after Flask and SocketIO")
 
 tables = {}  # dict to track active tables
-tables_path = os.path.join('data', 'tables')
-os.makedirs(tables_path, exist_ok=True)
-
-with open(os.path.join('data', 'my-cards.json')) as f:
-    cardDB = json.load(f)
-    logging.info(f"Cards loaded, eg {cardDB[0]}")
+MagicTable.initialize()
 
 
 @app.route('/')
@@ -40,7 +37,7 @@ def index():
 # todo convert to PUT: card names in, card data back
 @app.route('/cards')
 def cards():
-    return jsonify(cardDB[:10])  # only automatically does dicts
+    return jsonify(load_cards()[:10])  # only automatically does dicts
 
 
 @app.route('/table/<path:subpath>', methods=['GET', 'POST'])
@@ -48,30 +45,19 @@ def join_table(subpath):
     if request.method == 'POST':
         d = json.loads(request.data)
         app.logger.warning(d)
-        table = init_table(subpath)
+        table_name = subpath
+
+        # load from disk or create the table
+        if table_name not in tables:
+            tables[table_name] = MagicTable.load(subpath) or MagicTable(subpath)
+        table = tables[table_name]
+
         # todo load deck onto table, resolve card names into specific cards to store in table
-        table[d['name']] = d['color']
-        save_table(subpath, table)
-        return table
+        table.add_player(d)
+        table.save()
+        return table.get_data()
     else:
-        return init_table(subpath)
-
-
-def save_table(table_name, table_data):
-    file_path = os.path.join(tables_path, table_name)
-    with open(file_path, mode='w') as f:
-        json.dump(table_data, f)
-
-
-def init_table(table_name):
-    file_path = os.path.join(tables_path, table_name)
-    if table_name not in tables:
-        if os.path.isfile(file_path):
-            with open(file_path, mode='r') as f:
-                tables[table_name] = json.load(f)
-        else:
-            tables[table_name] = {}
-    return tables[table_name]
+        return tables[subpath].get_data() if subpath in tables else ("Table not found.", 404)
 
 
 @socketio.on('create')
