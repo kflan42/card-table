@@ -14,16 +14,12 @@ import logging
 # note that flask logs to stderr by default
 from magic_table import MagicTable, load_cards
 
-logging.basicConfig(format='%(asctime)s %(message)s', stream=sys.stdout, level=logging.DEBUG)
-logging.info("hello from logging")
 
 app = Flask(__name__)
 socketio = SocketIO(app)
 
-logging.info("hello from logging after Flask and SocketIO")
-
 tables = {}  # dict to track active tables
-MagicTable.initialize()
+
 
 
 @app.route('/')
@@ -43,8 +39,8 @@ def cards():
 @app.route('/table/<path:subpath>', methods=['GET', 'POST'])
 def join_table(subpath):
     if request.method == 'POST':
+        app.logger.warning(request.data.decode('utf-8'))
         d = json.loads(request.data)
-        app.logger.warning(d)
         table_name = subpath
 
         # load from disk or create the table
@@ -100,6 +96,8 @@ def on_flip_card(data):
 
 
 if __name__ == '__main__':
-    logging.warning("in main")
+    logging.basicConfig(format='%(asctime)s %(message)s', stream=sys.stdout, level=logging.DEBUG)
+    logging.info("hello from logging")
+    MagicTable.initialize()
     socketio.run(app, debug=True)
     logging.warning("goodbye world")
