@@ -8,14 +8,13 @@
 
 # test to filter for "Official sets always have a three-letter set code". weird cards have 4 letter. tokens have "t..."
 
-jq '[.[] | select(.set|test("^...$")) | if .image_uris then
-    {name: .name, set: .set, num: .collector_number, face_small: .image_uris.small, face_normal: .image_uris.normal}
-  else
-    {name: .name, set: .set, num: .collector_number, faces_small: .card_faces | map({(.name): .image_uris.small}) | add, faces_normal: .card_faces | map({(.name): .image_uris.normal}) | add  }
-  end]' samples/scryfall-default-cards.json > ../my-app/public/my-cards.json
+CORE='id: .id, name: .name, set_name: .set, number: .collector_number'
 
-jq '[.[] | select(.set|test("^t...$")) | if .image_uris then
-    {name: .name, set: .set, num: .collector_number, face_small: .image_uris.small, face_normal: .image_uris.normal}
+CARD='if .image_uris then
+    {'"${CORE}"', face: .image_uris | {small: .small, normal: .normal}}
   else
-    {name: .name, set: .set, num: .collector_number, faces_small: .card_faces | map({(.name): .image_uris.small}) | add, faces_normal: .card_faces | map({(.name): .image_uris.normal}) | add  }
-  end]' samples/scryfall-default-cards.json > ../my-app/public/my-tokens.json
+    {'"${CORE}"', faces: .card_faces | map({(.name): .image_uris | {small: .small, normal: .normal}}) | add }
+  end'
+
+jq '[.[] | select(.set|test("^...$")) | '"${CARD}"']' samples/scryfall-default-cards.json > ../my-app/public/my-cards.json
+jq '[.[] | select(.set|test("^t...$")) | '"${CARD}"']' samples/scryfall-default-cards.json > ../my-app/public/my-tokens.json

@@ -4,11 +4,14 @@ import os
 import random
 import re
 from collections import defaultdict
+from typing import List, Tuple
+
+from magic_models import Card, CardSchema
 
 
 class MagicTable:
     tables_path = None
-    card_map = None
+    _card_map = None
 
     @staticmethod
     def initialize():
@@ -18,8 +21,12 @@ class MagicTable:
         MagicTable.tables_path = os.path.join('data', 'tables')
         os.makedirs(MagicTable.tables_path, exist_ok=True)
         logging.info("MagicTable initialized. Tables on disk: " + ",".join(os.listdir(MagicTable.tables_path)))
-        MagicTable.card_map = load_cards()
-        logging.info("%s cards loaded", len(MagicTable.card_map))
+
+    @staticmethod
+    def get_card_map():
+        if not MagicTable._card_map:
+            MagicTable._card_map = load_cards() + load_cards("tokens")
+        return MagicTable._card_map
 
     @staticmethod
     def load(table_name):
@@ -37,7 +44,8 @@ class MagicTable:
 
     def add_player(self, player_data):
         deck = parse_deck(player_data['deck'])
-        player_data['deck'] = [find_card(MagicTable.card_map, c) for c in deck]
+        cr = CardResolver(MagicTable.get_card_map())
+        player_data['deck'] = [cr.find_card(*c) for c in deck]
         self.data[player_data['name']] = player_data
 
     def save(self):
@@ -49,51 +57,46 @@ class MagicTable:
         return self.data
 
 
-def load_cards():
-    with open(os.path.join('..', 'my-app', 'public', 'my-cards.json')) as f:
-        cards = json.load(f)
-        logging.info(f"Cards loaded, eg {cards[0]}")
+def load_cards(what="cards"):
+    with open(os.path.join('..', 'my-app', 'public', f'my-{what}.json')) as f:
+        card_list = [CardSchema().load(c) for c in json.load(f)]
+        # cards = {c.id: c for c in card_list}
+        logging.info(f"{len(card_list)} Cards loaded, eg {card_list[0]}")
+        return card_list
+
+
+class CardResolver:
+
+    def __init__(self, cards: List[Card]):
         # build map
-        card_map = defaultdict(lambda: defaultdict(list))
+        self.card_map = defaultdict(lambda: defaultdict(list))
         for card in cards:
-            name = card['name']
-            set_name = card['set']
-            set_number = card['num']
-            if "face_small" in card:
-                card_map[name][set_name].append(card)
-            elif "faces_small" in card:
-                for face in card["faces_small"]:
-                    card_map[face][set_name].append(card)
+            if card.face:
+                self.card_map[card.name][card.set_name].append(card)
+            elif card.faces:
+                for face in card.faces:
+                    self.card_map[face][card.set_name].append(card)
             else:
                 logging.error('Failed to map %s', card)
-        return card_map
+
+    def find_card(self, name, set_name=None, number=None) -> Card:
+        try:
+            name_map = self.card_map[name]
+            official_set = set_name and len(set_name) == 3
+            if official_set and number and set_name in name_map:
+                matches = [cd for cd in name_map[set_name] if cd.number == number]
+                if matches:
+                    return matches[0]
+            if official_set and set_name and set_name in name_map:
+                return random.choice(name_map[set_name])
+            # fall through if number or set not found
+            random_set = random.choice(list(name_map.values()))
+            return random.choice(random_set)
+        except LookupError:
+            logging.exception("Card data not found for %s %s %s", name, set_name, number)
 
 
-class Card:
-    def __init__(self, name, set_name, set_number):
-        self.set_number = set_number
-        self.set_name = set_name
-        self.name = name
-
-
-def find_card(card_map: dict, card: Card) -> dict:
-    try:
-        name_map = card_map[card.name]
-        official_set = card.set_name and len(card.set_name) == 3
-        if official_set and card.set_number and card.set_name in name_map:
-            matches = [cd for cd in name_map[card.set_name] if cd['num'] == card.set_number]
-            if matches:
-                return matches[0]
-        if official_set and card.set_name and card.set_name in name_map:
-            return random.choice(name_map[card.set_name])
-        # fall through if number or set not found
-        random_set = random.choice(list(name_map.values()))
-        return random.choice(random_set)
-    except LookupError:
-        logging.exception("Card data not found for %s", card.__dict__)
-
-
-def parse_deck(deck_text: str) -> [Card]:
+def parse_deck(deck_text: str) -> Tuple[str]:
     cards = []
     for line in deck_text.strip().splitlines():
         card_parts = line.strip().split(" ")
@@ -114,5 +117,5 @@ def parse_deck(deck_text: str) -> [Card]:
         name_parts = len(card_parts) - 1 - (1 if set_name else 0) - (1 if set_number else 0)
         name = " ".join(card_parts[1: name_parts + 1])
         for _ in range(count):
-            cards.append(Card(name, set_name, set_number))
+            cards.append((name, set_name, set_number))
     return cards
