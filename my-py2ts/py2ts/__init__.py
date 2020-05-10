@@ -5,8 +5,8 @@ from marshmallow import Schema, fields
 
 
 TYPE_MAP = {
-    fields.Bool: 'bool',
-    fields.Boolean: 'bool',
+    fields.Bool: 'boolean',
+    fields.Boolean: 'boolean',
     fields.Constant: 'any',
     fields.DateTime: 'Date',
     fields.Decimal: 'number',
@@ -65,6 +65,8 @@ def resolve_value(v):
         ts_type = v.nested.__name__.replace('Schema', '')
         if v.many:
             ts_type += '[]'
+    elif type(v) is marshmallow.fields.List:
+        ts_type = f'{resolve_value(v.inner)}[]'
     elif type(v) is marshmallow.fields.Dict:
         ts_type = f'{{ [index: {resolve_value(v.key_field)}]: {resolve_value(v.value_field)} }}'
     else:
