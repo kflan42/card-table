@@ -1,8 +1,8 @@
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, List
 from uuid import UUID
 
-from marshmallow import Schema
+from dataclass_schemas import Schema
 
 
 @dataclass
@@ -24,39 +24,94 @@ class Card:
     faces: Dict[str, Face] = None
 
 
-CardSchema = Schema.from_dataclass(Card)  # Scryfall schema snake_case, not camelCase
+CardSchema = Schema.from_dataclass(Card)
 
-if __name__ == "__main__":
-    c1 = CardSchema().load(
-        {
-            "id": "59cf9b3b-21ec-43c3-80d3-2e3c99f34714",
-            "name": "Piper of the Swarm",
-            "set_name": "prm",
-            "number": "78862",
-            "face": {
-                "small": "https://img.scryfall.com/cards/small/front/5/9/59cf9b3b-21ec-43c3-80d3-2e3c99f34714.jpg?1585972274",
-                "normal": "https://img.scryfall.com/cards/normal/front/5/9/59cf9b3b-21ec-43c3-80d3-2e3c99f34714.jpg?1585972274"
-            }
-        }
-    )
-    print(c1)
 
-    c2 = CardSchema().load(
-        {
-            "id": "5646ea19-0025-4f88-ad22-36968a1d3b89",
-            "name": "Nightmare Moon // Princess Luna",
-            "set_name": "ptg",
-            "number": "1",
-            "faces": {
-                "Nightmare Moon": {
-                    "small": "https://img.scryfall.com/cards/small/front/5/6/5646ea19-0025-4f88-ad22-36968a1d3b89.jpg?1583354618",
-                    "normal": "https://img.scryfall.com/cards/normal/front/5/6/5646ea19-0025-4f88-ad22-36968a1d3b89.jpg?1583354618"
-                },
-                "Princess Luna": {
-                    "small": "https://img.scryfall.com/cards/small/back/5/6/5646ea19-0025-4f88-ad22-36968a1d3b89.jpg?1583354618",
-                    "normal": "https://img.scryfall.com/cards/normal/back/5/6/5646ea19-0025-4f88-ad22-36968a1d3b89.jpg?1583354618"
-                }
-            }
-        }
-    )
-    print(c2)
+@dataclass
+class JoinRequest:
+    name: str
+    color: str
+    deck_list: str
+    table: str
+
+
+JoinRequestSchema = Schema.from_dataclass(JoinRequest)
+
+
+@dataclass
+class Player:
+    name: str
+    color: str
+    deck: List[int]
+    counters: Dict[str, int]
+    zones: Dict[str, int]
+
+
+PlayerSchema = Schema.from_dataclass(Player)
+
+
+@dataclass
+class GameCard:
+    id: int
+    card_id: UUID
+    owner: str
+    facedown: bool
+    transformed: bool
+    token: bool
+
+
+GameCardSchema = Schema.from_dataclass(GameCard)
+
+
+@dataclass
+class Zone:
+    id: int
+    name: str
+    owner: str
+    cards: List[int]
+
+
+ZoneSchema = Schema.from_dataclass(Zone)
+
+
+@dataclass
+class BattlefieldCard:
+    bf_id: int
+    card_id: int
+    x: int
+    y: int
+    tapped: bool
+    counters: Dict[str, int]
+    last_touched: int
+
+
+BattlefieldCardSchema = Schema.from_dataclass(BattlefieldCard)
+
+
+@dataclass
+class LogLine:
+    who: str
+    when: int
+    line: str
+
+
+LogLineSchema = Schema.from_dataclass(LogLine)
+
+
+@dataclass
+class Game:
+    cards: Dict[int, GameCard]
+    players: Dict[str, Player]
+    zones: Dict[int, Zone]
+    battlefield_cards: Dict[int, BattlefieldCard]
+    action_log: List[LogLine]
+
+
+GameSchema = Schema.from_dataclass(Game)
+
+HAND = "Hand"
+LIBRARY = "Library"
+GRAVEYARD = "Graveyard"
+COMMAND_ZONE = "Command Zone"
+EXILE = "Exile"
+BATTLEFIELD = "Battlefield"

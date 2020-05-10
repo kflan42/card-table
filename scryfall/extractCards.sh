@@ -8,7 +8,9 @@
 
 # test to filter for "Official sets always have a three-letter set code". weird cards have 4 letter. tokens have "t..."
 
-CORE='id: .id, name: .name, set_name: .set, number: .collector_number'
+# need to output camelCase field names since using a camelCase marshmallow schema
+
+CORE='id: .id, name: .name, setName: .set, number: .collector_number'
 
 CARD='if .image_uris then
     {'"${CORE}"', face: .image_uris | {small: .small, normal: .normal}}

@@ -3,6 +3,7 @@ import logging
 import os
 import random
 import re
+import time
 from collections import defaultdict
 from typing import List, Tuple
 
@@ -10,17 +11,17 @@ from magic_models import Card, CardSchema
 
 
 class MagicTable:
-    tables_path = None
+    _tables_path = None
     _card_map = None
 
     @staticmethod
-    def initialize():
+    def get_tables_path():
         # lazy class init
-        if MagicTable.tables_path:
-            return  # already done
-        MagicTable.tables_path = os.path.join('data', 'tables')
-        os.makedirs(MagicTable.tables_path, exist_ok=True)
-        logging.info("MagicTable initialized. Tables on disk: " + ",".join(os.listdir(MagicTable.tables_path)))
+        if not MagicTable._tables_path:
+            MagicTable._tables_path = os.path.join('data', 'tables')
+            os.makedirs(MagicTable._tables_path, exist_ok=True)
+            logging.info("Tables initialized. Tables on disk: " + ",".join(os.listdir(MagicTable._tables_path)))
+        return MagicTable._tables_path
 
     @staticmethod
     def get_card_map():
@@ -30,7 +31,7 @@ class MagicTable:
 
     @staticmethod
     def load(table_name):
-        file_path = os.path.join(MagicTable.tables_path, table_name)
+        file_path = os.path.join(MagicTable.get_tables_path(), table_name)
         if os.path.isfile(file_path):
             with open(file_path, mode='r') as f:
                 data = json.load(f)
@@ -47,9 +48,10 @@ class MagicTable:
         cr = CardResolver(MagicTable.get_card_map())
         player_data['deck'] = [cr.find_card(*c) for c in deck]
         self.data[player_data['name']] = player_data
+        # todo load deck onto table, resolve card names into specific cards to store in table
 
     def save(self):
-        file_path = os.path.join(MagicTable.tables_path, self.name)
+        file_path = os.path.join(MagicTable.get_tables_path(), self.name)
         with open(file_path, mode='w') as f:
             json.dump(self.data, f)
 
@@ -59,9 +61,25 @@ class MagicTable:
 
 def load_cards(what="cards"):
     with open(os.path.join('..', 'my-app', 'public', f'my-{what}.json')) as f:
-        card_list = [CardSchema().load(c) for c in json.load(f)]
+        t0 = time.time()
+        # too slow card_list = [CardSchema().load(c) for c in json.load(f)]
+        # this is about 50x faster, bypassing Schema logic
+        pattern = re.compile(r'(?<!^)(?=[A-Z])')
+
+        def load_card(d: dict):
+            # camelCase to snake case the dict
+            for k in d:
+                nk = pattern.sub('_', k).lower()
+                if nk != k:
+                    v = d[k]
+                    del d[k]
+                    d[nk] = v
+            return Card(**d)
+
+        card_list = [load_card(c) for c in json.load(f)]
         # cards = {c.id: c for c in card_list}
-        logging.info(f"{len(card_list)} Cards loaded, eg {card_list[0]}")
+        t1 = time.time()
+        logging.info(f"{len(card_list)} {what} loaded in {t1 - t0:.3f}s, eg {card_list[0]}")
         return card_list
 
 

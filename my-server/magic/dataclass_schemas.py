@@ -4,10 +4,9 @@ from marshmallow import fields, post_load, missing, decorators
 from marshmallow.schema import BaseSchema
 
 
-def camelcase(s):
+def make_camelcase(s):
     parts = iter(s.split("_"))
     return next(parts) + "".join(i.title() for i in parts)
-
 
 # based on https://stevenloria.com/dynamic-schemas-in-marshmallow/
 
@@ -15,7 +14,7 @@ class Schema(BaseSchema):
     DATACLASS_TYPE_MAPPING = {**BaseSchema.TYPE_MAPPING, list: fields.List, dict: fields.Dict}
 
     @classmethod
-    def from_dataclass(cls, datacls, camelcase=False):
+    def from_dataclass(cls, datacls, camelcase=True):
         """Generate a Schema from a dataclass."""
         c = cls.from_dict(
             {
@@ -31,7 +30,7 @@ class Schema(BaseSchema):
 
         if camelcase:
             def on_bind_field(self, field_name, field_obj):
-                field_obj.data_key = camelcase(field_obj.data_key or field_name)
+                field_obj.data_key = make_camelcase(field_obj.data_key or field_name)
 
             setattr(c, on_bind_field.__name__, on_bind_field)
 
