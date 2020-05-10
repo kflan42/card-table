@@ -1,113 +1,94 @@
 from dataclasses import dataclass
-from typing import Dict, List
-from uuid import UUID
+from typing import List
 
-from dataclass_schemas import Schema
+from py_ts_interfaces import Interface
 
+
+# transport classes, so per https://pypi.org/project/py-ts-interfaces/ no mapped types e.g. Dict
 
 @dataclass
-class Face:
+class Face(Interface):
     small: str
     normal: str
 
 
-FaceSchema = Schema.from_dataclass(Face)
-
-
 @dataclass
-class Card:
-    id: UUID
+class SFCard(Interface):
+    sf_id: str
     name: str
     set_name: str
     number: str
     face: Face = None
-    faces: Dict[str, Face] = None
-
-
-CardSchema = Schema.from_dataclass(Card)
+    faces: List[Face] = None
 
 
 @dataclass
-class JoinRequest:
+class JoinRequest(Interface):
     name: str
     color: str
     deck_list: str
     table: str
 
 
-JoinRequestSchema = Schema.from_dataclass(JoinRequest)
+@dataclass
+class Counter(Interface):
+    name: str
+    value: int
 
 
 @dataclass
-class Player:
+class Player(Interface):
     name: str
     color: str
     deck: List[int]
-    counters: Dict[str, int]
-    zones: Dict[str, int]
-
-
-PlayerSchema = Schema.from_dataclass(Player)
+    counters: List[Counter]
+    zones: List[int]
 
 
 @dataclass
-class GameCard:
-    id: int
-    card_id: UUID
+class Card(Interface):
+    card_id: int
+    sf_id: str
     owner: str
     facedown: bool
     transformed: bool
     token: bool
 
 
-GameCardSchema = Schema.from_dataclass(GameCard)
-
-
 @dataclass
-class Zone:
-    id: int
+class Zone(Interface):
+    z_id: int
     name: str
     owner: str
     cards: List[int]
 
 
-ZoneSchema = Schema.from_dataclass(Zone)
-
-
 @dataclass
-class BattlefieldCard:
+class BattlefieldCard(Interface):
     bf_id: int
     card_id: int
     x: int
     y: int
     tapped: bool
-    counters: Dict[str, int]
+    counters: List[Counter]
     last_touched: int
 
 
-BattlefieldCardSchema = Schema.from_dataclass(BattlefieldCard)
-
-
 @dataclass
-class LogLine:
+class LogLine(Interface):
     who: str
     when: int
     line: str
 
 
-LogLineSchema = Schema.from_dataclass(LogLine)
-
-
 @dataclass
-class Game:
-    cards: Dict[int, GameCard]
-    players: Dict[str, Player]
-    zones: Dict[int, Zone]
-    battlefield_cards: Dict[int, BattlefieldCard]
+class Game(Interface):
+    cards: List[Card]
+    players: List[Player]
+    zones: List[Zone]
+    battlefield_cards: List[BattlefieldCard]
     action_log: List[LogLine]
 
-
-GameSchema = Schema.from_dataclass(Game)
 
 HAND = "Hand"
 LIBRARY = "Library"

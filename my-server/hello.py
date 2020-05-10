@@ -1,25 +1,18 @@
 import json
 import logging
-import os
 import sys
 
-from flask import Flask, render_template, url_for, jsonify
+from flask import Flask, render_template, jsonify
 from flask import request
-
 from flask_socketio import SocketIO, join_room, emit, send
-from markupsafe import escape
-
-import logging
 
 # note that flask logs to stderr by default
 from magic_table import MagicTable, load_cards
-
 
 app = Flask(__name__)
 socketio = SocketIO(app)
 
 tables = {}  # dict to track active tables
-
 
 
 @app.route('/')
@@ -48,7 +41,6 @@ def join_table(subpath):
             tables[table_name] = MagicTable.load(subpath) or MagicTable(subpath)
         table = tables[table_name]
 
-        # todo load deck onto table, resolve card names into specific cards to store in table
         table.add_player(d)
         table.save()
         return table.get_data()
@@ -98,6 +90,5 @@ def on_flip_card(data):
 if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s %(message)s', stream=sys.stdout, level=logging.DEBUG)
     logging.info("hello from logging")
-    MagicTable.initialize()
     socketio.run(app, debug=True)
     logging.warning("goodbye world")

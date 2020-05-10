@@ -5,9 +5,9 @@ import random
 import re
 import time
 from collections import defaultdict
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
-from magic_models import Card, CardSchema
+from magic_models import SFCard
 
 
 class MagicTable:
@@ -59,7 +59,7 @@ class MagicTable:
         return self.data
 
 
-def load_cards(what="cards"):
+def load_cards(what="cards") -> List[SFCard]:
     with open(os.path.join('..', 'my-app', 'public', f'my-{what}.json')) as f:
         t0 = time.time()
         # too slow card_list = [CardSchema().load(c) for c in json.load(f)]
@@ -74,7 +74,7 @@ def load_cards(what="cards"):
                     v = d[k]
                     del d[k]
                     d[nk] = v
-            return Card(**d)
+            return SFCard(**d)
 
         card_list = [load_card(c) for c in json.load(f)]
         # cards = {c.id: c for c in card_list}
@@ -85,7 +85,7 @@ def load_cards(what="cards"):
 
 class CardResolver:
 
-    def __init__(self, cards: List[Card]):
+    def __init__(self, cards: List[SFCard]):
         # build map
         self.card_map = defaultdict(lambda: defaultdict(list))
         for card in cards:
@@ -97,7 +97,7 @@ class CardResolver:
             else:
                 logging.error('Failed to map %s', card)
 
-    def find_card(self, name, set_name=None, number=None) -> Card:
+    def find_card(self, name, set_name=None, number=None) -> SFCard:
         try:
             name_map = self.card_map[name]
             official_set = set_name and len(set_name) == 3
@@ -114,7 +114,7 @@ class CardResolver:
             logging.exception("Card data not found for %s %s %s", name, set_name, number)
 
 
-def parse_deck(deck_text: str) -> Tuple[str]:
+def parse_deck(deck_text: str) -> List[Tuple[str, Optional[str], Optional[str]]]:
     cards = []
     for line in deck_text.strip().splitlines():
         card_parts = line.strip().split(" ")
