@@ -26,10 +26,12 @@ class MyTestCase(unittest.TestCase):
 
     def test_card_map(self):
         resolver = CardResolver(MagicTable.get_all_cards())
-        print(resolver.find_card('Akroma, Angel of Wrath'))
-        print(resolver.find_card('Nissa, Vastwood Seer'))
-        # self.assertIn('face_small', card_map['Akroma, Angel of Wrath']['c20'][0])
-        # self.assertIn('faces_small', card_map['Nissa, Vastwood Seer']['v17'][0])
+        akroma = resolver.find_card('Akroma, Angel of Wrath', 'c20')
+        print(akroma)
+        nissa = resolver.find_card('Nissa, Vastwood Seer', 'v17')
+        print(nissa)
+        self.assertNotEqual(akroma.face.small, akroma.face.normal)
+        self.assertEqual(nissa.faces[1].name, "Nissa, Sage Animist")
 
     def test_add_player(self):
         player = JoinRequest(name='kerran', table='1', deck_list=arena_deck, color='OliveDrab')

@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from typing import List
+from dataclasses import dataclass, field
+from typing import List, Optional
 
 from dataclasses_json import DataClassJsonMixin
 from py_ts_interfaces import Interface
@@ -7,29 +7,29 @@ from py_ts_interfaces import Interface
 
 # transport classes, so per https://pypi.org/project/py-ts-Interface, DataClassJsonMixins/ no mapped types e.g. Dict
 
-
-@dataclass
+@dataclass()
 class Face(Interface, DataClassJsonMixin):
     small: str
     normal: str
+    name: Optional[str] = None
 
 
-@dataclass
+@dataclass()
 class SFCard(Interface, DataClassJsonMixin):
     sf_id: str
     name: str
     set_name: str
     number: str
-    face: Face = None
-    faces: List[Face] = None
+    face: Optional[Face] = None
+    faces: List[Face] = field(default_factory=list)
 
 
 @dataclass
 class JoinRequest(Interface, DataClassJsonMixin):
+    table: str
     name: str
     color: str
     deck_list: str
-    table: str
 
 
 @dataclass
@@ -59,8 +59,8 @@ class Card(Interface, DataClassJsonMixin):
 @dataclass
 class Zone(Interface, DataClassJsonMixin):
     z_id: int
-    name: str
     owner: str
+    name: str
     cards: List[int]
 
 
@@ -70,9 +70,9 @@ class BattlefieldCard(Interface, DataClassJsonMixin):
     card_id: int
     x: int
     y: int
+    tapped = False
     counters: List[Counter]
     last_touched = 0
-    tapped = False
 
 
 @dataclass
@@ -84,9 +84,9 @@ class LogLine(Interface, DataClassJsonMixin):
 
 @dataclass
 class Game(Interface, DataClassJsonMixin):
-    cards: List[Card]
     players: List[Player]
     zones: List[Zone]
+    cards: List[Card]
     battlefield_cards: List[BattlefieldCard]
     action_log: List[LogLine]
 
@@ -103,8 +103,8 @@ ZONES = [HAND, LIBRARY, GRAVEYARD, COMMAND_ZONE, EXILE, BATTLEFIELD]
 @dataclass
 class Table(Interface, DataClassJsonMixin):
     name: str
-    sf_cards: List[SFCard]
     game: Game
+    sf_cards: List[SFCard]
 
 
 def get_zone(game: Game, player: str, zone: str) -> Zone:

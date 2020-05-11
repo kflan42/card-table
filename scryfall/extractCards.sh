@@ -4,7 +4,14 @@
 
 DEFAULT_JSON="scryfall-default-cards.json"
 
-wget  "https://archive.scryfall.com/json/${DEFAULT_JSON}"
+if [[ $(date -r "${DEFAULT_JSON}" "+%m-%d-%Y") != $(date "+%m-%d-%Y") && \
+      $(date -r "${DEFAULT_JSON}" "+%m-%d-%Y") != $(date "+%m-%d-%Y" "--date" "yesterday") ]]; then
+  echo "stale json"
+  mv "${DEFAULT_JSON}" "${DEFAULT_JSON}.old"
+  wget "https://archive.scryfall.com/json/${DEFAULT_JSON}" && rm "${DEFAULT_JSON}.old"
+else
+  echo "new enough json"
+fi
 
 # subject 2 from line number to get array index for examples
 # jq "[.[12,2135,10399] | ...
@@ -12,11 +19,12 @@ wget  "https://archive.scryfall.com/json/${DEFAULT_JSON}"
 # test to filter for "Official sets always have a three-letter set code". weird cards have 4 letter. tokens have "t..."
 
 CORE='sf_id: .id, name: .name, set_name: .set, number: .collector_number'
+FACE='.image_uris | {small: .small, normal: .normal}'
 
 CARD='if .image_uris then
-    {'"${CORE}"', face: .image_uris | {small: .small, normal: .normal}}
+    {'${CORE}', face: '${FACE}'}
   else
-    {'"${CORE}"', faces: .card_faces | map({(.name): .image_uris | {small: .small, normal: .normal}}) | add }
+    {'${CORE}', faces: [.card_faces[] | {name: .name, small: .image_uris.small, normal: .image_uris.normal } ] }
   end'
 
 OUT_DIR="../my-server/data/cards"

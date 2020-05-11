@@ -1,5 +1,6 @@
 import React, {ChangeEvent, FormEvent} from 'react'
 import {useHistory} from 'react-router-dom';
+import {JoinRequest} from "../magic_models";
 
 
 export const LoginForm: React.FC = (props) => {
@@ -20,14 +21,14 @@ interface LoginP {
 
 
 class Login extends React.Component<LoginP> {
-    state: { [index: string]: any }
+    state: JoinRequest
 
     constructor(props: LoginP) {
         super(props);
         this.state = {
             name: '',
             table: '',
-            deck: '',
+            deck_list: '',
             color: ''
         }
 
@@ -62,7 +63,7 @@ class Login extends React.Component<LoginP> {
         if (event.target && event.target.files) {
             event.persist() // make name stick next to chooser
             event.target.files[0].text()
-                .then(d => this.setState({deck: d}))
+                .then(d => this.setState({deck_list: d}))
                 .catch(function (reason) {
                     console.log(`Error reading deck file ${reason}`);
                     event.target.value = ''; // to allow upload of same file if error occurs
@@ -167,7 +168,7 @@ class Login extends React.Component<LoginP> {
                         <input className="DivButton" type="submit" value="Join Table"/>
                         <br/> <br/>
                         Deck: <br/>
-                        <textarea value={this.state.deck} readOnly={true} cols={30} rows={25}/>
+                        <textarea value={this.state.deck_list} readOnly={true} cols={30} rows={25}/>
                     </div>
                 </form>
             </div>

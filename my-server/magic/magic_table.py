@@ -7,7 +7,7 @@ import time
 from collections import defaultdict
 from typing import List, Tuple, Optional
 
-from magic_models import SFCard, JoinRequest, Player, Card, Zone, ZONES, Game, LIBRARY, Table, Counter
+from magic_models import SFCard, JoinRequest, Player, Card, Zone, ZONES, Game, LIBRARY, Table, Counter, Face
 
 
 class MagicTable:
@@ -108,6 +108,10 @@ def load_cards(what="cards") -> List[SFCard]:
                     v = d[k]
                     del d[k]
                     d[nk] = v
+                elif k == "face" and d[k]:
+                    d[k] = Face(**d[k])
+                elif k == "faces" and d[k]:
+                    d[k] = [Face(**fa) for fa in d[k]]
             return SFCard(**d)
 
         card_list = [load_card(c) for c in json.load(f)]
@@ -127,7 +131,7 @@ class CardResolver:
                 self.card_map[card.name][card.set_name].append(card)
             elif card.faces:
                 for face in card.faces:
-                    self.card_map[face][card.set_name].append(card)
+                    self.card_map[face.name][card.set_name].append(card)
             else:
                 logging.error('Failed to map %s', card)
 
