@@ -90,7 +90,6 @@ class Login extends React.Component<LoginP> {
                     const error = (data && data.message) || response.status;
                     return Promise.reject(error);
                 }
-                // todo put data somewhere
 
                 // route over to table
                 this.props.cb(this.state.table)

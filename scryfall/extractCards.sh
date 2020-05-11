@@ -1,7 +1,10 @@
 #!/bin/bash
 
 # see https://scryfall.com/docs/api/cards and https://scryfall.com/docs/api/images
-# https://archive.scryfall.com/json/scryfall-default-cards.json
+
+DEFAULT_JSON="scryfall-default-cards.json"
+
+wget  "https://archive.scryfall.com/json/${DEFAULT_JSON}"
 
 # subject 2 from line number to get array index for examples
 # jq "[.[12,2135,10399] | ...
@@ -16,5 +19,14 @@ CARD='if .image_uris then
     {'"${CORE}"', faces: .card_faces | map({(.name): .image_uris | {small: .small, normal: .normal}}) | add }
   end'
 
-jq '[.[] | select(.set|test("^...$")) | '"${CARD}"']' samples/scryfall-default-cards.json > ../my-app/public/my-cards.json
-jq '[.[] | select(.set|test("^t...$")) | '"${CARD}"']' samples/scryfall-default-cards.json > ../my-app/public/my-tokens.json
+OUT_DIR="../my-server/data/cards"
+
+mkdir -p "${OUT_DIR}"
+
+jq '[.[] | select(.set|test("^...$")) | '"${CARD}"']' "${DEFAULT_JSON}" > "${OUT_DIR}"/cards.json
+jq '[.[] | select(.set|test("^t...$")) | '"${CARD}"']' "${DEFAULT_JSON}" > "${OUT_DIR}"/tokens.json
+
+cp "${OUT_DIR}"/* ../my-app/public
+
+echo "output to ${OUT_DIR} and ../my-app/public"
+ls "${OUT_DIR}"

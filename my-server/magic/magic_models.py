@@ -1,19 +1,21 @@
 from dataclasses import dataclass
 from typing import List
 
+from dataclasses_json import DataClassJsonMixin
 from py_ts_interfaces import Interface
 
 
-# transport classes, so per https://pypi.org/project/py-ts-interfaces/ no mapped types e.g. Dict
+# transport classes, so per https://pypi.org/project/py-ts-Interface, DataClassJsonMixins/ no mapped types e.g. Dict
+
 
 @dataclass
-class Face(Interface):
+class Face(Interface, DataClassJsonMixin):
     small: str
     normal: str
 
 
 @dataclass
-class SFCard(Interface):
+class SFCard(Interface, DataClassJsonMixin):
     sf_id: str
     name: str
     set_name: str
@@ -23,7 +25,7 @@ class SFCard(Interface):
 
 
 @dataclass
-class JoinRequest(Interface):
+class JoinRequest(Interface, DataClassJsonMixin):
     name: str
     color: str
     deck_list: str
@@ -31,32 +33,31 @@ class JoinRequest(Interface):
 
 
 @dataclass
-class Counter(Interface):
+class Counter(Interface, DataClassJsonMixin):
     name: str
     value: int
 
 
 @dataclass
-class Player(Interface):
+class Player(Interface, DataClassJsonMixin):
     name: str
     color: str
-    deck: List[int]
-    counters: List[Counter]
     zones: List[int]
+    counters: List[Counter]
 
 
 @dataclass
-class Card(Interface):
+class Card(Interface, DataClassJsonMixin):
     card_id: int
     sf_id: str
     owner: str
-    facedown: bool
-    transformed: bool
-    token: bool
+    facedown = False
+    transformed = False
+    token = False
 
 
 @dataclass
-class Zone(Interface):
+class Zone(Interface, DataClassJsonMixin):
     z_id: int
     name: str
     owner: str
@@ -64,25 +65,25 @@ class Zone(Interface):
 
 
 @dataclass
-class BattlefieldCard(Interface):
+class BattlefieldCard(Interface, DataClassJsonMixin):
     bf_id: int
     card_id: int
     x: int
     y: int
-    tapped: bool
     counters: List[Counter]
-    last_touched: int
+    last_touched = 0
+    tapped = False
 
 
 @dataclass
-class LogLine(Interface):
+class LogLine(Interface, DataClassJsonMixin):
     who: str
     when: int
     line: str
 
 
 @dataclass
-class Game(Interface):
+class Game(Interface, DataClassJsonMixin):
     cards: List[Card]
     players: List[Player]
     zones: List[Zone]
@@ -96,3 +97,11 @@ GRAVEYARD = "Graveyard"
 COMMAND_ZONE = "Command Zone"
 EXILE = "Exile"
 BATTLEFIELD = "Battlefield"
+ZONES = [HAND, LIBRARY, GRAVEYARD, COMMAND_ZONE, EXILE, BATTLEFIELD]
+
+
+@dataclass
+class Table(Interface, DataClassJsonMixin):
+    name: str
+    sf_cards: List[SFCard]
+    game: Game

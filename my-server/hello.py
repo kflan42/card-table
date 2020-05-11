@@ -2,50 +2,64 @@ import json
 import logging
 import sys
 
+import typing
 from flask import Flask, render_template, jsonify
 from flask import request
 from flask_socketio import SocketIO, join_room, emit, send
 
 # note that flask logs to stderr by default
+from magic_models import JoinRequest
 from magic_table import MagicTable, load_cards
 
 app = Flask(__name__)
 socketio = SocketIO(app)
 
-tables = {}  # dict to track active tables
+tables: typing.Dict[str, MagicTable] = {}  # dict to track active tables
 
 
 @app.route('/')
 def index():
     """Serve the index HTML"""
-    return render_template('index.html')  #
+    return render_template('index.html')
 
 
-# todo token data will just be served statically
+def get_table(table_name):
+    if table_name in tables:  # check memory
+        return tables[table_name]
+    else:
+        table = MagicTable.load(table_name)  # check disk
+        if table:
+            tables[table_name] = table  # keep in memory
+        return table
 
-# todo convert to PUT: card names in, card data back
-@app.route('/cards')
-def cards():
-    return jsonify(load_cards()[:10])  # only automatically does dicts
 
-
-@app.route('/table/<path:subpath>', methods=['GET', 'POST'])
-def join_table(subpath):
+@app.route('/table/<path:table_name>', methods=['GET', 'POST'])
+def join_table(table_name):
+    table = get_table(table_name)
     if request.method == 'POST':
+        if not table:
+            table = MagicTable(table_name)  # create if joining
         app.logger.warning(request.data.decode('utf-8'))
         d = json.loads(request.data)
-        table_name = subpath
-
-        # load from disk or create the table
-        if table_name not in tables:
-            tables[table_name] = MagicTable.load(subpath) or MagicTable(subpath)
-        table = tables[table_name]
-
-        table.add_player(d)
-        table.save()
-        return table.get_data()
+        join_request = JoinRequest(**d)
+        if table.add_player(join_request):
+            table.save()
+            return "Joined table.", 201
+        else:
+            return "Already at table.", 409
     else:
-        return tables[subpath].get_data() if subpath in tables else ("Table not found.", 404)
+        if table:
+            return table.table.game.to_json()
+        return "Table not found.", 404
+
+
+@app.route('/table/<path:table_name>/cards', methods=['GET'])
+def get_cards(table_name):
+    table = get_table(table_name)
+    if table:
+        return table.get_cards()
+    else:
+        return "Table not found.", 404
 
 
 @socketio.on('create')

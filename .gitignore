@@ -128,6 +128,16 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-scryfall/samples/
-
 .idea/
+
+# derived files
+scryfall/samples/
+/my-app/src/magic_models.ts
+/my-app/public/cards.json
+/my-app/public/tokens.json
+/my-server/data/
+/scryfall/scryfall-default-cards.json
+/scryfall/symbology/
+/scryfall/tappedout/
+
+#
