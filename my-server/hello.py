@@ -10,6 +10,7 @@ from flask_socketio import SocketIO, join_room, emit, send
 # note that flask logs to stderr by default
 from magic_models import JoinRequest
 from magic_table import MagicTable, load_cards
+from test_table import test_table
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -24,6 +25,8 @@ def index():
 
 
 def get_table(table_name):
+    if table_name == "test":
+        return test_table()
     if table_name in tables:  # check memory
         return tables[table_name]
     else:

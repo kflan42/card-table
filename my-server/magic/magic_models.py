@@ -105,3 +105,7 @@ class Table(Interface, DataClassJsonMixin):
     name: str
     sf_cards: List[SFCard]
     game: Game
+
+
+def get_zone(game: Game, player: str, zone: str) -> Zone:
+    return [z for z in game.zones if z.owner == player and z.name == zone][0]

@@ -7,7 +7,7 @@ import time
 from collections import defaultdict
 from typing import List, Tuple, Optional
 
-from magic_models import SFCard, JoinRequest, Player, Card, Zone, ZONES, Game, LIBRARY, Table
+from magic_models import SFCard, JoinRequest, Player, Card, Zone, ZONES, Game, LIBRARY, Table, Counter
 
 
 class MagicTable:
@@ -80,6 +80,7 @@ class MagicTable:
 
         # setup player
         player = Player(name=join_request.name, color=join_request.color, counters=[], zones=z_ids)
+        player.counters.append(Counter(name="Life", value=40))
         table.game.players.append(player)
         return True
 
