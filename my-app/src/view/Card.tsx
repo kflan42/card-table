@@ -2,16 +2,10 @@ import React from 'react'
 
 import './_style.css';
 import CardDB from '../CardDB';
-import { CardData } from '../CardDB';
-import { ClientState } from '../ClientState';
-import { useSelector, useDispatch } from 'react-redux';
-import { hoveredCard } from '../Actions';
-import { useAsync, PromiseFn } from "react-async"
+import {ClientState} from '../ClientState';
+import {useSelector, useDispatch} from 'react-redux';
+import {hoveredCard} from '../Actions';
 
-
-const loadCardData: PromiseFn<CardData> = async ({ cardName }): Promise<CardData> => {
-    return await CardDB.getCard(cardName)
-}
 
 export interface CardProps {
     cardId: number,
@@ -19,44 +13,31 @@ export interface CardProps {
     imageSize?: string,
 }
 
-const Card: React.FC<CardProps> = ({
-    cardId,
-    imageSize,
-}) => {
+const Card: React.FC<CardProps> = ({cardId, imageSize}) => {
 
-    const cardState = useSelector((state: ClientState) => state.game.cards[cardId])
+    const card = useSelector((state: ClientState) => state.game.cards[cardId])
 
-    const ownerColor = useSelector((state: ClientState) => state.game.players[cardState.owner].color)
+    const ownerColor = useSelector((state: ClientState) => state.game.players[card.owner].color)
 
     // small is 10.8k (memory cache after 1st). fuzzy text, hard to read
     // normal is 75.7k (memory cache after 1st). readable
 
-    const { data, error, isPending } = useAsync(loadCardData, { cardName: cardState.name })
-
-    // TODO move card db load to ClientState
-
-    const cardData = data ? data : null;
+    const sfCard = CardDB.getCard(card.sf_id);
 
     // altText, url
     const getFront = () => {
-        if (cardState.facedown) {
+        if (card.facedown) {
             return ["Card Back", "Magic_card_back.jpg"]
         }
-        if (cardData) {
-            const faces = imageSize === "normal" ? cardData.faces_normal : cardData.faces_small
-            if (cardState.transformed && faces) {
-                for (const f in faces) {
-                    if (f !== cardState.name) return [f, faces[f]];
-                }
+        if (sfCard) {
+            let face = sfCard.face
+            if(sfCard.faces.length > 0) {
+                face = card.transformed ? sfCard.faces[1] : sfCard.faces[0]
             }
-            const face = imageSize === "normal" ? cardData.face_normal
-                : cardData.face_small
-            return face ? [cardState.name, face]
-                : faces ? [cardState.name, faces[cardState.name]]
-                    : ["Card Not Found", "react_logo_skewed.png"]
-        }
-        else
-            return ["Loading Card", "react_logo_skewed.png"]
+            const img = imageSize === "normal" ? face?.normal : face?.small
+            return img ? [sfCard.name, img] : ["Card Image Not Found", "react_logo_skewed.png"]
+        } else
+            return ["Card Not Found", "react_logo_skewed.png"]
     }
 
     const front = getFront()
@@ -69,18 +50,14 @@ const Card: React.FC<CardProps> = ({
 
     return (
         <div className={"Card cardtooltip"}
-            onMouseOver={() => dispatch(hoveredCard(cardId))}
-            onMouseOut={() => dispatch(hoveredCard(null))}
-            onClick={click}
+             onMouseOver={() => dispatch(hoveredCard(cardId))}
+             onMouseOut={() => dispatch(hoveredCard(null))}
+             onClick={click}
         >
-            {cardState.facedown ? null
+            {card.facedown ? null
                 : <span className="cardtooltiptext">
-                    {(isPending || error ? cardState.name : front[0]) + (cardState.token ? " (Token)" : "")} </span>}
-            <img style={{ borderColor: ownerColor }} src={front[1]} alt={front[0]} />
-            {isPending ? <span style={{ position: "absolute", top: "5%", left: "5%", color: "white", backgroundColor: ownerColor }}>
-                {`${cardState.name}`}</span> : null}
-            {error ? <span style={{ position: "absolute", top: "5%", left: "5%", color: "white", backgroundColor: ownerColor }}>
-                {`${cardState.name}`}</span> : null}
+                    {`${front[0]}${card.token ? " (Token)" : ""}`} </span>}
+            <img style={{borderColor: ownerColor}} src={front[1]} alt={front[0]}/>
         </div>
     )
 }

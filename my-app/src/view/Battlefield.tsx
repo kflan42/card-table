@@ -1,13 +1,13 @@
-import React, { useRef } from 'react'
+import React, {useRef} from 'react'
 
 import './_style.css';
-import { useSelector } from 'react-redux';
-import { ClientState, BATTLEFIELD } from '../ClientState';
+import {useSelector} from 'react-redux';
+import {ClientState, BATTLEFIELD} from '../ClientState';
 import BFCard from './BFCard';
-import { useDrop } from 'react-dnd';
-import { ItemTypes, DragCard } from "./DnDUtils";
-import { MOVE_CARD } from '../Actions';
-import { usePlayerDispatch } from '../PlayerDispatch';
+import {useDrop} from 'react-dnd';
+import {ItemTypes, DragCard} from "./DnDUtils";
+import {MOVE_CARD} from '../Actions';
+import {usePlayerDispatch} from '../PlayerDispatch';
 
 /** Takes px and returns %. */
 export function snapToGrid(x: number, y: number, width: number, height: number) {
@@ -21,10 +21,10 @@ interface BFP {
     player: string,
 }
 
-const Battlefield: React.FC<BFP> = ({ player }) => {
+const Battlefield: React.FC<BFP> = ({player}) => {
 
     const zoneState = useSelector((state: ClientState) => {
-        return state.game.battlefields[player]
+        return state.game.zones[`${player}-${BATTLEFIELD}`]
     })
 
     const bfCardsState = useSelector((state: ClientState) => {
@@ -72,12 +72,12 @@ const Battlefield: React.FC<BFP> = ({ player }) => {
 
     const listItems = []
     if (zoneState) {
-        for (const bfId of zoneState.battlefieldCards) {
-            listItems.push(<BFCard key={bfId} bfId={bfId} fieldOwner={player} />)
+        for (const bfId of zoneState.cards) {
+            listItems.push(<BFCard key={bfId} bfId={bfId} fieldOwner={player}/>)
         }
     }
     // sort most recent changes to last so they end up on top
-    listItems.sort((a, b) => bfCardsState[a.props.bfId].changed - bfCardsState[b.props.bfId].changed)
+    listItems.sort((a, b) => bfCardsState[a.props.bfId].last_touched - bfCardsState[b.props.bfId].last_touched)
 
     return (
         <div ref={bf} style={{

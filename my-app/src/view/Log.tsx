@@ -3,7 +3,8 @@ import React, { useRef, useEffect } from 'react'
 import './_style.css';
 import Clock from './Clock';
 import { useSelector } from 'react-redux';
-import { ClientState, LogLine } from '../ClientState';
+import { ClientState } from '../ClientState';
+import {LogLine} from "../magic_models";
 
 
 

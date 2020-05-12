@@ -1,23 +1,19 @@
 /** state of this client, e.g. popups and options */
+import {BattlefieldCard, Card, Game as GameT, LogLine, Player, Zone} from "./magic_models";
+
 export interface ClientState {
     playerPrefs: PlayerPrefs,
     game: Game,
-    cardUnderCursor: HoveredCard
+    hoveredCard: HoveredCard
 }
 
 export interface HoveredCard {
-    cardId: number | null, 
+    cardId: number | null,
     bfId: number | null
 }
 
 export interface PlayerPrefs {
     name: string,
-}
-
-export interface LogLine {
-    who: string,
-    when: number,
-    line: string
 }
 
 export const HAND: string = "Hand"
@@ -27,70 +23,22 @@ export const COMMAND_ZONE: string = "Command Zone"
 export const EXILE: string = "Exile"
 export const BATTLEFIELD: string = "Battlefield"
 
-/** state of the game itself, regardless of viewer. shared via server to other clients. */
 export interface Game {
     cards: { [index: number]: Card }
     players: { [index: string]: Player }
-    /** indexed by zoneId */
-    zones: { [index: number]: Zone }
-    /** indexed by player name */
-    battlefields: { [index: string]: Battlefield }
+    /** indexed by owner-name */
+    zones: { [index: string]: Zone }
     /** index by bfCard bfId */
     battlefieldCards: { [index: number]: BattlefieldCard }
     actionLog: LogLine[]
 }
 
-export interface Card {
-    /** referenced throughout state, unique */
-    id: number,
-    /** used to lookup pic in CardDB */
-    name: string,
-    set?: string,
-    setNumber?: string, // can have weird chars in it
-    /** used for sleeve color and some actions */
-    owner: string,
-    facedown: boolean,
-    transformed: boolean,
-    token: boolean,
-}
-
-export interface Player {
-    name: string,
-    /** which card ids are in this player's deck. 1st = commander */
-    deck: number[],
-    counters: { [index: string]: number }
-    zones: { [index: string]: number }
-    color: string,
-}
-
-
-/** aka card stack, excludes battlefield */
-export interface Zone {
-    id: number,
-    name: string,
-    /** who can act on it easily */
-    owner: string,
-    cards: number[]
-}
-
-export interface Battlefield {
-    battlefieldCards: number[]
-}
-
-export interface BattlefieldCard {
-    bfId: number,
-    cardId: number,
-    x: number,
-    y: number,
-    tapped: boolean,
-    counters: { [index: string]: number },
-    changed: number
-}
-
-export function getZone(game: Game, player: string, zone: string): Zone|undefined {
-    const zoneId = game.players[player]?.zones[zone]
-    if (zoneId !== undefined) {
-        return game.zones[zoneId]
-    }
-    return undefined
+export function index_game(game: GameT): Game {
+    return {
+        players: game.players.reduce((d, x, i) => ({...d, [x.name]: x}), {}),
+        cards: game.cards.reduce((d, x, i) => ({...d, [x.card_id]: x}), {}),
+        zones: game.zones.reduce((d, x, i) => ({...d, [`${x.owner}-${x.name}`]: x}), {}),
+        battlefieldCards: game.battlefield_cards.reduce((d, x, i) => ({...d, [x.bf_id]: x}), {}),
+        actionLog: game.action_log
+    };
 }

@@ -12,8 +12,9 @@ export function usePlayerDispatch() {
     const playerName = useSelector((state: ClientState) => state.playerPrefs.name)
 
     function action(action: { type: string }) {
-        const playerActon: PlayerAction = { ...action, who: playerName, when: Date.now() }
-        dispatch(playerActon)
+        const playerAction: PlayerAction = { ...action, who: playerName, when: Date.now() }
+        console.log(gameId, playerAction, new Date(playerAction.when).toLocaleTimeString())
+        dispatch(playerAction)
     }
 
     return action

@@ -91,15 +91,15 @@ export function createTokenCopy(owner: string, copyOfCardId: number) {
         type: CREATE_TOKEN,
         owner,
         copyOfCardId,
-        name: null,
+        sf_id: null,
     }
 }
-export function createTokenNew(owner: string, name: string) {
+export function createTokenNew(owner: string, sf_id: string) {
     return {
         type: CREATE_TOKEN,
         owner,
         copyOfCardId: null,
-        name,
+        sf_id,
     }
 }
 

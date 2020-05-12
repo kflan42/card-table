@@ -1,4 +1,4 @@
-import { combineReducers } from 'redux'
+import {combineReducers} from 'redux'
 
 import update from 'immutability-helper'
 
@@ -20,12 +20,14 @@ import {
     PlayerAction,
     CardAction, SET_GAME, GameSet,
 } from './Actions'
-import { Game, HAND, BATTLEFIELD, BattlefieldCard, HoveredCard, LIBRARY, Card } from './ClientState'
-import { shuffleArray } from './Utilities'
+import {HAND, BATTLEFIELD, HoveredCard, Game, LIBRARY} from './ClientState'
+import {shuffleArray} from './Utilities'
+import CardDB from "./CardDB";
+import {BattlefieldCard, Card} from "./magic_models";
 
 
 function gameReducer(
-    state: Game = {players:{}, cards:{}, zones:{}, battlefields:{}, battlefieldCards:{}, actionLog:[]},
+    state: Game = {players: {}, cards: {}, zones: {}, battlefieldCards: {}, actionLog: []},
     gameAction: PlayerAction
 ) {
     let [newState, logLine]: [Game?, string?] = [undefined, undefined]
@@ -33,8 +35,13 @@ function gameReducer(
 
     function getBfCardName(g: Game, bfId: number) {
         const bfCard = g.battlefieldCards[bfId]
-        const card = g.cards[bfCard.cardId]
-        return card.facedown ? "a facedown card" : card.name
+        return getCardName(g, bfCard.card_id)
+    }
+
+    function getCardName(g: Game, cardId: number) {
+        const card = g.cards[cardId]
+        const sfCard = CardDB.getCard(card.sf_id)
+        return card.facedown ? "a facedown card" : sfCard.name
     }
 
     switch (gameAction.type) {
@@ -47,62 +54,107 @@ function gameReducer(
             break;
         case SHUFFLE_LIBRARY:
             action = gameAction as { type: string, who: string, when: number, owner: string }
-            const zoneId = state.players[action.owner].zones[LIBRARY]
-            newState = update(state, { zones: { [zoneId]: { cards: a => { shuffleArray(a); return a; } } } })
+            const zoneId = `${action.owner}-${LIBRARY}`
+            newState = update(state, {
+                zones: {
+                    [zoneId]: {
+                        cards: a => {
+                            shuffleArray(a);
+                            return a;
+                        }
+                    }
+                }
+            })
             logLine = ` shuffled ${action.who === action.owner ? "their" : `${action.owner}'s`} Library`
             break;
         case TOGGLE_TAP_CARD:
             action = gameAction as unknown as CardAction
-            newState = update(state, { battlefieldCards: { [action.id]: { $toggle: ['tapped'] } } })
+            newState = update(state, {battlefieldCards: {[action.id]: {$toggle: ['tapped']}}})
             logLine = ` tapped ${getBfCardName(state, action.id)}`
             break;
         case TOGGLE_TRANSFORM_CARD:
             action = gameAction as unknown as CardAction
-            newState = update(state, { cards: { [action.id]: { $toggle: ['transformed'] } } })
-            logLine = action.silent ? undefined : ` transformed ${newState.cards[action.id].name}`
+            newState = update(state, {cards: {[action.id]: {$toggle: ['transformed']}}})
+            logLine = action.silent ? undefined : ` transformed ${getCardName(state, action.id)}`
             break;
         case TOGGLE_FACEDOWN_CARD:
             action = gameAction as unknown as CardAction
-            newState = update(state, { cards: { [action.id]: { $toggle: ['facedown'] } } })
-            logLine = action.silent ? undefined : ` flipped ${newState.cards[action.id].name}`
+            newState = update(state, {cards: {[action.id]: {$toggle: ['facedown']}}})
+            logLine = action.silent ? undefined : ` flipped ${getCardName(state, action.id)}`
             break;
         case SET_PLAYER_COUNTER:
             action = gameAction as { type: string, who: string, when: number, player: string, kind: string, value: number }
             if (action.value !== 0) {
-                newState = update(state, { players: { [action.player]: { counters: { $merge: { [action.kind]: action.value } } } } })
+                const kind = action.kind
+                let idx = state.players[action.player].counters.findIndex(c=>c.name === kind)
+                if (idx < 0) idx = state.players[action.player].counters.length
+                newState = update(state, {
+                    players: {
+                        [action.player]: {
+                            counters: {
+                                $merge: {
+                                    [idx]: {
+                                        name: action.kind,
+                                        value: action.value
+                                    }
+                                }
+                            }
+                        }
+                    }
+                })
             } else {
-                newState = update(state, { players: { [action.player]: { counters: { $unset: [action.kind] } } } })
+                const kind = action.kind
+                const newCounters = state.players[action.player].counters.filter(c => (c.name !== kind))
+                newState = update(state, {players: {[action.player]: {counters: {$set: newCounters}}}})
             }
             logLine = ` set ${action.player}'s ${action.kind} counter to ${action.value}`
             break;
         case SET_CARD_COUNTER:
             action = gameAction as { type: string, who: string, when: number, bfId: number, kind: string, value: number }
             if (action.value !== 0) {
-                newState = update(state, { battlefieldCards: { [action.bfId]: { counters: { $merge: { [action.kind]: action.value } } } } })
+                const kind = action.kind
+                let idx = state.battlefieldCards[action.bfId].counters.findIndex(c=>c.name === kind)
+                if (idx < 0) idx = state.battlefieldCards[action.bfId].counters.length
+                newState = update(state, {
+                    battlefieldCards: {
+                        [action.bfId]: {
+                            counters: {
+                                $merge: {
+                                    [idx]: {
+                                        name: action.kind,
+                                        value: action.value
+                                    }
+                                }
+                            }
+                        }
+                    }
+                })
             } else {
-                newState = update(state, { battlefieldCards: { [action.bfId]: { counters: { $unset: [action.kind] } } } })
+                const kind = action.kind
+                const newCounters = state.battlefieldCards[action.bfId].counters.filter(c => (c.name !== kind))
+                newState = update(state, {battlefieldCards: {[action.bfId]: {counters: {$set: newCounters}}}})
             }
             logLine = ` set ${getBfCardName(newState, action.bfId)}'s ${action.kind} counter to ${action.value}`
             break;
         case CREATE_TOKEN:
-            action = gameAction as { type: string, who: string, when: number, owner: string, copyOfCardId?: number, name?: string }
+            action = gameAction as { type: string, who: string, when: number, owner: string, copyOfCardId?: number, sf_id?: string }
             // create card for it
             const maxId = Object.keys(state.cards).map(k => Number.parseInt(k)).reduce((p, c) => Math.max(p, c))
             const sourceCard = action.copyOfCardId ? state.cards[action.copyOfCardId] : {
-                name: action.name as string,
+                sf_id: action.sf_id as string,
                 facedown: false,
                 transformed: false
             }
-            const newCard: Card = { ...sourceCard, id: maxId + 1, owner: action.owner, token: true }
-            newState = update(state, { cards: { $merge: { [newCard.id]: newCard } } })
+            const newCard: Card = {...sourceCard, card_id: maxId + 1, owner: action.owner, token: true}
+            newState = update(state, {cards: {$merge: {[newCard.card_id]: newCard}}})
             // create bfCard
-            newState = newBfCard(newState, action.owner, newCard.id)
-            logLine = ` created  ${newCard.name}`
+            newState = addNewBfCard(newState, action.owner, newCard.card_id)
+            logLine = ` created  ${getCardName(newState, newCard.card_id)}`
             break;
         case ADD_LOG_LINE:
             action = gameAction as { type: string, who: string, when: number, line: string }
-            const actionLine = { who: action.who, when: action.when, line: action.line }
-            newState = update(state, { actionLog: { $push: [actionLine] } })
+            const actionLine = {who: action.who, when: action.when, line: action.line}
+            newState = update(state, {actionLog: {$push: [actionLine]}})
             logLine = undefined // already added a line
             break;
         default:
@@ -116,10 +168,10 @@ function gameReducer(
             // record to user visible game log
             if (newState.actionLog.length > 256) {
                 // drop first (oldest)
-                newState = update(newState, { actionLog: { $splice: [[0, 1]] } })
+                newState = update(newState, {actionLog: {$splice: [[0, 1]]}})
             }
-            const actionLine = { who: gameAction.who, when: gameAction.when, line: logLine }
-            newState = update(newState, { actionLog: { $push: [actionLine] } })
+            const actionLine = {who: gameAction.who, when: gameAction.when, line: logLine}
+            newState = update(newState, {actionLog: {$push: [actionLine]}})
         }
         return newState
     }
@@ -127,16 +179,19 @@ function gameReducer(
 }
 
 const stateReducer = combineReducers({
-    playerPrefs: (x = { name: undefined, color: undefined }, y) => {
+    playerPrefs: (x = {name: undefined, color: undefined}, y) => {
         if (y.type === LOCAL_STATE_LOAD) return y.payload;
         else return x;
     },
     game: gameReducer,
-    cardUnderCursor: (x: HoveredCard = { cardId: null, bfId: null }, y) => {
+    hoveredCard: (x: HoveredCard = {cardId: null, bfId: null}, y) => {
         switch (y.type) {
-            case HOVERED_CARD: return { cardId: y.cardId, bfId: x.bfId };
-            case HOVERED_BFCARD: return { cardId: y.cardId, bfId: y.bfId };
-        } return x;
+            case HOVERED_CARD:
+                return {cardId: y.cardId, bfId: x.bfId};
+            case HOVERED_BFCARD:
+                return {cardId: y.cardId, bfId: y.bfId};
+        }
+        return x;
     },
 })
 
@@ -147,11 +202,21 @@ function handleMoveCard(newState: Game, moveCard: MoveCard): [Game, string?] {
     const sameZone = moveCard.tgtZone === moveCard.srcZone
     // set things if moving around field
     if (moveCard.bfId !== undefined && moveCard.toX !== undefined && moveCard.toY !== undefined) {
-        newState = update(newState, { battlefieldCards: { [moveCard.bfId]: { $merge: { x: moveCard.toX, y: moveCard.toY, changed: moveCard.when } } } })
+        newState = update(newState, {
+            battlefieldCards: {
+                [moveCard.bfId]: {
+                    $merge: {
+                        x: moveCard.toX,
+                        y: moveCard.toY,
+                        last_touched: moveCard.when
+                    }
+                }
+            }
+        })
     }
     // re ordering hand
     if (moveCard.tgtZone === HAND && moveCard.srcZone === HAND && sameOwner && moveCard.toIdx !== undefined) {
-        const zoneId = newState.players[moveCard.tgtOwner].zones[HAND]
+        const zoneId = `${moveCard.tgtOwner}-${HAND}`
         const originalIdx = newState.zones[zoneId].cards.indexOf(moveCard.cardId)
         newState = update(newState, {
             zones: {
@@ -169,15 +234,15 @@ function handleMoveCard(newState: Game, moveCard: MoveCard): [Game, string?] {
     if (!sameZone || !sameOwner) {
         // need to remove from src zone
         if (moveCard.srcZone === BATTLEFIELD && moveCard.bfId !== undefined) {
-            const srcBfCardIdx = newState.battlefields[moveCard.srcOwner].battlefieldCards.indexOf(moveCard.bfId)
-            newState = update(newState, { battlefields: { [moveCard.srcOwner]: { battlefieldCards: { $splice: [[srcBfCardIdx, 1]] } } } })
+            const zoneId = `${moveCard.srcOwner}-${BATTLEFIELD}`
+            const srcBfCardIdx = newState.zones[zoneId].cards.indexOf(moveCard.bfId)
+            newState = update(newState, {zones: {[zoneId]: {cards: {$splice: [[srcBfCardIdx, 1]]}}}})
             if (moveCard.tgtZone !== BATTLEFIELD) {
                 // if destination isn't battlefield, need to destry bf card
-                newState = update(newState, { battlefieldCards: { $unset: [moveCard.bfId] } })
+                newState = update(newState, {battlefieldCards: {$unset: [moveCard.bfId]}})
             }
-        }
-        else {
-            const srcZoneId = newState.players[moveCard.srcOwner].zones[moveCard.srcZone]
+        } else {
+            const srcZoneId = `${moveCard.srcOwner}-${moveCard.srcZone}`
             const originalIdx = newState.zones[srcZoneId].cards.indexOf(moveCard.cardId)
             newState = update(newState, {
                 zones: {
@@ -194,16 +259,15 @@ function handleMoveCard(newState: Game, moveCard: MoveCard): [Game, string?] {
         // add to tgt zone
         if (moveCard.tgtZone === BATTLEFIELD) {
             if (moveCard.bfId !== undefined) {
-                newState = update(newState, { battlefields: { [moveCard.tgtOwner]: { battlefieldCards: { $push: [moveCard.bfId] } } } })
-            }
-            else {
+                const zoneId = `${moveCard.tgtOwner}-${BATTLEFIELD}`
+                newState = update(newState, {zones: {[zoneId]: {cards: {$push: [moveCard.bfId]}}}})
+            } else {
                 // create a BFCard
-                newState = newBfCard(newState, moveCard.tgtOwner, moveCard.cardId, moveCard.toX, moveCard.toY)
+                newState = addNewBfCard(newState, moveCard.tgtOwner, moveCard.cardId, moveCard.toX, moveCard.toY)
             }
-        }
-        else {
+        } else {
             // not moving to battlefield
-            const tgtZoneId = newState.players[moveCard.tgtOwner].zones[moveCard.tgtZone]
+            const tgtZoneId = `${moveCard.tgtOwner}-${moveCard.tgtZone}`
             if (moveCard.toIdx !== undefined) {
                 newState = update(newState, {
                     zones: {
@@ -216,9 +280,8 @@ function handleMoveCard(newState: Game, moveCard: MoveCard): [Game, string?] {
                         }
                     }
                 })
-            }
-            else { // append
-                newState = update(newState, { zones: { [tgtZoneId]: { cards: { $push: [moveCard.cardId] } } } })
+            } else { // append
+                newState = update(newState, {zones: {[tgtZoneId]: {cards: {$push: [moveCard.cardId]}}}})
             }
         }
     }
@@ -228,19 +291,19 @@ function handleMoveCard(newState: Game, moveCard: MoveCard): [Game, string?] {
     return [newState, sameOwner && sameZone ? undefined : line]
 }
 
-function newBfCard(newState: Game, owner: string, cardId: number, toX?: number, toY?: number, ) {
+function addNewBfCard(newState: Game, owner: string, cardId: number, toX?: number, toY?: number,) {
     const maxId = Object.keys(newState.battlefieldCards).map(k => Number.parseInt(k)).reduce((p, c) => Math.max(p, c))
     const bfc: BattlefieldCard = {
-        bfId: maxId + 1,
-        cardId: cardId,
+        bf_id: maxId + 1,
+        card_id: cardId,
         x: toX ? toX : 5,
         y: toY ? toY : 5,
         tapped: false,
-        counters: {},
-        changed: Date.now()
+        counters: [],
+        last_touched: Date.now()
     }
-    newState = update(newState, { battlefieldCards: { $merge: { [bfc.bfId]: bfc } } })
-    newState = update(newState, { battlefields: { [owner]: { battlefieldCards: { $push: [bfc.bfId] } } } })
+    newState = update(newState, {battlefieldCards: {$merge: {[bfc.bf_id]: bfc}}})
+    newState = update(newState, {zones: {[`${owner}-${BATTLEFIELD}`]: {cards: {$push: [bfc.bf_id]}}}})
     return newState
 }
 

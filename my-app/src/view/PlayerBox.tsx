@@ -21,8 +21,8 @@ const PlayerBox: React.FC<PlayerBoxP> = ({ player }) => {
     });
 
     const counters = []
-    for (const kind in playerState.counters) {
-        counters.push(<PlayerCounter key={kind} player={player} kind={kind} />)
+    for (const counter of playerState.counters) {
+        counters.push(<PlayerCounter key={counter.name} player={player} kind={counter.name} value={counter.value}/>)
     }
 
     const playerDispatch = usePlayerDispatch()

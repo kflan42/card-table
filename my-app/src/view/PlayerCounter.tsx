@@ -1,25 +1,20 @@
 import React from 'react'
 
 import './_style.css';
-import { useConfirmation } from './ConfirmationService';
-import { useSelector } from 'react-redux';
-import { setPlayerCounter } from '../Actions';
-import { ClientState } from '../ClientState';
-import { ConfirmationResult } from './ConfirmationDialog';
-import { usePlayerDispatch } from '../PlayerDispatch';
+import {useConfirmation} from './ConfirmationService';
+import {setPlayerCounter} from '../Actions';
+import {ConfirmationResult} from './ConfirmationDialog';
+import {usePlayerDispatch} from '../PlayerDispatch';
 
 interface PlayerCounterP {
     player: string,
-    kind: string
+    kind: string,
+    value: number
 }
 
 
-const PlayerCounter: React.FC<PlayerCounterP> = ({ player, kind }) => {
-
+const PlayerCounter: React.FC<PlayerCounterP> = ({player, kind, value}) => {
     const label = kind === "Life" ? "❤️" : kind;
-    const value = useSelector((state: ClientState) => {
-        return state.game.players[player].counters[kind];
-    });
 
     const playerDispatch = usePlayerDispatch()
 

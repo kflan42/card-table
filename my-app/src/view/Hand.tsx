@@ -1,13 +1,13 @@
 import React from 'react'
 
 import './_style.css';
-import {ClientState, getZone, HAND} from '../ClientState';
-import { useSelector } from 'react-redux';
-import { useDrop, DropTargetMonitor } from 'react-dnd';
+import {ClientState, HAND} from '../ClientState';
+import {useSelector} from 'react-redux';
+import {useDrop, DropTargetMonitor} from 'react-dnd';
 import MemoizeHandCard from './HandCard';
-import { ItemTypes, DragCard } from './DnDUtils';
-import { MOVE_CARD } from '../Actions';
-import { usePlayerDispatch } from '../PlayerDispatch';
+import {ItemTypes, DragCard} from './DnDUtils';
+import {MOVE_CARD} from '../Actions';
+import {usePlayerDispatch} from '../PlayerDispatch';
 
 export interface HandProps {
 }
@@ -15,7 +15,7 @@ export interface HandProps {
 const Hand: React.FC<HandProps> = () => {
 
     const zoneState = useSelector((state: ClientState) => {
-        return getZone(state.game, state.playerPrefs.name, HAND)
+        return state.game.zones[`${state.playerPrefs.name}-${HAND}`]
     })
 
     const playerDispatch = usePlayerDispatch()
@@ -46,14 +46,15 @@ const Hand: React.FC<HandProps> = () => {
         let i = 0;
         for (const cardId of zoneState.cards) {
             listItems.push(
-                <MemoizeHandCard key={cardId} cardId={cardId} handIdx={i++} owner={zoneState.owner} />
+                <MemoizeHandCard key={cardId} cardId={cardId} handIdx={i++} owner={zoneState.owner}/>
             )
         }
     }
 
     return (
         <div ref={drop} className="Hand">
-            <span style={{ userSelect: "none", writingMode: "vertical-lr", textOrientation: "upright", minHeight: "13em" }}>
+            <span
+                style={{userSelect: "none", writingMode: "vertical-lr", textOrientation: "upright", minHeight: "13em"}}>
                 Hand
             </span>
             {listItems}

@@ -81,12 +81,17 @@ class Login extends React.Component<LoginP> {
         localStorage.setItem('userColor', this.state.color)
 
         console.log("joining table...", this.state)
+        if(this.state.table === 'test') {
+             this.props.cb(this.state.table)
+            return; // will use non dynamic server data
+        }
         this.sendChoices()
             .then(async response => {
-                const data = await response.json();
+                console.log(response)
 
                 // check for error response
                 if (!response.ok) {
+                    const data = await response.json()
                     // get error message from body or default to response status
                     const error = (data && data.message) || response.status;
                     return Promise.reject(error);
@@ -127,10 +132,13 @@ class Login extends React.Component<LoginP> {
             const g = (v & 0x00ff00) >> 8
             const b = v & 0x0000ff
             // const s = r.toString(16) + g.toString(16) + b.toString(16)
-            if ((r < 0xa0 || g < 0xa0 || b < 0xa0) /* && (r > 0x40 || g > 0x40 || b > 0x40) */) {
+            // let too_pale = r < 0xa0 || g < 0xa0 || b < 0xa0;
+            // let too_bright = r > 0x40 || g > 0x40 || b > 0x40;
+            let brightness = r + g + b
+            if (true) {
                 colorItems.push(<span
                     key={color}
-                    style={{backgroundColor: color, color: "white", cursor: "pointer"}}
+                    style={{backgroundColor: color, color: brightness < 128 * 3 ? "white" : "black", cursor: "pointer"}}
                     onClick={() => this.pickColor(color)}
                 >{color}</span>)
             }

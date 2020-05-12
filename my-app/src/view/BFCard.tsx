@@ -24,7 +24,7 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
     const dispatch = useDispatch()
     const playerDispatch = usePlayerDispatch()
 
-    const cardProps = { cardId: bfState?.cardId }
+    const cardProps = { cardId: bfState?.card_id }
 
     const dragCard: DragCard = {
         type: ItemTypes.BFCARD, bfId, cardId: cardProps.cardId, srcZone: BATTLEFIELD, srcOwner: fieldOwner
@@ -84,8 +84,9 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
     }
 
     const counters = [];
-    for (const counterLabel in bfState.counters) {
-        const count = bfState.counters[counterLabel];
+    for (const counter of bfState.counters) {
+        const count = counter.value
+        let counterLabel = counter.name;
         const m = counterLabel.match(/([+-])(\d+)\/([+-])(\d+)/)
         let label = <> {counterLabel} </>
         if (m) {
@@ -133,7 +134,7 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
             onMouseOver={() => dispatch(hoveredBFCard(bfId, cardProps.cardId))}
             onMouseOut={() => dispatch(hoveredBFCard(null))}
             onClick={(e) => {
-                if (!e.isDefaultPrevented()) playerDispatch(cardAction(TOGGLE_TAP_CARD, bfState.bfId))
+                if (!e.isDefaultPrevented()) playerDispatch(cardAction(TOGGLE_TAP_CARD, bfState.bf_id))
             }}
         >
             <Card cardId={cardProps.cardId} borderStyle={borderWidth + " solid"} ></Card>
