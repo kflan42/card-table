@@ -7,7 +7,8 @@ import time
 from collections import defaultdict
 from typing import List, Tuple, Optional
 
-from magic_models import SFCard, JoinRequest, Player, Card, Zone, ZONES, Game, LIBRARY, Table, Counter, Face
+from magic_models import SFCard, JoinRequest, Player, Card, Zone, ZONES, Game, LIBRARY, Table, Counter, Face, EXILE, \
+    COMMAND_ZONE
 
 
 class MagicTable:
@@ -73,9 +74,12 @@ class MagicTable:
         zones = [Zone(name=z, z_id=zid + i, owner=join_request.name, cards=[]) for i, z in enumerate(ZONES)]
         table.game.zones.extend(zones)
 
-        # start with cards in library
+        # start with cards in library, last in command zone, extras in sideboard
         c_ids = [c.card_id for c in cards]
-        [z for z in zones if z.name == LIBRARY][0].cards.extend(c_ids)
+        [z for z in zones if z.name == LIBRARY][0].cards.extend(c_ids[:99])
+        [z for z in zones if z.name == COMMAND_ZONE][0].cards.append(c_ids[99])
+        if len(c_ids) > 100:
+            [z for z in zones if z.name == EXILE][0].cards.extend(c_ids[100:])
         z_ids = [z.z_id for z in zones]
 
         # setup player
@@ -137,6 +141,7 @@ class CardResolver:
 
     def find_card(self, name, set_name=None, number=None) -> SFCard:
         try:
+            name = name.replace(" / ", " // ")  # some deck formats use single slash instead of double
             name_map = self.card_map[name]
             official_set = set_name and len(set_name) == 3
             if official_set and number and set_name in name_map:
@@ -156,6 +161,8 @@ def parse_deck(deck_text: str) -> List[Tuple[str, Optional[str], Optional[str]]]
     cards = []
     for line in deck_text.strip().splitlines():
         card_parts = line.strip().split(" ")
+        if len(card_parts) < 2:  # shortest is count "name"
+            continue  # blanks separate sideboard sometimes
         count = int(card_parts[0].replace("r", "").replace("x", ""))
         set_name = None
         set_number = None

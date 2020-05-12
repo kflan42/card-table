@@ -5,7 +5,8 @@ from dataclasses_json import DataClassJsonMixin
 from py_ts_interfaces import Interface
 
 
-# transport classes, so per https://pypi.org/project/py-ts-Interface, DataClassJsonMixins/ no mapped types e.g. Dict
+# transport classes per https://pypi.org/project/py-ts-interfaces Interface, no mapped types e.g. Dict
+# serialization support from https://lidatong.github.io/dataclasses-json/ DataClassJsonMixins
 
 @dataclass()
 class Face(Interface, DataClassJsonMixin):
@@ -51,9 +52,9 @@ class Card(Interface, DataClassJsonMixin):
     card_id: int
     sf_id: str
     owner: str
-    facedown = False
-    transformed = False
-    token = False
+    facedown: bool = False
+    transformed: bool = False
+    token: bool = False
 
 
 @dataclass
@@ -70,9 +71,9 @@ class BattlefieldCard(Interface, DataClassJsonMixin):
     card_id: int
     x: int
     y: int
-    tapped = False
-    counters: List[Counter]
-    last_touched = 0
+    tapped: bool = False
+    counters: List[Counter] = field(default_factory=list)
+    last_touched: int = 0
 
 
 @dataclass
