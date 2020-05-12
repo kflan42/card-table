@@ -32,3 +32,15 @@ Cache-Control: no-cache
 
 ###
 
+GET http://localhost:5000/table/test
+Accept: */*
+Cache-Control: no-cache
+
+###
+
+GET http://localhost:5000/table/test/cards
+Accept: */*
+Cache-Control: no-cache
+
+###
+

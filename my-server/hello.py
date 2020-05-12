@@ -25,9 +25,10 @@ def index():
 
 
 def get_table(table_name):
-    if table_name == "test":
-        return test_table()
     if table_name in tables:  # check memory
+        return tables[table_name]
+    elif table_name == "test":
+        tables[table_name] = test_table()
         return tables[table_name]
     else:
         table = MagicTable.load(table_name)  # check disk
