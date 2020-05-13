@@ -1,27 +1,30 @@
 import json
 import logging
+import socket
 import sys
-
 import typing
-from flask import Flask, render_template, jsonify
+
+from flask import Flask, render_template
 from flask import request
 from flask_socketio import SocketIO, join_room, emit, send
 
 # note that flask logs to stderr by default
 from magic_models import JoinRequest
-from magic_table import MagicTable, load_cards
+from magic_table import MagicTable
 from test_table import test_table
 
+IP = socket.gethostbyname(socket.gethostname())
+
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins=[
-    'http://localhost:5000',  # necessary for flask served bits
-    'http://localhost:3000',  # necessary for static file server
-    # '*'  # necessary for clients until i figure out proxying from static file server
-])
-# todo try ideas on https://github.com/facebook/create-react-app/issues/5280 instead of cors *
+socketio = SocketIO(app,
+                    cors_allowed_origins=[
+                        'http://localhost:5000',  # necessary for flask served static js
+                        'http://localhost:3000',  # necessary for static file server js
+                        f'http://{IP}:3000',  # necessary for static file server js loaded on other machine
+                        # '*'  # would allow clients served from anywhere, not a good idea
+                    ])
+# todo try ideas on https://github.com/facebook/create-react-app/issues/5280 instead of cors and these ports
 # or https://create-react-app.dev/docs/proxying-api-requests-in-development/
-# currently react server tries and fails to proxy websocket, tho succeeds with files
-# can't seem to connect to websocket from other computer on my network, but http works
 
 tables: typing.Dict[str, MagicTable] = {}  # dict to track active tables
 
@@ -35,7 +38,7 @@ def index():
 def get_table(table_name):
     if table_name in tables:  # check memory
         return tables[table_name]
-    elif table_name == "test":
+    elif "test" in table_name and table_name[:4] == "test":
         tables[table_name] = test_table()
         return tables[table_name]
     else:
@@ -133,5 +136,7 @@ def on_flip_card(data):
 if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s %(message)s', stream=sys.stdout, level=logging.DEBUG)
     logging.info("hello from logging")
-    socketio.run(app, debug=True)
+    socketio.run(app,
+                 debug=True,
+                 host='0.0.0.0')  # so that the server listens on the public network interface, else localhost
     logging.warning("goodbye world")

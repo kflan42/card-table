@@ -65,7 +65,6 @@ const PlayerBox: React.FC<PlayerBoxP> = ({ player }) => {
                 <span className="buttontooltiptext">Add Counter</span>
             </div>
         </div>
-        /* todo popup dialog for adding a counter (player/card), delete counters at zero */
     )
 }
 

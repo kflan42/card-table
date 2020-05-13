@@ -14,13 +14,14 @@ export function usePlayerDispatch() {
 
     function action(action: { type: string }) {
         const playerAction: PlayerAction = {...action, who: playerName, when: Date.now()}
-        console.log(gameId, playerAction, new Date(playerAction.when).toLocaleTimeString())
-
-        // todo use a socket.io room for the table name
-        MySocket.get_socket().emit('player_action', playerAction)
-
-        // todo bypass this server callback for local test game
-        // Game call back on action will dispatch(playerAction)
+        if (gameId === 'test') {
+            dispatch(playerAction)
+            // bypass server for local test game
+        } else {
+            console.log(gameId, playerAction, new Date(playerAction.when).toLocaleTimeString())
+            // todo use a socket.io room for the table name
+            MySocket.get_socket().emit('player_action', playerAction)
+        }
     }
 
     return action

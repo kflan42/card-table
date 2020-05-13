@@ -8,9 +8,6 @@ import { usePlayerDispatch } from "../PlayerDispatch";
 
 const Die: React.FC = () => {
 
-  // TODO, abstract a player action dispatcher that will set the who property on all actions,
-  // then call that from compnonents instead of useDispatch
-  // this will also allow me to hit server first
   const playerDispatch = usePlayerDispatch()
   const confirmation = useConfirmation()
 

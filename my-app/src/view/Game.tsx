@@ -86,7 +86,7 @@ const Game: React.FC = () => {
                     playerDispatch(createTokenCopy(userName, hoveredCard.cardId as number));
                     break;
                 case "New":
-                    // todo account for set, error-handle, auto complete
+                    // todo account for set, error-handle, auto complete during token selection
                     playerDispatch(createTokenNew(userName, CardDB.findCardNow(s.s).sf_id))
                     break;
             }

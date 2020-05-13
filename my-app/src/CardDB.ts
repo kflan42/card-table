@@ -23,8 +23,6 @@ class CardDB {
         else {
             const url = gameId === 'test' ? '/testCards.json' : '/table/' + gameId + '/cards'
             console.log("beginning load from " + url)
-            // TODO load only necessary cards from server, this 2MB file is slow. split cards vs tokens.
-            // re-run lighthouse with prod server, dev one has huge dev js piles of files, my code negligible
             CardDB.cards = fetch(url).then(r => {
                 return r.json()
             })
