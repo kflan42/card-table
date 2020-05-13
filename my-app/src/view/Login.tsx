@@ -81,8 +81,8 @@ class Login extends React.Component<LoginP> {
         localStorage.setItem('userColor', this.state.color)
 
         console.log("joining table...", this.state)
-        if(this.state.table === 'test') {
-             this.props.cb(this.state.table)
+        if (this.state.table === 'test') {
+            this.props.cb('/table/' + this.state.table)
             return; // will use non dynamic server data
         }
         this.sendChoices()
@@ -98,7 +98,7 @@ class Login extends React.Component<LoginP> {
                 }
 
                 // route over to table
-                this.props.cb(this.state.table)
+                this.props.cb('/table/' + this.state.table)
             })
             .catch(error => {
                 console.error('There was an error!', error);
@@ -112,7 +112,7 @@ class Login extends React.Component<LoginP> {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(this.state)
         };
-        return fetch('http://localhost:3000/table/' + this.state.table, requestOptions)
+        return fetch('/table/' + this.state.table, requestOptions)
 
     }
 

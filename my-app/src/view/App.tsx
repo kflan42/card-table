@@ -18,6 +18,7 @@ import Game from './Game';
 import Log from './Log';
 import stateReducer from '../Reducers';
 import { ConfirmationServiceProvider } from './ConfirmationService';
+import Sockets from "./Sockets";
 
 const App: React.FC = () => {
 
@@ -29,7 +30,7 @@ const App: React.FC = () => {
             <Router>
 
                 <Switch>
-                    <Route path="/:gameId">
+                    <Route path="/table/:gameId">
                         <Provider store={store}>
                             <DndProvider backend={Backend}>
                                 <ConfirmationServiceProvider>
@@ -41,8 +42,11 @@ const App: React.FC = () => {
                             </ConfirmationServiceProvider>
                         </Provider>
                     </Route>
-                    <Route path="">
+                    <Route path="/login">
                         <LoginForm />
+                    </Route>
+                    <Route path="/sockets">
+                        <Sockets />
                     </Route>
                 </Switch>
             </Router>

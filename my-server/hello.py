@@ -13,7 +13,15 @@ from magic_table import MagicTable, load_cards
 from test_table import test_table
 
 app = Flask(__name__)
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins=[
+    'http://localhost:5000',  # necessary for flask served bits
+    'http://localhost:3000',  # necessary for static file server
+    # '*'  # necessary for clients until i figure out proxying from static file server
+])
+# todo try ideas on https://github.com/facebook/create-react-app/issues/5280 instead of cors *
+# or https://create-react-app.dev/docs/proxying-api-requests-in-development/
+# currently react server tries and fails to proxy websocket, tho succeeds with files
+# can't seem to connect to websocket from other computer on my network, but http works
 
 tables: typing.Dict[str, MagicTable] = {}  # dict to track active tables
 
@@ -66,6 +74,23 @@ def get_cards(table_name):
         return "Table not found.", 404
 
 
+@socketio.on('connect')
+def test_connect():
+    app.logger.warning(f'Client connected {{{request.method} {request.headers}}}')
+
+
+@socketio.on('disconnect')
+def test_disconnect():
+    app.logger.warning(f'Client disconnected {{{request.method} {request.headers}}}')
+
+
+@socketio.on('player_action')
+def on_player_action(data):
+    app.logger.info(f'player_action {data}')
+    # todo store action for late joiners or refresh
+    emit('player_action', data, broadcast=True)
+
+
 @socketio.on('create')
 def on_create(data):
     """Create a game lobby"""
@@ -89,7 +114,7 @@ def on_join(data):
         tables[room]['users'].append(username)
         join_room(room)
         send(tables[room], room=room, json=True)
-        emit('joined', tables[room], json=True)
+        emit('joined', tables[room], json=True)  # on('joined'
         app.logger.warning("%s %s", data, room)
     else:
         emit('error', {'error': 'Unable to join room. Room does not exist.'})
@@ -101,7 +126,7 @@ def on_flip_card(data):
     room = data['room']
     card = data['card']
     tables[room]['flip_card'] = card
-    send(tables[room], room=room)
+    send(tables[room], room=room)  # json=False means on('message'
     app.logger.warning("%s %s", data, room)
 
 

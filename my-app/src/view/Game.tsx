@@ -9,7 +9,7 @@ import {
     cardAction,
     createTokenCopy,
     createTokenNew,
-    localStateLoaded,
+    localStateLoaded, PlayerAction,
     setCardCounter,
     setGame,
     TOGGLE_FACEDOWN_CARD,
@@ -23,6 +23,7 @@ import {usePlayerDispatch} from '../PlayerDispatch';
 import {useParams} from "react-router-dom";
 import {Game as GameT} from "../magic_models";
 import CardDB from "../CardDB";
+import MySocket from "../MySocket";
 
 const Game: React.FC = () => {
     const userName = useSelector((state: ClientState) => state.playerPrefs.name)
@@ -51,11 +52,19 @@ const Game: React.FC = () => {
             const data = r.json()
             const game: GameT = await data
             dispatch(setGame(index_game(game)))
+
+            try {
+                // now that game is loaded, register for updates to it
+                MySocket.get_socket().on('player_action', function (msg: PlayerAction) {
+                    console.log('received', msg)
+                    return dispatch(msg);
+                })
+            } catch (e) {
+                console.error(e)
+            }
         }
 
-        const gameUrl = gameId === 'test' ? 'testGame.json' : 'http://localhost:3000/table/' + gameId
-        // const headers = { Accept: "application/json" }
-        // const { data, error, isPending, run } = useFetch<Game>("testGame.json", {headers} )
+        const gameUrl = gameId === 'test' ? '/testGame.json' : '/table/' + gameId
         fetch(gameUrl).then(
             gameLoaded
         )
@@ -141,7 +150,6 @@ const Game: React.FC = () => {
                 break;
         }
     }
-
 
     //tabIndex means it can recieve focus which means it can receive keyboard events
     return userName

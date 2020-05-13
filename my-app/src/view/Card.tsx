@@ -27,7 +27,7 @@ const Card: React.FC<CardProps> = ({cardId, imageSize}) => {
     // altText, url
     const getFront = () => {
         if (card.facedown) {
-            return ["Card Back", "Magic_card_back.jpg"]
+            return ["Card Back", "/Magic_card_back.jpg"]
         }
         if (sfCard) {
             let face = sfCard.face
@@ -35,9 +35,9 @@ const Card: React.FC<CardProps> = ({cardId, imageSize}) => {
                 face = card.transformed ? sfCard.faces[1] : sfCard.faces[0]
             }
             const img = imageSize === "normal" ? face?.normal : face?.small
-            return img ? [sfCard.name, img] : ["Card Image Not Found", "react_logo_skewed.png"]
+            return img ? [sfCard.name, img] : ["Card Image Not Found", "/react_logo_skewed.png"]
         } else
-            return ["Card Not Found", "react_logo_skewed.png"]
+            return ["Card Not Found", "/react_logo_skewed.png"]
     }
 
     const front = getFront()
