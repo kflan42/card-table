@@ -139,4 +139,5 @@ if __name__ == '__main__':
     socketio.run(app,
                  debug=True,
                  host='0.0.0.0')  # so that the server listens on the public network interface, else localhost
+    # todo figure out how to run this insecure code safely before forwarding traffic through router
     logging.warning("goodbye world")

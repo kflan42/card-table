@@ -43,7 +43,7 @@ const Game: React.FC = () => {
         if (userName)
             return
         const u = localStorage.getItem('userName') || 'onlooker'
-        const c = localStorage.getItem('userColor')
+        const c = localStorage.getItem('userColor') || 'Gray'
         if (u && c) dispatch(localStateLoaded(u, c))
 
         async function gameLoaded(r: Response) {
