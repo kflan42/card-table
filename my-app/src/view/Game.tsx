@@ -42,7 +42,7 @@ const Game: React.FC = () => {
         // initial load effect only, prevents "too many re-renders error"
         if (userName)
             return
-        const u = localStorage.getItem('userName')
+        const u = localStorage.getItem('userName') || 'onlooker'
         const c = localStorage.getItem('userColor')
         if (u && c) dispatch(localStateLoaded(u, c))
 
