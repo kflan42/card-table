@@ -21,7 +21,7 @@ class CardDB {
         if (CardDB.cards)
             return CardDB.cards
         else {
-            const url = gameId === 'test' ? '/testCards.json' : '/table/' + gameId + '/cards'
+            const url = gameId === 'test' ? '/testCards.json' : `/api/table/${gameId}/cards`
             console.log("beginning load from " + url)
             CardDB.cards = fetch(url).then(r => {
                 return r.json()

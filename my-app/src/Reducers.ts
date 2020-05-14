@@ -292,7 +292,7 @@ function handleMoveCard(newState: Game, moveCard: MoveCard): [Game, string?] {
 }
 
 function addNewBfCard(newState: Game, owner: string, cardId: number, toX?: number, toY?: number,) {
-    const maxId = Object.keys(newState.battlefieldCards).map(k => Number.parseInt(k)).reduce((p, c) => Math.max(p, c))
+    const maxId = Object.keys(newState.battlefieldCards).map(k => Number.parseInt(k)).reduce((p, c) => Math.max(p, c), 0)
     const bfc: BattlefieldCard = {
         bf_id: maxId + 1,
         card_id: cardId,

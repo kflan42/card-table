@@ -1,4 +1,4 @@
-POST http://localhost:5000/table/z
+POST http://localhost:5000/api/table/z
 Accept: */*
 Cache-Control: no-cache
 
@@ -9,7 +9,7 @@ Cache-Control: no-cache
 
 ###
 
-POST http://localhost:5000/table/z
+POST http://localhost:5000/api/table/z
 Accept: */*
 Cache-Control: no-cache
 
@@ -20,25 +20,25 @@ Cache-Control: no-cache
 
 ###
 
-GET http://localhost:5000/table/z
+GET http://localhost:5000/api/table/z
 Accept: */*
 Cache-Control: no-cache
 
 ###
 
-GET http://localhost:5000/table/z/cards
+GET http://localhost:5000/api/table/z/cards
 Accept: */*
 Cache-Control: no-cache
 
 ###
 
-GET http://localhost:5000/table/test
+GET http://localhost:5000/api/table/test
 Accept: */*
 Cache-Control: no-cache
 
 ###
 
-GET http://localhost:5000/table/test/cards
+GET http://localhost:5000/api/table/test/cards
 Accept: */*
 Cache-Control: no-cache
 

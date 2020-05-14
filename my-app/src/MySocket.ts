@@ -7,10 +7,16 @@ export default class MySocket {
 
     static get_socket() {
         if (this.socket === null) {
-            console.log('creating socket')
-            const socketIoUrl = window.location.protocol + "//" + window.location.host.replace('3000', '5000')
-            //+ "/" + window.location.pathname + window.location.search
-            this.socket = socketIOClient(socketIoUrl)
+            let hostPort = window.location.host
+            if (process.env.NODE_ENV === "development") {
+                hostPort = hostPort.replace(RegExp(':\\d+$'), "")
+                    + ":" + (process.env.REACT_APP_DYNAMIC_PORT || 5000);
+            }
+            const socketIOUrl = window.location.protocol
+                + "//" + hostPort
+
+            console.log(`creating socket for ${socketIOUrl}`)
+            this.socket = socketIOClient(socketIOUrl)
         }
         return this.socket
     }

@@ -112,7 +112,7 @@ class Login extends React.Component<LoginP> {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(this.state)
         };
-        return fetch('/table/' + this.state.table, requestOptions)
+        return fetch(`/api/table/${this.state.table}`, requestOptions)
 
     }
 

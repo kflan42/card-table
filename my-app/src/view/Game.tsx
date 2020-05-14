@@ -64,7 +64,7 @@ const Game: React.FC = () => {
             }
         }
 
-        const gameUrl = gameId === 'test' ? '/testGame.json' : '/table/' + gameId
+        const gameUrl = gameId === 'test' ? '/testGame.json' : `/api/table/${gameId}`
         fetch(gameUrl).then(
             gameLoaded
         )

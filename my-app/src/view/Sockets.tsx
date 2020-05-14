@@ -1,5 +1,5 @@
 import React, {useState, useEffect} from "react";
-import socketIOClient from "socket.io-client";
+import MySocket from "../MySocket";
 
 
 const Sockets: React.FC = () => {
@@ -8,9 +8,7 @@ const Sockets: React.FC = () => {
     const [response, setResponse] = useState<object[]>([]);
     const [response2, setResponse2] = useState<object[]>([]);
 
-    const socketIoUrl = window.location.protocol + "//" + window.location.host.replace('3000', '5000')
-    //+ "/" + window.location.pathname + window.location.search
-    const socket = socketIOClient(socketIoUrl);
+    const socket = MySocket.get_socket()
 
     useEffect(() => {
         socket.on('connect', function () {

@@ -44,6 +44,5 @@
     ]
   },
   "devDependencies": {},
-  "proxy": "http://localhost:5000",
-  "sends any request it doesn't understand to here": ""
+  "proxy": "http://localhost:5000"
 }
