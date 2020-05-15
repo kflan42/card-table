@@ -51,7 +51,7 @@ class MagicTable:
         if data:
             self.table = Table.from_dict(data)
         else:
-            self.table = Table(name=name, sf_cards=[],
+            self.table = Table(name=name, sf_cards=[], actions=[],
                                game=Game(cards=[], players=[], zones=[], battlefield_cards=[], action_log=[]))
 
     def add_player(self, join_request: JoinRequest):
@@ -88,10 +88,16 @@ class MagicTable:
         table.game.players.append(player)
         return True
 
+    def add_action(self, action):
+        self.table.actions.append(action)
+
     def save(self):
         file_path = os.path.join(MagicTable.get_tables_path(), self.table.name + ".json")
         with open(file_path, mode='w') as f:
             f.write(self.table.to_json())
+
+    def get_actions(self):
+        return self.table.actions
 
     def get_cards(self):
         return SFCard.schema().dumps(self.table.sf_cards + MagicTable.get_all_tokens(), many=True)

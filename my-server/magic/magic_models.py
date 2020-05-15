@@ -106,6 +106,7 @@ class Table(Interface, DataClassJsonMixin):
     name: str
     game: Game
     sf_cards: List[SFCard]
+    actions: List
 
 
 def get_zone(game: Game, player: str, zone: str) -> Zone:

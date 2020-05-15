@@ -44,3 +44,9 @@ Cache-Control: no-cache
 
 ###
 
+GET http://localhost:5000/api/table/test/actions
+Accept: */*
+Cache-Control: no-cache
+
+###
+
