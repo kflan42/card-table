@@ -1,13 +1,16 @@
-import gameReducer from "./Reducers";
-import { toggleTap } from './Actions'
+import {parseDeckCard} from "./CardDB";
 
-test('should handle tapping', () => {
-    const input = { cards: { 1: { id: 1, tapped: false } } }
-    console.log(input)
+
+test('card parsing test', () => {
     expect(
-        gameReducer(input, toggleTap(1))
+        parseDeckCard("1x Zombie (AKH)")
     ).toEqual(
-        { cards: { 1: { id: 1, tapped: true } } }
+        {count: 1, name: 'Zombie', set_name: 'AKH', number: undefined}
     )
-}
-)
+
+    expect(
+        parseDeckCard("Elf Druid")
+    ).toEqual(
+        {count: 1, name: 'Elf Druid', set_name: undefined, number: undefined}
+    )
+})

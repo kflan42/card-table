@@ -17,11 +17,10 @@ class CardDB {
         console.log("card map built")
     }
 
-    static async loadCards(gameId: string) {
+    static async loadCards(url: string) {
         if (CardDB.cards)
             return CardDB.cards
         else {
-            const url = gameId === 'test' ? '/testCards.json' : `/api/table/${gameId}/cards`
             console.log("beginning load from " + url)
             CardDB.cards = fetch(url).then(r => {
                 return r.json()
@@ -42,13 +41,58 @@ class CardDB {
         throw Error(`CardDB card not found for ${sf_id}`)
     }
 
-    static findCardNow(name: string) {
-        const choices = Object.values(this.cardMap).filter(card => card.name === name)
+    static findCardNow(name: string, set_name?:string, number?:string) {
+        const choices = Object.values(this.cardMap).filter(card => {
+            return card.name.toLowerCase() === name.toLowerCase()
+                && (set_name === undefined || card.set_name === set_name.toLowerCase())
+                && (number === undefined || card.number === number.toLowerCase())
+        })
         if (choices) {
             return randchoice(choices)
         }
         throw Error(`CardDB card not found for ${name}`)
     }
+
+    private static tokens: string[] = []
+
+    static getTokenChoices() {
+        if(this.tokens.length === 0) {
+            this.tokens = Object.values(this.cardMap)
+                .filter(c => c.set_name.length === 4)
+                .map(c => `${c.name} (${c.set_name.toUpperCase()}) ${c.number}`)
+                .sort()
+        }
+        return this.tokens
+    }
 }
 
 export default CardDB
+
+export function parseDeckCard(deckCard: string) {
+    let cardParts = deckCard.split(" ")
+    let first = cardParts[0].replace("x", "");
+    let count = 1
+    if (first.match(/\d+/)) {
+        count = Number.parseInt(first)
+        cardParts = cardParts.slice(1)
+    }
+    var set_name = undefined, number = undefined;
+    if (cardParts.length > 2) { // count "name" (set) num // plus spaces in name
+        const m = cardParts[cardParts.length - 2].match(/\((\w+)\)/);
+        if (m) {
+            set_name = m[1];
+            number = cardParts[cardParts.length - 1]; // not always numeric
+        }
+    }
+    if (cardParts.length > 1) { // count "name" (set) // plus spaces in name
+        const m = cardParts[cardParts.length - 1].match(/\((\w+)\)/);
+        if (m) {
+            set_name = m[1];
+            // no set number if set last
+        }
+    }
+    // else just count "name" // plus spaces in name
+    const nameParts = cardParts.length - (set_name ? 1 : 0) - (number ? 1 : 0)
+    const name = cardParts.slice(0, nameParts).join(" ")
+    return {count, name, set_name, number}
+}

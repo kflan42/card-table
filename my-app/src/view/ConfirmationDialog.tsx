@@ -1,4 +1,7 @@
-import * as React from "react";
+import Select, {ActionMeta} from 'react-select'
+import React, {useState} from "react";
+import CardDB from "../CardDB";
+
 
 export interface ConfirmationOptions {
     catchOnCancel?: boolean;
@@ -28,14 +31,20 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
     const left = (location ? location.x : 0 + window.innerWidth / 2) / 2
     const top = (location ? location.y : 0 + window.innerHeight / 2) / 2
 
-    const [valueN, setValueN] = React.useState(1)
-    const [valueS, setValueS] = React.useState("")
+    const [valueN, setValueN] = useState(1)
+    const [valueS, setValueS] = useState("")
+
+    function selectChanged(value: any, actionMeta: ActionMeta<any>) {
+        if (actionMeta.action === 'select-option') {
+            setValueS(value.value as string)
+        }
+    }
 
     const elements = []
     for (const c of choices) {
         const parts = c.split(' ')
         const elementParts = []
-        if (parts.indexOf('_') > -1 || parts.indexOf('*') > -1) {
+        if (parts.indexOf('_') > -1 || parts.indexOf('*') > -1 || parts.indexOf('$') > -1) {
             // use first word as button, rest as label(s) for input field(s)
             elementParts.push(
                 <button key={c}
@@ -63,6 +72,29 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
                                 type="text" id="x" name="x" autoFocus={true}
                                 value={valueS} onChange={e => setValueS(e.currentTarget.value)} />)
                         break;
+                    case '$':
+                        const options = CardDB.getTokenChoices().map((c: string) => ({value: c, label: c}))
+                        const customStyles = {
+                            option: (provided: object, state: object) => ({
+                                ...provided
+                            }),
+                            control: () => ({minWidth: "20em", display: "flex"}),
+                        }
+                        elementParts.push(
+                            <Select className="DivButton" key={p}
+                                    style={{
+                                        marginLeft: "0.5em",
+                                        marginRight: "0.5em",
+                                        marginTop: "1em",
+                                        marginBottom: "1em"
+                                    }}
+                                    styles={customStyles}
+                                    options={options}
+                                    id="x" name="x" autoFocus={true}
+                                    onChange={selectChanged}
+                            />
+                        )
+                        break;
                     default:
                         elementParts.push(
                             <span key={p}>{p}</span>
@@ -80,7 +112,9 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
                     {c}
                 </button>)
         }
-        elements.push(<div key={c}>{elementParts}</div>)
+        elements.push(<div style={{
+            display: "flex", alignItems:"center"
+        }} key={c}>{elementParts}</div>)
     }
     elements.push(<div key={"Cancel"}>
         <button

@@ -1,0 +1,90 @@
+[
+  {
+    "kind": "Life",
+    "player": "bob",
+    "table": "test",
+    "type": "SET_PLAYER_COUNTER",
+    "value": 39,
+    "when": 1589509510962,
+    "who": "alice"
+  },
+  {
+    "kind": "Life",
+    "player": "bob",
+    "table": "test",
+    "type": "SET_PLAYER_COUNTER",
+    "value": 38,
+    "when": 1589509512480,
+    "who": "alice"
+  },
+  {
+    "kind": "Poison",
+    "player": "bob",
+    "table": "test",
+    "type": "SET_PLAYER_COUNTER",
+    "value": 10,
+    "when": 1589509515457,
+    "who": "alice"
+  },
+  {
+    "cardId": 44,
+    "srcOwner": "alice",
+    "srcZone": "Hand",
+    "table": "test",
+    "tgtOwner": "alice",
+    "tgtZone": "Hand",
+    "toIdx": 3,
+    "type": "MOVE_CARD",
+    "when": 1589509552684,
+    "who": "alice"
+  },
+  {
+    "cardId": 44,
+    "srcOwner": "alice",
+    "srcZone": "Hand",
+    "table": "test",
+    "tgtOwner": "alice",
+    "tgtZone": "Hand",
+    "toIdx": 3,
+    "type": "MOVE_CARD",
+    "when": 1589509552688,
+    "who": "alice"
+  },
+  {
+    "cardId": 44,
+    "srcOwner": "alice",
+    "srcZone": "Hand",
+    "table": "test",
+    "tgtOwner": "alice",
+    "tgtZone": "Hand",
+    "toIdx": 3,
+    "type": "MOVE_CARD",
+    "when": 1589509552690,
+    "who": "alice"
+  },
+  {
+    "cardId": 44,
+    "srcOwner": "alice",
+    "srcZone": "Hand",
+    "table": "test",
+    "tgtOwner": "alice",
+    "tgtZone": "Hand",
+    "toIdx": 3,
+    "type": "MOVE_CARD",
+    "when": 1589509552690,
+    "who": "alice"
+  },
+  {
+    "cardId": 44,
+    "srcOwner": "alice",
+    "srcZone": "Hand",
+    "table": "test",
+    "tgtOwner": "alice",
+    "tgtZone": "Battlefield",
+    "toX": 20,
+    "toY": 10,
+    "type": "MOVE_CARD",
+    "when": 1589509553491,
+    "who": "alice"
+  }
+]

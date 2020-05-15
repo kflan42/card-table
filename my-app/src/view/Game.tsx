@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react'
+import React, {useCallback, useEffect, useState} from 'react'
 
 import './_style.css';
 import Hand from './Hand';
@@ -9,7 +9,8 @@ import {
     cardAction,
     createTokenCopy,
     createTokenNew,
-    localStateLoaded, PlayerAction,
+    localStateLoaded,
+    PlayerAction,
     setCardCounter,
     setGame,
     TOGGLE_FACEDOWN_CARD,
@@ -22,59 +23,114 @@ import {ConfirmationResult} from './ConfirmationDialog';
 import {usePlayerDispatch} from '../PlayerDispatch';
 import {useParams} from "react-router-dom";
 import {Game as GameT} from "../magic_models";
-import CardDB from "../CardDB";
+import CardDB, {parseDeckCard} from "../CardDB";
 import MySocket from "../MySocket";
 
 const Game: React.FC = () => {
-    const userName = useSelector((state: ClientState) => state.playerPrefs.name)
+    const userName = useSelector((state: ClientState) => state.playerPrefs.name) as string | undefined
     const hoveredCard = useSelector((state: ClientState) => state.hoveredCard)
     const cardUnderCursor = useSelector((state: ClientState) =>
         state.hoveredCard.cardId ? state.game.cards[state.hoveredCard.cardId] : null)
+    const players = useSelector((state: ClientState) => state.game.players)
 
     const [cardPopupShown, setCardPopupShown] = useState<number | null>(null)
     const [cardPopupTransformed, setCardPopupTransformed] = useState(false)
+    const [hasSockets, setHasSockets] = useState(false)
+
+    // todo enable drawing lines to indicate attacks / spell targets, do need to send, store in clientState (not game)
 
     const dispatch = useDispatch()
     const playerDispatch = usePlayerDispatch()
     const {gameId} = useParams()
 
+
+    const loadGame = useCallback(
+        () => {
+            // enable testing off static assets
+            const gameUrl = gameId === 'static_test' ? '/testGame.json' : `/api/table/${gameId}`
+            const actionsUrl = gameId === 'static_test' ? '/testActions.json' : `/api/table/${gameId}/actions`
+            const cardsUrl = gameId === 'static_test' ? '/testCards.json' : `/api/table/${gameId}/cards`
+
+            async function onGameLoaded(r: Response) {
+                await CardDB.loadCards(cardsUrl)
+                // now that cards are loaded, load the game
+                const data = r.json()
+                const game: GameT = await data
+                let indexedGame = index_game(game);
+                dispatch(setGame(indexedGame))
+
+                fetch(actionsUrl)
+                    .then(onActionsLoaded)
+                    .catch(r => console.error("exception loading game actions", r))
+            }
+
+            async function onActionsLoaded(r: Response) {
+                // replay any actions
+                const actions = await r.json() as any[]
+                console.log(`${actions.length} actions loaded from server, catching up now ...`)
+                for (const action of actions) {
+                    dispatch(action)
+                }
+                console.log(`caught up on ${actions.length} actions loaded from server`)
+            }
+
+            //function loadGame() {
+            console.log(`loading game from ${gameUrl}`)
+            fetch(gameUrl).then(
+                onGameLoaded
+            ).catch(r => console.error("exception loading game", r))
+            //}
+        },
+        [gameId, dispatch],
+    );
+
+
     useEffect(() => {
         // initial load effect only, prevents "too many re-renders error"
-        if (userName)
+        if (userName !== undefined)
             return
         const u = localStorage.getItem('userName') || 'onlooker'
         const c = localStorage.getItem('userColor') || 'Gray'
         if (u && c) dispatch(localStateLoaded(u, c))
 
-        async function gameLoaded(r: Response) {
-            await CardDB.loadCards(gameId as string)
-            // now that cards are loaded, load the game
-            const data = r.json()
-            const game: GameT = await data
-            dispatch(setGame(index_game(game)))
+        loadGame()
+    }, [userName, dispatch, loadGame]);
 
+    useEffect(() => {
+        if (gameId !== 'static_test' && userName !== undefined && players.hasOwnProperty(userName) && !hasSockets) {
+            // if we have already loaded a real game object, now it is socket time
+            connectSockets();
+            setHasSockets(true);
+        }
+
+        function connectSockets() {
             try {
+                console.log('Connecting sockets...')
                 // now that game is loaded, register for updates to it
+                MySocket.get_socket().emit('join', {table: gameId, username: userName})
                 MySocket.get_socket().on('player_action', function (msg: PlayerAction) {
                     console.log('received', msg)
                     return dispatch(msg);
+                })
+                MySocket.get_socket().on('joined', function (msg: { table: string, username: string }) {
+                    if (msg.username !== 'onlooker' && !players.hasOwnProperty(msg.username)) {
+                        // new player joined table since we loaded it, need to reload table data
+                        console.log(`reloading since ${msg.username} joined ${Object.keys(players)}`)
+                        loadGame()
+                    }
                 })
             } catch (e) {
                 console.error(e)
             }
         }
-
-        const gameUrl = gameId === 'test' ? '/testGame.json' : `/api/table/${gameId}`
-        fetch(gameUrl).then(
-            gameLoaded
-        )
-    }, [userName, gameId, dispatch]);
+    }, [gameId, userName, hasSockets, players, dispatch, loadGame])
 
     const confirmation = useConfirmation();
 
     const tokenPopup = () => {
+        if (userName === undefined) return
         const choices = cardUnderCursor ? ["Copy " + CardDB.getCard(cardUnderCursor.sf_id).name] : []
-        choices.push("New Token *")
+        choices.push("New Token $")
         confirmation({
             choices: choices,
             catchOnCancel: true,
@@ -86,8 +142,13 @@ const Game: React.FC = () => {
                     playerDispatch(createTokenCopy(userName, hoveredCard.cardId as number));
                     break;
                 case "New":
-                    // todo account for set, error-handle, auto complete during token selection
-                    playerDispatch(createTokenNew(userName, CardDB.findCardNow(s.s).sf_id))
+                    const deck_card = parseDeckCard(s.s)
+                    try {
+                        let foundCard = CardDB.findCardNow(deck_card.name, deck_card.set_name, deck_card.number);
+                        playerDispatch(createTokenNew(userName, foundCard.sf_id))
+                    } catch (e) {
+                        console.error(`Card not found: ${s.s}`)
+                    }
                     break;
             }
         })

@@ -163,7 +163,7 @@ function gameReducer(
     }
 
     if (newState !== undefined) {
-        console.log(`${JSON.stringify(gameAction)} applied`)
+        console.log('applied', gameAction)
         if (logLine) {
             // record to user visible game log
             if (newState.actionLog.length > 256) {
