@@ -4,7 +4,7 @@ import './_style.css';
 import CardDB from '../CardDB';
 import {ClientState} from '../ClientState';
 import {useSelector, useDispatch} from 'react-redux';
-import {hoveredCard} from '../Actions';
+import {drawing, drawLine, hoveredCard} from '../Actions';
 
 
 export interface CardProps {
@@ -18,6 +18,9 @@ const Card: React.FC<CardProps> = ({cardId, imageSize}) => {
     const card = useSelector((state: ClientState) => state.game.cards[cardId])
 
     const ownerColor = useSelector((state: ClientState) => state.game.players[card.owner].color)
+
+    const drawStage = useSelector((state: ClientState) => state.drawStage)
+
 
     // small is 10.8k (memory cache after 1st). fuzzy text, hard to read
     // normal is 75.7k (memory cache after 1st). readable
@@ -46,10 +49,23 @@ const Card: React.FC<CardProps> = ({cardId, imageSize}) => {
 
     const click = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
         console.log(event)
+        if(drawStage === 1) {
+            dispatch(drawLine(cardId, 1))
+            dispatch(drawing(2))
+            event.preventDefault()
+            return
+        }
+        if(drawStage === 2) {
+            dispatch(drawLine(cardId, 2))
+            dispatch(drawing(0))
+            event.preventDefault()
+            return;
+        }
     }
 
     return (
-        <div className={"Card cardtooltip"}
+        // c${cardId} is a class used for line drawing
+        <div className={`Card cardtooltip c${cardId}`}
              onMouseOver={() => dispatch(hoveredCard(cardId))}
              onMouseOut={() => dispatch(hoveredCard(null))}
              onClick={click}

@@ -16,10 +16,14 @@ export function usePlayerDispatch() {
         const playerAction: PlayerAction = {...action, who: playerName, when: Date.now()}
         if (gameId === 'static_test') {
             dispatch(playerAction)
-            // bypass server for local test game
         } else {
             console.log(gameId, playerAction, new Date(playerAction.when).toLocaleTimeString())
-            MySocket.get_socket().emit('player_action', {...playerAction, table: gameId})
+            MySocket.get_socket().emit('player_action', {...playerAction, table: gameId}, (ack:boolean)=> {
+                console.log('got ack for ', playerAction, ack)
+                if(ack) {
+                    dispatch(playerAction)
+                }
+            })
         }
     }
 

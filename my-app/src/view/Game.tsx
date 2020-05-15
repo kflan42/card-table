@@ -1,4 +1,5 @@
 import React, {useCallback, useEffect, useState} from 'react'
+import LineTo from 'react-lineto';
 
 import './_style.css';
 import Hand from './Hand';
@@ -8,7 +9,7 @@ import {ClientState, index_game} from '../ClientState';
 import {
     cardAction,
     createTokenCopy,
-    createTokenNew,
+    createTokenNew, drawing,
     localStateLoaded,
     PlayerAction,
     setCardCounter,
@@ -31,13 +32,18 @@ const Game: React.FC = () => {
     const hoveredCard = useSelector((state: ClientState) => state.hoveredCard)
     const cardUnderCursor = useSelector((state: ClientState) =>
         state.hoveredCard.cardId ? state.game.cards[state.hoveredCard.cardId] : null)
+    const isDrawing = useSelector((state: ClientState) => state.drawStage > 0)
+    const drawLines = useSelector((state: ClientState) => state.drawLines)
     const players = useSelector((state: ClientState) => state.game.players)
 
     const [cardPopupShown, setCardPopupShown] = useState<number | null>(null)
     const [cardPopupTransformed, setCardPopupTransformed] = useState(false)
     const [hasSockets, setHasSockets] = useState(false)
 
-    // todo enable drawing lines to indicate attacks / spell targets, do need to send, store in clientState (not game)
+    // todo finish line support for drawing to indicate attacks / spell targets
+    // do need to emit & broadcast, don't save. store in clientState (not game)
+    // need lines for attacks definitely
+    // need a way for a player to clear their lines, need lines colored to player color in state
 
     const dispatch = useDispatch()
     const playerDispatch = usePlayerDispatch()
@@ -69,7 +75,11 @@ const Game: React.FC = () => {
                 const actions = await r.json() as any[]
                 console.log(`${actions.length} actions loaded from server, catching up now ...`)
                 for (const action of actions) {
-                    dispatch(action)
+                    try {
+                        dispatch(action)
+                    } catch (e) {
+                        console.error('Problem dispatching', action, e)
+                    }
                 }
                 console.log(`caught up on ${actions.length} actions loaded from server`)
             }
@@ -124,6 +134,10 @@ const Game: React.FC = () => {
             }
         }
     }, [gameId, userName, hasSockets, players, dispatch, loadGame])
+
+    const drawArrow = () => {
+        dispatch(drawing(1))
+    }
 
     const confirmation = useConfirmation();
 
@@ -209,17 +223,36 @@ const Game: React.FC = () => {
                     event.preventDefault()
                 }
                 break;
+            case 'a':
+                drawArrow()
+                event.preventDefault();
+                break;
         }
     }
 
-    //tabIndex means it can recieve focus which means it can receive keyboard events
+    const lines = []
+    for (let i = 0; i < drawLines.length; i++) {
+        if (i % 2 == 1) {
+            lines.push(
+                <LineTo from={`c${drawLines[i - 1]}`} to={`c${drawLines[i]}`}
+                        borderColor={"gray"} borderStyle={"dashed"} borderWidth={4}
+                        delay={100}/>
+            )
+        }
+    }
+
+    //tabIndex means it can receive focus which means it can receive keyboard events
     return userName
         ? (
-            <div className="Game" onKeyPress={keyPress} tabIndex={0}>
+            <div className="Game" onKeyPress={keyPress} tabIndex={0} style={{
+                cursor: isDrawing ? "crosshair" : undefined
+            }}>
                 <Table/>
                 <Hand/>
-                {cardPopupShown !== null ?
-                    <CardPopup cardId={cardPopupShown} transformed={cardPopupTransformed}/> : undefined}
+                {cardPopupShown !== null
+                    ? <CardPopup cardId={cardPopupShown} transformed={cardPopupTransformed}/>
+                    : undefined}
+                {lines}
                 <CustomDragLayer/>
             </div>
         )

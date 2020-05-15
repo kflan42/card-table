@@ -4,7 +4,9 @@ import {BattlefieldCard, Card, Game as GameT, LogLine, Player, Zone} from "./mag
 export interface ClientState {
     playerPrefs: PlayerPrefs,
     game: Game,
-    hoveredCard: HoveredCard
+    hoveredCard: HoveredCard,
+    drawStage: number // 0 not, 1 for start, 2 for end, create and reset to 0
+    drawLines: number[] // 0th to 1th and so on. card ids. // todo player color for who drew them
 }
 
 export interface HoveredCard {
@@ -31,6 +33,7 @@ export interface Game {
     /** index by bfCard bfId */
     battlefieldCards: { [index: number]: BattlefieldCard }
     actionLog: LogLine[]
+    processedActions: Set<string>
 }
 
 export function index_game(game: GameT): Game {
@@ -39,6 +42,7 @@ export function index_game(game: GameT): Game {
         cards: game.cards.reduce((d, x, i) => ({...d, [x.card_id]: x}), {}),
         zones: game.zones.reduce((d, x, i) => ({...d, [`${x.owner}-${x.name}`]: x}), {}),
         battlefieldCards: game.battlefield_cards.reduce((d, x, i) => ({...d, [x.bf_id]: x}), {}),
-        actionLog: game.action_log
+        actionLog: game.action_log,
+        processedActions: new Set<string>()
     };
 }

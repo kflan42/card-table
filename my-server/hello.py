@@ -137,6 +137,8 @@ def main(args: argparse.Namespace):
                 table.save()
         else:
             emit('error', {'error': 'Unable to do action. Table does not exist.'})
+            return False
+        return True
 
     @socketio.on('join')
     def on_join(data):

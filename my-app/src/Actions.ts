@@ -8,6 +8,16 @@ export function localStateLoaded(name: string, color: string) {
     }
 }
 
+export const DRAWING = 'DRAWING'
+export function drawing(drawing: number) {
+    return {type: DRAWING, drawing}
+}
+
+export const DRAWLINE = 'DRAWLINE'
+export function drawLine(cardId: number, linePoint: number) {
+    return {type: DRAWLINE, cardId, linePoint} // point 1 or point 2
+}
+
 export const SHUFFLE_LIBRARY = 'SHUFFLE_LIBRARY'
 export function shuffleLibrary(owner: string) {
     return {
