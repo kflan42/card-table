@@ -10,7 +10,7 @@ if [[ $(date -r "${DEFAULT_JSON}" "+%m-%d-%Y") != $(date "+%m-%d-%Y") && \
   mv "${DEFAULT_JSON}" "${DEFAULT_JSON}.old"
   wget "https://archive.scryfall.com/json/${DEFAULT_JSON}" && rm "${DEFAULT_JSON}.old"
 else
-  echo "new enough json"
+  echo "new enough ${DEFAULT_JSON}"
 fi
 
 # subject 2 from line number to get array index for examples
@@ -31,10 +31,8 @@ OUT_DIR="../my-server/data/cards"
 
 mkdir -p "${OUT_DIR}"
 
-jq '[.[] | select(.set|test("^...$")) | '"${CARD}"']' "${DEFAULT_JSON}" > "${OUT_DIR}"/cards.json
-jq '[.[] | select(.set|test("^t...$")) | '"${CARD}"']' "${DEFAULT_JSON}" > "${OUT_DIR}"/tokens.json
+jq --compact-output '[.[] | select(.set|test("^...$")) | '"${CARD}"']' "${DEFAULT_JSON}" > "${OUT_DIR}"/cards.json
+jq --compact-output '[.[] | select(.set|test("^t...$")) | '"${CARD}"']' "${DEFAULT_JSON}" > "${OUT_DIR}"/tokens.json
 
-cp "${OUT_DIR}"/* ../my-app/public
-
-echo "output to ${OUT_DIR} and ../my-app/public"
+echo "output to ${OUT_DIR}"
 ls "${OUT_DIR}"
