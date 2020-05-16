@@ -140,6 +140,20 @@ def main(args: argparse.Namespace):
             return False
         return True
 
+    @socketio.on('player_draw')
+    def on_player_action(data):
+        logging.info('player_draw %s', data)
+        table_name = data['table']
+        table = get_table(table_name=table_name)
+        if table:
+            # send it out
+            emit('player_draw', data, room=table_name, broadcast=True)  # on('player_draw'
+            # don't need to store draw
+        else:
+            emit('error', {'error': 'Unable to do action. Table does not exist.'})
+            return False
+        return True
+
     @socketio.on('join')
     def on_join(data):
         """Join a table, which has its own socket.io room."""
@@ -171,7 +185,9 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s %(message)s', stream=sys.stdout, level=logging.INFO)
     import logging.handlers
 
-    h = logging.handlers.RotatingFileHandler(filename='hello.log', mode='a', maxBytes=1e6, backupCount=10)
+    os.makedirs(os.path.join('data', 'logs'), exist_ok=True)
+    h = logging.handlers.RotatingFileHandler(filename=os.path.join('data', 'logs', 'hello.log'),
+                                             mode='a', maxBytes=int(1e6), backupCount=10)
     f = logging.Formatter('%(asctime)s %(name)s %(levelname)-8s %(message)s')
     h.setFormatter(f)
     logging.getLogger().addHandler(h)

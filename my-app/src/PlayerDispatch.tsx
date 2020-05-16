@@ -12,20 +12,29 @@ export function usePlayerDispatch() {
 
     const playerName = useSelector((state: ClientState) => state.playerPrefs.name)
 
-    function action(action: { type: string }) {
-        const playerAction: PlayerAction = {...action, who: playerName, when: Date.now()}
+    function send(playerAction: PlayerAction, eventName: string) {
         if (gameId === 'static_test') {
             dispatch(playerAction)
         } else {
             console.log(gameId, playerAction, new Date(playerAction.when).toLocaleTimeString())
-            MySocket.get_socket().emit('player_action', {...playerAction, table: gameId}, (ack:boolean)=> {
+            MySocket.get_socket().emit(eventName, {...playerAction, table: gameId}, (ack: boolean) => {
                 console.log('got ack for ', playerAction, ack)
-                if(ack) {
+                if (ack) {
                     dispatch(playerAction)
                 }
             })
         }
     }
 
-    return action
+    function action(action: { type: string }) {
+        const playerAction: PlayerAction = {...action, who: playerName, when: Date.now()}
+        send(playerAction, 'player_action');
+    }
+
+    function draw(action: { type: string }) {
+        const playerDraw = {...action, who: playerName, when: Date.now() }
+        send(playerDraw, 'player_draw');
+    }
+
+    return {action, draw}
 }

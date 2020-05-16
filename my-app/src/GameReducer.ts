@@ -22,6 +22,16 @@ import {shuffleArray} from './Utilities'
 import CardDB from "./CardDB";
 import {BattlefieldCard, Card} from "./magic_models";
 
+function getBfCardName(g: Game, bfId: number) {
+        const bfCard = g.battlefieldCards[bfId]
+        return getCardName(g, bfCard.card_id)
+    }
+
+function getCardName(g: Game, cardId: number) {
+    const card = g.cards[cardId]
+    const sfCard = CardDB.getCard(card.sf_id)
+    return card.facedown ? "a facedown card" : sfCard.name
+}
 
 export function gameReducer(
     state: Game = {
@@ -45,17 +55,6 @@ export function gameReducer(
     let [newState, logLine]: [Game?, string?] = [undefined, undefined]
     let action = null
 
-    function getBfCardName(g: Game, bfId: number) {
-        const bfCard = g.battlefieldCards[bfId]
-        return getCardName(g, bfCard.card_id)
-    }
-
-    function getCardName(g: Game, cardId: number) {
-        const card = g.cards[cardId]
-        const sfCard = CardDB.getCard(card.sf_id)
-        return card.facedown ? "a facedown card" : sfCard.name
-    }
-
     switch (gameAction.type) {
         case SET_GAME:
             newState = (gameAction as GameSet).game
@@ -65,19 +64,19 @@ export function gameReducer(
             [newState, logLine] = handleMoveCard(state, gameAction as MoveCard)
             break;
         case SHUFFLE_LIBRARY:
-            action = gameAction as { type: string, who: string, when: number, owner: string }
-            const zoneId = `${action.owner}-${LIBRARY}`
+            const shuffleAction = gameAction as { type: string, who: string, when: number, owner: string }
+            const zoneId = `${shuffleAction.owner}-${LIBRARY}`
             newState = update(state, {
                 zones: {
                     [zoneId]: {
                         cards: a => {
-                            shuffleArray(a);
+                            shuffleArray(a, shuffleAction.when);
                             return a;
                         }
                     }
                 }
             })
-            logLine = ` shuffled ${action.who === action.owner ? "their" : `${action.owner}'s`} Library`
+            logLine = ` shuffled ${shuffleAction.who === shuffleAction.owner ? "their" : `${shuffleAction.owner}'s`} Library`
             break;
         case TOGGLE_TAP_CARD:
             action = gameAction as unknown as CardAction
@@ -120,7 +119,8 @@ export function gameReducer(
                 const newCounters = state.players[action.player].counters.filter(c => (c.name !== kind))
                 newState = update(state, {players: {[action.player]: {counters: {$set: newCounters}}}})
             }
-            logLine = ` set ${action.player}'s ${action.kind} counter to ${action.value}`
+            let whose = action.player !== action.who ? `${action.player}'s` : 'their';
+            logLine = ` set ${whose} ${action.kind} counter to ${action.value}`
             break;
         case SET_CARD_COUNTER:
             action = gameAction as { type: string, who: string, when: number, bfId: number, kind: string, value: number }
@@ -279,9 +279,12 @@ function handleMoveCard(newState: Game, moveCard: MoveCard): [Game, string?] {
             }
         }
     }
-    const draw = sameOwner && moveCard.srcZone === LIBRARY && moveCard.tgtZone === HAND
-    const line = draw ? 'drew a card'
-        : `moved a card from ${moveCard.srcOwner}'s ${moveCard.srcZone} to ${moveCard.tgtOwner}'s ${moveCard.tgtZone}`
+    let line = `moved a card from ${moveCard.srcOwner}'s ${moveCard.srcZone} to ${moveCard.tgtOwner}'s ${moveCard.tgtZone}`
+    if(sameOwner && moveCard.srcZone === LIBRARY && moveCard.tgtZone === HAND) {
+        line = 'drew a card'
+    } else if (sameOwner && moveCard.srcZone === HAND && moveCard.tgtZone === BATTLEFIELD) {
+        line = `played ${getCardName(newState, moveCard.cardId)}`
+    }
     return [newState, sameOwner && sameZone ? undefined : line]
 }
 

@@ -8,7 +8,7 @@ import { usePlayerDispatch } from "../PlayerDispatch";
 
 const Die: React.FC = () => {
 
-  const playerDispatch = usePlayerDispatch()
+  const playerDispatch = usePlayerDispatch().action
   const confirmation = useConfirmation()
 
   const rollPrompt = (event: React.MouseEvent<HTMLSpanElement, MouseEvent>) => {

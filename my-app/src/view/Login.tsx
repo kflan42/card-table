@@ -52,7 +52,7 @@ class Login extends React.Component<LoginP> {
     }
 
     handleNameChange(event: ChangeEvent<HTMLInputElement>) {
-        this.setState({name: event.target.value});
+        this.setState({name: event.target.value.replace(/[^A-Za-z0-9 .,]/,'')});
     }
 
     handleTableChange(event: ChangeEvent<HTMLInputElement>) {

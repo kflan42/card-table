@@ -1,8 +1,9 @@
 import {combineReducers} from 'redux'
+import update from 'immutability-helper'
 
 
-import {DRAWING, DRAWLINE, HOVERED_BFCARD, HOVERED_CARD, LOCAL_STATE_LOAD,} from './Actions'
-import {HoveredCard} from './ClientState'
+import {CLEAR_LINES, DRAWING, DRAWLINE, HOVERED_BFCARD, HOVERED_CARD, LOCAL_STATE_LOAD,} from './Actions'
+import {Drawing, HoveredCard} from './ClientState'
 import {gameReducer} from "./GameReducer";
 
 
@@ -21,24 +22,25 @@ const stateReducer = combineReducers({
         }
         return x;
     },
-    drawStage: (x: number = 0, y) => {
+    drawing: (x: Drawing = {first: null, lines: []}, y) => {
         switch (y.type) {
             case DRAWING:
-                return y.drawing;
-                break;
+                return update(x, {first: {$set: y.first}});
+            case DRAWLINE:
+                const nl = y.entityLine
+                if (x.lines.filter(el => el.color === nl.color && el.from === nl.from && el.to === nl.to).length === 0) {
+                    return update(x, {lines: {$push: [y.entityLine]}})
+                } else {
+                    // already got this one
+                    return x
+                }
+            case CLEAR_LINES:
+                const newLines = x.lines.filter(el => (el.color !== y.color))
+                return update(x, {lines: {$set: newLines}})
             default:
                 return x;
         }
     },
-    drawLines: (x: number[] = [], y) => {
-        switch (y.type) {
-            case DRAWLINE:
-                return [...x, y.cardId]
-                break;
-            default:
-                return x;
-        }
-    }
 })
 
 export default stateReducer

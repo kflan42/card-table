@@ -22,7 +22,7 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
     const bfState = useSelector((state: ClientState) => state.game.battlefieldCards[bfId])
 
     const dispatch = useDispatch()
-    const playerDispatch = usePlayerDispatch()
+    const playerDispatch = usePlayerDispatch().action
 
     const cardProps = { cardId: bfState?.card_id }
 
@@ -59,7 +59,8 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
             catchOnCancel: true,
             title: `Adjust ${kind} x${current}`,
             description: "",
-            location: { x: e.clientX, y: e.clientY }
+            location: { x: e.clientX, y: e.clientY },
+            initialNumber: current
         })
             .then((s: ConfirmationResult) => {
                 switch (s.choice) {

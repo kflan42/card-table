@@ -42,8 +42,8 @@ const Log: React.FC = () => {
                 flexGrow: 1,
                 overflowY: "scroll",
                 padding: "0.1em",
-                width: "15em",
-                maxWidth: "15em",
+                minWidth: "20em",
+                maxWidth: "20em",
                 fontSize: "small",
 
             }}>

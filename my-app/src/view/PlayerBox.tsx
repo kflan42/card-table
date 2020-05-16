@@ -4,9 +4,9 @@ import './_style.css';
 import PlayerCounter from './PlayerCounter';
 import CardStack from './CardStack';
 import { EXILE, COMMAND_ZONE, GRAVEYARD, LIBRARY, HAND, ClientState } from '../ClientState';
-import { useSelector } from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import { useConfirmation } from './ConfirmationService';
-import { setPlayerCounter } from '../Actions';
+import {drawing, drawLine, setPlayerCounter} from '../Actions';
 import { ConfirmationResult } from './ConfirmationDialog';
 import { usePlayerDispatch } from '../PlayerDispatch';
 
@@ -25,7 +25,7 @@ const PlayerBox: React.FC<PlayerBoxP> = ({ player }) => {
         counters.push(<PlayerCounter key={counter.name} player={player} kind={counter.name} value={counter.value}/>)
     }
 
-    const playerDispatch = usePlayerDispatch()
+    const {action:playerDispatch, draw:drawDispatch} = usePlayerDispatch()
     const confirmation = useConfirmation();
 
     const addCounter = () => {
@@ -45,13 +45,33 @@ const PlayerBox: React.FC<PlayerBoxP> = ({ player }) => {
             .catch(() => null);
     }
 
+    const drawingFirst = useSelector((state: ClientState) => state.drawing.first)
+    const drawerColor = useSelector((state: ClientState) => state.game.players.hasOwnProperty(state.playerPrefs.name)
+        ? state.game.players[state.playerPrefs.name].color
+        : "gray")
+    const dispatch = useDispatch()
+
+    const click = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+        if (drawingFirst === '') {
+            dispatch(drawing(`p-${player}`))
+            event.preventDefault()
+            return
+        }
+        if (drawingFirst !== null && drawingFirst !== '') {
+            drawDispatch(drawLine({color: drawerColor, from: drawingFirst, to: `p-${player}`}))
+            dispatch(drawing(null))
+            event.preventDefault()
+            return;
+        }
+    }
+
     return (
         /* eslint-disable jsx-a11y/accessible-emoji */
         <div className="PlayerBox" style={{ backgroundColor: playerState.color }}>
-            <div style={{
+            <div className={`p-${player}`} style={{
                 whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                 maxWidth: "6em",
-            }}>
+                }} onClick={click}>
                 <strong>{player}</strong>
             </div>
             <CardStack name={HAND} owner={player} icon="✋" />

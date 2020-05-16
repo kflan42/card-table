@@ -5,8 +5,18 @@ export interface ClientState {
     playerPrefs: PlayerPrefs,
     game: Game,
     hoveredCard: HoveredCard,
-    drawStage: number // 0 not, 1 for start, 2 for end, create and reset to 0
-    drawLines: number[] // 0th to 1th and so on. card ids. // todo player color for who drew them
+    drawing: Drawing
+}
+
+export interface Drawing {
+    first: string|null
+    lines: EntityLine[]
+}
+
+export interface EntityLine {
+    from: string
+    to: string
+    color: string
 }
 
 export interface HoveredCard {

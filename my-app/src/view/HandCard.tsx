@@ -23,7 +23,7 @@ const HandCard: React.FC<HandCardProps> = ({
     handIdx,
     owner
 }) => {
-    const playerDispatch = usePlayerDispatch()
+    const playerDispatch = usePlayerDispatch().action
 
     const dragCard: DragCard = {
         type: ItemTypes.CARD, cardId: cardId, srcZone: HAND, srcOwner: owner

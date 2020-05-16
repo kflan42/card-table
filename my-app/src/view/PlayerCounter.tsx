@@ -16,7 +16,7 @@ interface PlayerCounterP {
 const PlayerCounter: React.FC<PlayerCounterP> = ({player, kind, value}) => {
     const label = kind === "Life" ? "❤️" : kind;
 
-    const playerDispatch = usePlayerDispatch()
+    const playerDispatch = usePlayerDispatch().action
 
     const confirmation = useConfirmation();
 
@@ -26,7 +26,8 @@ const PlayerCounter: React.FC<PlayerCounterP> = ({player, kind, value}) => {
             catchOnCancel: true,
             title: `Adjust ${label} ${value}`,
             description: "",
-            location: { x: e.clientX, y: e.clientY }
+            location: { x: e.clientX, y: e.clientY },
+            initialNumber: value
         })
             .then((s: ConfirmationResult) => {
                 switch (s.choice) {

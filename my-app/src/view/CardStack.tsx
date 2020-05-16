@@ -30,7 +30,7 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
     const cards = useSelector((state: ClientState) => state.game.cards)
     const playerName = useSelector((state: ClientState) => state.playerPrefs.name)
 
-    const playerDispatch = usePlayerDispatch()
+    const playerDispatch = usePlayerDispatch().action
     const confirmation = useConfirmation();
 
     function stackButtonClicked(e: React.MouseEvent<HTMLDivElement, MouseEvent>) {

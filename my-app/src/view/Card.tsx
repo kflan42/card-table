@@ -5,6 +5,7 @@ import CardDB from '../CardDB';
 import {ClientState} from '../ClientState';
 import {useSelector, useDispatch} from 'react-redux';
 import {drawing, drawLine, hoveredCard} from '../Actions';
+import {usePlayerDispatch} from "../PlayerDispatch";
 
 
 export interface CardProps {
@@ -16,16 +17,19 @@ export interface CardProps {
 const Card: React.FC<CardProps> = ({cardId, imageSize}) => {
 
     const card = useSelector((state: ClientState) => state.game.cards[cardId])
+    const ownerColor = useSelector((state: ClientState) => state.game.players[card?.owner]?.color)
 
-    const ownerColor = useSelector((state: ClientState) => state.game.players[card.owner].color)
+    const drawingFirst = useSelector((state: ClientState) => state.drawing.first)
+    const drawerColor = useSelector((state: ClientState) => state.game.players.hasOwnProperty(state.playerPrefs.name)
+        ? state.game.players[state.playerPrefs.name].color
+        : "gray")
+    const dispatch = useDispatch()
+    const {draw: drawDispatch} = usePlayerDispatch()
 
-    const drawStage = useSelector((state: ClientState) => state.drawStage)
-
-
-    // small is 10.8k (memory cache after 1st). fuzzy text, hard to read
-    // normal is 75.7k (memory cache after 1st). readable
-
-    const sfCard = CardDB.getCard(card.sf_id);
+    if(!card) {
+        return <div className={`Card cardtooltip c-${cardId}`}>{`Card ${cardId}`}</div>
+    }
+    const sfCard = CardDB.getCard(card?.sf_id);
 
     // altText, url
     const getFront = () => {
@@ -34,9 +38,11 @@ const Card: React.FC<CardProps> = ({cardId, imageSize}) => {
         }
         if (sfCard) {
             let face = sfCard.face
-            if(sfCard.faces.length > 0) {
+            if (sfCard.faces.length > 0) {
                 face = card.transformed ? sfCard.faces[1] : sfCard.faces[0]
             }
+            // small is 10.8k (memory cache after 1st). fuzzy text, hard to read
+            // normal is 75.7k (memory cache after 1st). readable
             const img = imageSize === "normal" ? face?.normal : face?.small
             return img ? [sfCard.name, img] : ["Card Image Not Found", "/react_logo_skewed.png"]
         } else
@@ -45,19 +51,15 @@ const Card: React.FC<CardProps> = ({cardId, imageSize}) => {
 
     const front = getFront()
 
-    const dispatch = useDispatch()
-
     const click = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-        console.log(event)
-        if(drawStage === 1) {
-            dispatch(drawLine(cardId, 1))
-            dispatch(drawing(2))
+        if (drawingFirst === '') {
+            dispatch(drawing(`c-${cardId}`))
             event.preventDefault()
             return
         }
-        if(drawStage === 2) {
-            dispatch(drawLine(cardId, 2))
-            dispatch(drawing(0))
+        if (drawingFirst !== null && drawingFirst !== '') {
+            drawDispatch(drawLine({color: drawerColor, from: drawingFirst, to: `c-${cardId}`}))
+            dispatch(drawing(null))
             event.preventDefault()
             return;
         }
@@ -65,7 +67,7 @@ const Card: React.FC<CardProps> = ({cardId, imageSize}) => {
 
     return (
         // c${cardId} is a class used for line drawing
-        <div className={`Card cardtooltip c${cardId}`}
+        <div className={`Card cardtooltip c-${cardId}`}
              onMouseOver={() => dispatch(hoveredCard(cardId))}
              onMouseOut={() => dispatch(hoveredCard(null))}
              onClick={click}

@@ -5,12 +5,12 @@ import './_style.css';
 import Hand from './Hand';
 import Table from './Table';
 import {useDispatch, useSelector} from 'react-redux';
-import {ClientState, index_game} from '../ClientState';
+import {ClientState, HAND, index_game, LIBRARY} from '../ClientState';
 import {
-    cardAction,
+    cardAction, clearLines,
     createTokenCopy,
     createTokenNew, drawing,
-    localStateLoaded,
+    localStateLoaded, MOVE_CARD,
     PlayerAction,
     setCardCounter,
     setGame,
@@ -32,8 +32,8 @@ const Game: React.FC = () => {
     const hoveredCard = useSelector((state: ClientState) => state.hoveredCard)
     const cardUnderCursor = useSelector((state: ClientState) =>
         state.hoveredCard.cardId ? state.game.cards[state.hoveredCard.cardId] : null)
-    const isDrawing = useSelector((state: ClientState) => state.drawStage > 0)
-    const drawLines = useSelector((state: ClientState) => state.drawLines)
+    const isDrawing = useSelector((state: ClientState) => state.drawing.first !== null)
+    const drawLines = useSelector((state: ClientState) => state.drawing.lines)
     const players = useSelector((state: ClientState) => state.game.players)
 
     const [cardPopupShown, setCardPopupShown] = useState<number | null>(null)
@@ -46,9 +46,9 @@ const Game: React.FC = () => {
     // need a way for a player to clear their lines, need lines colored to player color in state
 
     const dispatch = useDispatch()
-    const playerDispatch = usePlayerDispatch()
+    const {action: playerDispatch, draw: drawDispatch} = usePlayerDispatch()
     const {gameId} = useParams()
-
+    const [loadedId, setLoadedId] = useState('')
 
     const loadGame = useCallback(
         () => {
@@ -84,12 +84,11 @@ const Game: React.FC = () => {
                 console.log(`caught up on ${actions.length} actions loaded from server`)
             }
 
-            //function loadGame() {
             console.log(`loading game from ${gameUrl}`)
             fetch(gameUrl).then(
                 onGameLoaded
             ).catch(r => console.error("exception loading game", r))
-            //}
+            setLoadedId(gameId as string)
         },
         [gameId, dispatch],
     );
@@ -97,17 +96,18 @@ const Game: React.FC = () => {
 
     useEffect(() => {
         // initial load effect only, prevents "too many re-renders error"
-        if (userName !== undefined)
-            return
-        const u = localStorage.getItem('userName') || 'onlooker'
-        const c = localStorage.getItem('userColor') || 'Gray'
-        if (u && c) dispatch(localStateLoaded(u, c))
-
-        loadGame()
-    }, [userName, dispatch, loadGame]);
+        if (userName === undefined) {
+            const u = localStorage.getItem('userName') || 'onlooker'
+            const c = localStorage.getItem('userColor') || 'Gray'
+            if (u && c) dispatch(localStateLoaded(u, c))
+        }
+        if (loadedId !== gameId) {
+            loadGame()
+        }
+    }, [userName, dispatch, loadGame, gameId, loadedId]);
 
     useEffect(() => {
-        if (gameId !== 'static_test' && userName !== undefined && players.hasOwnProperty(userName) && !hasSockets) {
+        if (gameId !== 'static_test' && userName !== undefined && Object.keys(players).length > 0 && !hasSockets) {
             // if we have already loaded a real game object, now it is socket time
             connectSockets();
             setHasSockets(true);
@@ -119,7 +119,11 @@ const Game: React.FC = () => {
                 // now that game is loaded, register for updates to it
                 MySocket.get_socket().emit('join', {table: gameId, username: userName})
                 MySocket.get_socket().on('player_action', function (msg: PlayerAction) {
-                    console.log('received', msg)
+                    console.log('received player_action', msg)
+                    return dispatch(msg);
+                })
+                MySocket.get_socket().on('player_draw', function (msg: object) {
+                    console.log('received player_draw', msg)
                     return dispatch(msg);
                 })
                 MySocket.get_socket().on('joined', function (msg: { table: string, username: string }) {
@@ -136,7 +140,36 @@ const Game: React.FC = () => {
     }, [gameId, userName, hasSockets, players, dispatch, loadGame])
 
     const drawArrow = () => {
-        dispatch(drawing(1))
+        dispatch(drawing(''))
+    }
+
+    const drawerColor = useSelector((state: ClientState) => state.game.players.hasOwnProperty(state.playerPrefs.name)
+        ? state.game.players[state.playerPrefs.name].color
+        : "gray")
+    const clearMyLines = () => {
+        drawDispatch(clearLines(drawerColor))
+    }
+
+    const topCard = useSelector((state: ClientState) => {
+        const player = state.playerPrefs.name ? state.game.players[state.playerPrefs.name] : null
+        if (!player) return
+        const library = Object.values(state.game.zones).filter(z => z.owner === userName && z.name === LIBRARY).pop()
+        return library?.cards[0]
+    })
+
+    function drawCard() {
+        const player = userName ? players[userName] : null
+        if (!player || topCard === undefined) return
+        const cardMove = {
+            type: MOVE_CARD,
+            cardId: topCard,
+            srcZone: LIBRARY,
+            srcOwner: userName,
+            tgtZone: HAND,
+            tgtOwner: userName,
+            toIdx: 0 // put first
+        }
+        playerDispatch(cardMove)
     }
 
     const confirmation = useConfirmation();
@@ -189,27 +222,29 @@ const Game: React.FC = () => {
             .catch(() => null);
     }
 
+    const isHoveredCard = !(hoveredCard.cardId === null || hoveredCard.cardId === undefined)
+
     const keyPress = (event: React.KeyboardEvent<HTMLDivElement>) => {
         switch (event.key) {
             case 'v':
-                if (cardPopupShown === hoveredCard.cardId) {
-                    setCardPopupShown(null) // view again to close
+                if (cardPopupShown === hoveredCard.cardId || (cardPopupShown != null && !isHoveredCard)) {
+                    setCardPopupShown(null) // view again to close or 'v' anywhere to close
                     event.preventDefault()
-                } else if (hoveredCard.cardId !== null) {
+                } else if (isHoveredCard) {
                     setCardPopupShown(hoveredCard.cardId)
                     setCardPopupTransformed(false)
                     event.preventDefault()
                 }
                 break;
-            case 't':
-                if (hoveredCard.cardId !== null) {
-                    playerDispatch(cardAction(TOGGLE_TRANSFORM_CARD, hoveredCard.cardId, hoveredCard.bfId === null))
+            case 'T':
+                if (isHoveredCard) {
+                    playerDispatch(cardAction(TOGGLE_TRANSFORM_CARD, hoveredCard.cardId as number, hoveredCard.bfId === null))
                     event.preventDefault()
                 }
                 break;
-            case 'f':
-                if (hoveredCard.cardId !== null) {
-                    playerDispatch(cardAction(TOGGLE_FACEDOWN_CARD, hoveredCard.cardId, hoveredCard.bfId === null))
+            case 'F':
+                if (isHoveredCard) {
+                    playerDispatch(cardAction(TOGGLE_FACEDOWN_CARD, hoveredCard.cardId as number, hoveredCard.bfId === null))
                     event.preventDefault()
                 }
                 break;
@@ -218,28 +253,31 @@ const Game: React.FC = () => {
                 event.preventDefault()
                 break;
             case 'c':
-                if (hoveredCard.bfId !== null) {
+                if (hoveredCard.bfId !== null && hoveredCard.bfId !== undefined) {
                     counterPopup(hoveredCard.bfId)
                     event.preventDefault()
                 }
                 break;
             case 'a':
                 drawArrow()
-                event.preventDefault();
+                event.preventDefault()
+                break;
+            case 'A':
+                clearMyLines()
+                event.preventDefault()
+                break;
+            case 'D':
+                drawCard()
+                event.preventDefault()
                 break;
         }
     }
 
-    const lines = []
-    for (let i = 0; i < drawLines.length; i++) {
-        if (i % 2 == 1) {
-            lines.push(
-                <LineTo from={`c${drawLines[i - 1]}`} to={`c${drawLines[i]}`}
-                        borderColor={"gray"} borderStyle={"dashed"} borderWidth={4}
-                        delay={100}/>
-            )
-        }
-    }
+    const lines = drawLines
+        .map(entityLine => <LineTo key={`${entityLine.from}-${entityLine.to}`} from={entityLine.from} to={entityLine.to}
+                                   borderColor={entityLine.color} borderWidth={2}
+                                   className={"Line"}
+        />)
 
     //tabIndex means it can receive focus which means it can receive keyboard events
     return userName
@@ -248,7 +286,7 @@ const Game: React.FC = () => {
                 cursor: isDrawing ? "crosshair" : undefined
             }}>
                 <Table/>
-                <Hand/>
+                {players.hasOwnProperty(userName) ? <Hand/> : null}
                 {cardPopupShown !== null
                     ? <CardPopup cardId={cardPopupShown} transformed={cardPopupTransformed}/>
                     : undefined}

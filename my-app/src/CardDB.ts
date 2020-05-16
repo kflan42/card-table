@@ -18,19 +18,15 @@ class CardDB {
     }
 
     static async loadCards(url: string) {
-        if (CardDB.cards)
-            return CardDB.cards
-        else {
-            console.log("beginning load from " + url)
-            CardDB.cards = fetch(url).then(r => {
-                return r.json()
-            })
-            CardDB.cards.then((cds) => {
-                console.log(`${cds.length} cards loaded`)
-                CardDB.buildMap(cds);
-            });
-            return CardDB.cards
-        }
+        console.log("beginning load from " + url)
+        CardDB.cards = fetch(url).then(r => {
+            return r.json()
+        })
+        CardDB.cards.then((cds) => {
+            console.log(`${cds.length} cards loaded`)
+            CardDB.buildMap(cds);
+        });
+        return CardDB.cards
     }
 
     static getCard(sf_id: string): SFCard {

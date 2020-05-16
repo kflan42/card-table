@@ -1,4 +1,4 @@
-import {Game} from "./ClientState";
+import {EntityLine, Game} from "./ClientState";
 
 export const LOCAL_STATE_LOAD = 'LOCAL_STATE_LOAD'
 export function localStateLoaded(name: string, color: string) {
@@ -9,13 +9,18 @@ export function localStateLoaded(name: string, color: string) {
 }
 
 export const DRAWING = 'DRAWING'
-export function drawing(drawing: number) {
-    return {type: DRAWING, drawing}
+export function drawing(first: string|null) {
+    return {type: DRAWING, first}
 }
 
 export const DRAWLINE = 'DRAWLINE'
-export function drawLine(cardId: number, linePoint: number) {
-    return {type: DRAWLINE, cardId, linePoint} // point 1 or point 2
+export function drawLine(entityLine: EntityLine) {
+    return {type: DRAWLINE, entityLine}
+}
+
+export const CLEAR_LINES = 'CLEAR_LINES'
+export function clearLines(color: string) {
+    return {type:CLEAR_LINES, color}
 }
 
 export const SHUFFLE_LIBRARY = 'SHUFFLE_LIBRARY'

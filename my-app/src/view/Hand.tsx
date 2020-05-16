@@ -18,7 +18,7 @@ const Hand: React.FC<HandProps> = () => {
         return state.game.zones[`${state.playerPrefs.name}-${HAND}`]
     })
 
-    const playerDispatch = usePlayerDispatch()
+    const playerDispatch = usePlayerDispatch().action
 
     const [, drop] = useDrop({
         accept: [ItemTypes.CARD, ItemTypes.BFCARD],

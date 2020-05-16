@@ -31,7 +31,7 @@ const Battlefield: React.FC<BFP> = ({player}) => {
         return state.game.battlefieldCards
     })
 
-    const playerDispatch = usePlayerDispatch()
+    const playerDispatch = usePlayerDispatch().action
 
     const bf = useRef<HTMLDivElement>(null);
 

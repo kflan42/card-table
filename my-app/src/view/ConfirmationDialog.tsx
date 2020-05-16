@@ -9,6 +9,8 @@ export interface ConfirmationOptions {
     description: string;
     choices: string[];
     location?: { x: number, y: number }
+    initialNumber?: number
+    initialString?: string
 }
 
 export interface ConfirmationResult { choice: string, n: number, s: string }
@@ -23,6 +25,8 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
     description,
     choices,
     location,
+    initialNumber,
+    initialString,
     onSubmit,
     onCancel,
 }) => {
@@ -31,8 +35,8 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
     const left = (location ? location.x : 0 + window.innerWidth / 2) / 2
     const top = (location ? location.y : 0 + window.innerHeight / 2) / 2
 
-    const [valueN, setValueN] = useState(1)
-    const [valueS, setValueS] = useState("")
+    const [valueN, setValueN] = useState(initialNumber || 1)
+    const [valueS, setValueS] = useState(initialString || "")
 
     function selectChanged(value: any, actionMeta: ActionMeta<any>) {
         if (actionMeta.action === 'select-option') {
@@ -44,7 +48,7 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
     for (const c of choices) {
         const parts = c.split(' ')
         const elementParts = []
-        if (parts.indexOf('_') > -1 || parts.indexOf('*') > -1 || parts.indexOf('$') > -1) {
+        if (parts.find(p => p.match(/^[_*$]/))) {
             // use first word as button, rest as label(s) for input field(s)
             elementParts.push(
                 <button key={c}
@@ -57,7 +61,7 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
             parts.splice(0, 1)
             for (let i = 0; i < parts.length; i++) {
                 let p = parts[i];
-                switch (p) {
+                switch (p.charAt(0)) {
                     case '_':
                         elementParts.push(
                             <input className="DivButton" key={p}
