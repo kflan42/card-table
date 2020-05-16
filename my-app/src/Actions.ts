@@ -1,9 +1,9 @@
 import {EntityLine, Game} from "./ClientState";
 
-export const LOCAL_STATE_LOAD = 'LOCAL_STATE_LOAD'
-export function localStateLoaded(name: string, color: string) {
+export const SET_USER_PREFS = 'SET_USER_PREFS'
+export function setUserPrefs(name: string, color: string) {
     return {
-        type: LOCAL_STATE_LOAD,
+        type: SET_USER_PREFS,
         payload: { name, color },
     }
 }

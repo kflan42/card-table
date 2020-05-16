@@ -10,7 +10,7 @@ import {
     cardAction, clearLines,
     createTokenCopy,
     createTokenNew, drawing,
-    localStateLoaded, MOVE_CARD,
+    setUserPrefs, MOVE_CARD,
     PlayerAction,
     setCardCounter,
     setGame,
@@ -40,15 +40,12 @@ const Game: React.FC = () => {
     const [cardPopupTransformed, setCardPopupTransformed] = useState(false)
     const [hasSockets, setHasSockets] = useState(false)
 
-    // todo finish line support for drawing to indicate attacks / spell targets
-    // do need to emit & broadcast, don't save. store in clientState (not game)
-    // need lines for attacks definitely
-    // need a way for a player to clear their lines, need lines colored to player color in state
-
     const dispatch = useDispatch()
     const {action: playerDispatch, draw: drawDispatch} = usePlayerDispatch()
     const {gameId} = useParams()
     const [loadedId, setLoadedId] = useState('')
+
+    const confirmation = useConfirmation();
 
     const loadGame = useCallback(
         () => {
@@ -95,16 +92,34 @@ const Game: React.FC = () => {
 
 
     useEffect(() => {
-        // initial load effect only, prevents "too many re-renders error"
-        if (userName === undefined) {
-            const u = localStorage.getItem('userName') || 'onlooker'
-            const c = localStorage.getItem('userColor') || 'Gray'
-            if (u && c) dispatch(localStateLoaded(u, c))
-        }
         if (loadedId !== gameId) {
             loadGame()
         }
-    }, [userName, dispatch, loadGame, gameId, loadedId]);
+    }, [loadGame, gameId, loadedId]);
+
+    useEffect(() => {
+            const playerNames = Object.keys(players)
+            if (userName === undefined && playerNames.length > 0) {
+                playerNames.push('Spectator *')
+                confirmation({
+                    title: "Who are you?",
+                    description: "Please select from existing players, else use /login to join the game.",
+                    choices: playerNames,
+                    catchOnCancel: true
+                })
+                    .then((s: ConfirmationResult) => {
+                        if (players.hasOwnProperty(s.choice)) {
+                            dispatch(setUserPrefs(s.choice, players[s.choice].color))
+                        } else if (s.choice === 'Spectator *') {
+                            dispatch(setUserPrefs(`(${s.s})`, "gray"))
+                        }
+                    })
+                    .catch(() => null)
+            }
+        },
+        // since it wants confirmation but that changes every render and infinite loops
+        // eslint-disable-next-line
+        [userName, players, dispatch])
 
     useEffect(() => {
         if (gameId !== 'static_test' && userName !== undefined && Object.keys(players).length > 0 && !hasSockets) {
@@ -127,7 +142,7 @@ const Game: React.FC = () => {
                     return dispatch(msg);
                 })
                 MySocket.get_socket().on('joined', function (msg: { table: string, username: string }) {
-                    if (msg.username !== 'onlooker' && !players.hasOwnProperty(msg.username)) {
+                    if (msg.username.startsWith('(') && !players.hasOwnProperty(msg.username)) {
                         // new player joined table since we loaded it, need to reload table data
                         console.log(`reloading since ${msg.username} joined ${Object.keys(players)}`)
                         loadGame()
@@ -137,7 +152,7 @@ const Game: React.FC = () => {
                 console.error(e)
             }
         }
-    }, [gameId, userName, hasSockets, players, dispatch, loadGame])
+    }, [gameId, userName, players, hasSockets, dispatch, loadGame])
 
     const drawArrow = () => {
         dispatch(drawing(''))
@@ -171,8 +186,6 @@ const Game: React.FC = () => {
         }
         playerDispatch(cardMove)
     }
-
-    const confirmation = useConfirmation();
 
     const tokenPopup = () => {
         if (userName === undefined) return

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Die from "./Die";
+import Help from "./Help";
 
 
 const Clock: React.FC = () => {
@@ -29,10 +30,16 @@ const Clock: React.FC = () => {
     <div style={{
       padding: "0.1em",
       color: "black",
-      textAlign: "center"
+      textAlign: "center",
+      display: "flex",
+      justifyContent: "space-around"
     }}>
       <Die />
-      {state.date.toLocaleTimeString()}
+      {state.date.toLocaleTimeString([], {
+        hour: 'numeric',
+        minute: '2-digit',
+      })}
+      <Help />
     </div>
   );
 }

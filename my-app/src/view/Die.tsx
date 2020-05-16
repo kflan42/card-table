@@ -39,7 +39,7 @@ const Die: React.FC = () => {
 
   /* eslint-disable jsx-a11y/accessible-emoji */
   return (
-    <span style={{ cursor: "pointer" }} onClick={rollPrompt}>🎲 </span>
+    <span style={{ cursor: "pointer" }} onClick={rollPrompt}>🎲</span>
   );
 }
 

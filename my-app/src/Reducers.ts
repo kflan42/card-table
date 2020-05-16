@@ -2,14 +2,14 @@ import {combineReducers} from 'redux'
 import update from 'immutability-helper'
 
 
-import {CLEAR_LINES, DRAWING, DRAWLINE, HOVERED_BFCARD, HOVERED_CARD, LOCAL_STATE_LOAD,} from './Actions'
+import {CLEAR_LINES, DRAWING, DRAWLINE, HOVERED_BFCARD, HOVERED_CARD, SET_USER_PREFS,} from './Actions'
 import {Drawing, HoveredCard} from './ClientState'
 import {gameReducer} from "./GameReducer";
 
 
 const stateReducer = combineReducers({
     playerPrefs: (x = {name: undefined, color: undefined}, y) => {
-        if (y.type === LOCAL_STATE_LOAD) return y.payload;
+        if (y.type === SET_USER_PREFS) return y.payload;
         else return x;
     },
     game: gameReducer,
