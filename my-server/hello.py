@@ -27,6 +27,7 @@ from test_table import test_table
 def is_test(table_name: str) -> bool:
     return "test" in table_name and table_name[:4] == "test"
 
+
 def main(args: argparse.Namespace):
     ip = socket.gethostbyname(socket.gethostname())
 
@@ -84,16 +85,20 @@ def main(args: argparse.Namespace):
         if request.method == 'POST':
             if is_test(table_name):
                 return "Can't join test tables.", 400
-            logging.info(request.data.decode('utf-8'))
-            if not table:
-                table = MagicTable(table_name)  # create if joining
-            d = json.loads(request.data)
-            join_request = JoinRequest(**d)
-            if table.add_player(join_request):
-                table.save()
-                return "Joined table.", 201
-            else:
-                return "Already at table.", 409
+            try:
+                logging.info(request.data.decode('utf-8'))
+                if not table:
+                    table = MagicTable(table_name)  # create if joining
+                d = json.loads(request.data)
+                join_request = JoinRequest(**d)
+                if table.add_player(join_request):
+                    table.save()
+                    return "Joined table.", 201
+                else:
+                    return "Already at table.", 409
+            except Exception as e:
+                logging.exception(e)
+                return "Error joining table.", 500
         else:
             if table:
                 return table.table.game.to_json()
@@ -172,6 +177,7 @@ def main(args: argparse.Namespace):
         else:
             emit('error', {'error': 'Unable to join table. Table does not exist.'})
 
+    logging.info(f"starting up at http://{args.public_ip}:{args.port}")
     socketio.run(app,
                  debug=True,
                  host='0.0.0.0',  # so that the server listens on the public network interface, else localhost

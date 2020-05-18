@@ -142,6 +142,7 @@ class CardResolver:
             elif card.faces:
                 for face in card.faces:
                     self.card_map[face.name][card.set_name].append(card)
+                self.card_map[" // ".join([f.name for f in card.faces])][card.set_name].append(card)
             else:
                 logging.error('Failed to map %s', card)
 
