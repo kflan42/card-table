@@ -15,7 +15,7 @@ import {
     SHUFFLE_LIBRARY,
     TOGGLE_FACEDOWN_CARD,
     TOGGLE_TAP_CARD,
-    TOGGLE_TRANSFORM_CARD,
+    TOGGLE_TRANSFORM_CARD, UNTAP_ALL,
 } from './Actions'
 import {BATTLEFIELD, Game, HAND, LIBRARY} from './ClientState'
 import {shuffleArray} from './Utilities'
@@ -83,6 +83,17 @@ export function gameReducer(
             newState = update(state, {battlefieldCards: {[action.id]: {$toggle: ['tapped']}}})
             const nowTapped = newState.battlefieldCards[action.id].tapped
             logLine = ` ${nowTapped ? '' : 'un'}tapped ${getBfCardName(state, action.id)}`
+            break;
+        case UNTAP_ALL:
+            const cardIds = new Set(Object.values(state.cards).filter(c=>c.owner === gameAction.who).map(c=>c.card_id))
+            let count = 0
+            const newBfCards: { [index: number]: BattlefieldCard } = {}
+            for (let bf of Object.values(state.battlefieldCards).filter(b=>b.tapped && cardIds.has(b.card_id))) {
+                count++
+                newBfCards[bf.bf_id] = {...bf, tapped: false}
+            }
+            newState = update(state, {battlefieldCards: {$merge: newBfCards}})
+            logLine = ` ${gameAction.who} untapped ${count} cards`
             break;
         case TOGGLE_TRANSFORM_CARD:
             action = gameAction as unknown as CardAction

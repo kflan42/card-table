@@ -80,6 +80,13 @@ export function cardAction(type: string, id: number, silent?:boolean) : CardActi
     }
 }
 
+export const UNTAP_ALL = 'UNTAP_ALL'
+export function untapAll() {
+    return {
+        type:UNTAP_ALL,
+    }
+}
+
 export const SET_PLAYER_COUNTER = 'SET_PLAYER_COUNTER'
 export function setPlayerCounter(player: string, kind: string, value: number) {
     return {

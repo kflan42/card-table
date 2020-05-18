@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { DndProvider } from 'react-dnd'
+import {DndProvider} from 'react-dnd'
 
 import {
     BrowserRouter as Router,
@@ -12,12 +12,13 @@ import Backend from 'react-dnd-html5-backend'
 
 import './_style.css';
 import LoginForm from './Login'
-import { createStore } from 'redux'
-import { Provider } from 'react-redux';
+import {createStore} from 'redux'
+import {Provider} from 'react-redux';
 import Game from './Game';
 import Log from './Log';
 import stateReducer from '../Reducers';
-import { ConfirmationServiceProvider } from './ConfirmationService';
+import {ConfirmationServiceProvider} from './ConfirmationService';
+import ErrorBoundary from "./ErrorBoundary";
 
 const App: React.FC = () => {
 
@@ -25,28 +26,27 @@ const App: React.FC = () => {
     const store = createStore(stateReducer)
 
     return (
-        <div className="App">
-            <Router>
-
-                <Switch>
-                    <Route path="/table/:gameId">
-                        <Provider store={store}>
-                            <DndProvider backend={Backend}>
+        <ErrorBoundary>
+            <div className="App">
+                <Provider store={store}>
+                    <Router>
+                        <Switch>
+                            <Route path="/table/:gameId">
                                 <ConfirmationServiceProvider>
-                                    <Game />
+                                    <DndProvider backend={Backend}>
+                                        <Game/>
+                                    </DndProvider>
+                                    <Log/>
                                 </ConfirmationServiceProvider>
-                            </DndProvider>
-                            <ConfirmationServiceProvider>
-                                <Log />
-                            </ConfirmationServiceProvider>
-                        </Provider>
-                    </Route>
-                    <Route path="/login">
-                        <LoginForm />
-                    </Route>
-                </Switch>
-            </Router>
-        </div>
+                            </Route>
+                            <Route path="/login">
+                                <LoginForm/>
+                            </Route>
+                        </Switch>
+                    </Router>
+                </Provider>
+            </div>
+        </ErrorBoundary>
     )
 }
 

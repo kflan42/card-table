@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react'
+import React, {useEffect} from 'react'
 
 
 import { DropTargetMonitor, useDrag, useDrop } from 'react-dnd';
@@ -9,6 +9,7 @@ import { MOVE_CARD } from '../Actions';
 import { HAND } from '../ClientState';
 import { getEmptyImage } from 'react-dnd-html5-backend';
 import { usePlayerDispatch } from '../PlayerDispatch';
+import {useDispatch} from "react-redux";
 
 
 interface HandCardProps {
@@ -41,8 +42,10 @@ const HandCard: React.FC<HandCardProps> = ({
         preview(getEmptyImage(), { captureDraggingState: true })
     }, [preview])
 
-    function moveCard(draggedCard: DragCard) {
-        if (draggedCard.cardId !== cardId) {
+    const dispatch = useDispatch()
+
+    function moveCard(draggedCard: DragCard, dueToHover: boolean) {
+        if (draggedCard.cardId !== cardId || !dueToHover) {
             const cardMove = {
                 ...draggedCard,
                 type: MOVE_CARD,
@@ -50,22 +53,24 @@ const HandCard: React.FC<HandCardProps> = ({
                 tgtOwner: owner,
                 toIdx: handIdx,
             }
-            playerDispatch(cardMove)
+            if (dueToHover) {
+                // avoid spamming server as hover fires every render which is faster than server dispatching
+                dispatch({...cardMove, who: owner, when: Date.now()})
+            } else {
+                playerDispatch(cardMove)
+            }
         }
     }
 
     const [, drop] = useDrop({
         accept: [ItemTypes.CARD, ItemTypes.BFCARD],
-        canDrop: (item: DragCard, monitor: DropTargetMonitor) => {
-            return item.srcOwner !== owner || item.srcZone !== HAND
-        },
         hover(item: DragCard, monitor: DropTargetMonitor) {
             if (item.srcOwner === owner && item.srcZone === HAND) {
-                moveCard(item) // re order hand on hover
+                moveCard(item, true) // re order hand on hover
             }
         },
         drop(item: DragCard, monitor: DropTargetMonitor) {
-            moveCard(item); // allow cross zone moves on drop
+            moveCard(item, false); // allow cross zone moves on drop
             return {} // empty object says we handled it
         },
     })

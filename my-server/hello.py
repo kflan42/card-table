@@ -117,11 +117,11 @@ def main(args: argparse.Namespace):
 
     @socketio.on('connect')
     def test_connect():
-        logging.info(f'Client connected {{{request.method} {request.headers}}}')
+        logging.info(f'Client connected via {request.referrer} from {request.remote_addr}')
 
     @socketio.on('disconnect')
     def test_disconnect():
-        logging.info(f'Client disconnected {{{request.method} {request.headers}}}')
+        logging.info(f'Client disconnected via {request.referrer} from {request.remote_addr}')
 
     @socketio.on('player_action')
     def on_player_action(data):
@@ -141,7 +141,7 @@ def main(args: argparse.Namespace):
         return True
 
     @socketio.on('player_draw')
-    def on_player_action(data):
+    def on_player_draw(data):
         logging.info('player_draw %s', data)
         table_name = data['table']
         table = get_table(table_name=table_name)
@@ -153,6 +153,10 @@ def main(args: argparse.Namespace):
             emit('error', {'error': 'Unable to do action. Table does not exist.'})
             return False
         return True
+
+    @socketio.on('error_report')
+    def on_error_report(data):
+        logging.error(f'error_report via {request.referrer} from {request.remote_addr} %s', data)
 
     @socketio.on('join')
     def on_join(data):
@@ -185,12 +189,13 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s %(message)s', stream=sys.stdout, level=logging.INFO)
     import logging.handlers
 
-    os.makedirs(os.path.join('data', 'logs'), exist_ok=True)
-    h = logging.handlers.RotatingFileHandler(filename=os.path.join('data', 'logs', 'hello.log'),
-                                             mode='a', maxBytes=int(1e6), backupCount=10)
-    f = logging.Formatter('%(asctime)s %(name)s %(levelname)-8s %(message)s')
-    h.setFormatter(f)
-    logging.getLogger().addHandler(h)
+    # socket.io doesn't handle rotating file appender, gets stuck on old one after the move (at least on windows)
+    # os.makedirs(os.path.join('data', 'logs'), exist_ok=True)
+    # h = logging.handlers.RotatingFileHandler(filename=os.path.join('data', 'logs', 'hello.log'),
+    #                                          mode='a', maxBytes=int(1e6), backupCount=10)
+    # f = logging.Formatter('%(asctime)s %(name)s %(levelname)-8s %(message)s')
+    # h.setFormatter(f)
+    # logging.getLogger().addHandler(h)
 
     logging.info("hello from logging")
     main(args)

@@ -15,7 +15,7 @@ import {
     setCardCounter,
     setGame,
     TOGGLE_FACEDOWN_CARD,
-    TOGGLE_TRANSFORM_CARD
+    TOGGLE_TRANSFORM_CARD, untapAll
 } from '../Actions';
 import CardPopup from './CardPopup';
 import CustomDragLayer from './CustomDragLayer';
@@ -254,6 +254,9 @@ const Game: React.FC = () => {
                     playerDispatch(cardAction(TOGGLE_TRANSFORM_CARD, hoveredCard.cardId as number, hoveredCard.bfId === null))
                     event.preventDefault()
                 }
+                break;
+            case 'U':
+                playerDispatch(untapAll())
                 break;
             case 'F':
                 if (isHoveredCard) {

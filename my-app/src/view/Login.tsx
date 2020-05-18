@@ -1,22 +1,26 @@
 import React, {ChangeEvent, FormEvent} from 'react'
 import {useHistory} from 'react-router-dom';
 import {JoinRequest} from "../magic_models";
+import {setUserPrefs} from "../Actions";
+import {useDispatch} from "react-redux";
 
 
 export const LoginForm: React.FC = (props) => {
     const history = useHistory()
 
-    function cb(arg0: string) {
-        history.push(arg0)
-    }
+    const dispatch = useDispatch()
 
     return (
-        <Login cb={cb}></Login>
+        <Login
+            routeChange={(r) => history.push(r)}
+            setUserPrefs={(up) => dispatch(up)}
+        ></Login>
     )
 }
 
 interface LoginP {
-    cb: (arg0: any) => void
+    routeChange: (arg0: string) => void
+    setUserPrefs: (arg0: object) => void
 }
 
 
@@ -82,7 +86,7 @@ class Login extends React.Component<LoginP> {
 
         console.log("joining table...", this.state)
         if (this.state.table === 'test') {
-            this.props.cb('/table/' + this.state.table)
+            this.props.routeChange('/table/' + this.state.table)
             return; // will use non dynamic server data
         }
         this.sendChoices()
@@ -97,8 +101,10 @@ class Login extends React.Component<LoginP> {
                     return Promise.reject(error);
                 }
 
+                // set user name and color in app memory
+                this.props.setUserPrefs(setUserPrefs(this.state.name, this.state.color))
                 // route over to table
-                this.props.cb('/table/' + this.state.table)
+                this.props.routeChange('/table/' + this.state.table)
             })
             .catch(error => {
                 console.error('There was an error!', error);
