@@ -133,14 +133,9 @@ class Login extends React.Component<LoginP> {
             //   for (let g = 0; g <= 3; g++) {
             //     for (let b = 0; b <= 3; b++) {
             // const color = "#" + (r * 64 + 16).toString(16) + (g * 64 + 16).toString(16) + (b * 64 + 16).toString(16)
-            const v = colors[color]
-            const r = v >> 16
-            const g = (v & 0x00ff00) >> 8
-            const b = v & 0x0000ff
-            // const s = r.toString(16) + g.toString(16) + b.toString(16)
+            const {brightness} = analyzeColor(color);
             // let too_pale = r < 0xa0 || g < 0xa0 || b < 0xa0;
             // let too_bright = r > 0x40 || g > 0x40 || b > 0x40;
-            let brightness = r + g + b
             if (true) {
                 colorItems.push(<span
                     key={color}
@@ -191,6 +186,16 @@ class Login extends React.Component<LoginP> {
 }
 
 export default LoginForm
+
+export function analyzeColor(color: string) {
+    const v = colors[color]
+    const r = v >> 16
+    const g = (v & 0x00ff00) >> 8
+    const b = v & 0x0000ff
+    const brightness = r + g + b
+    // const s = r.toString(16) + g.toString(16) + b.toString(16)
+    return {r, g, b, brightness};
+}
 
 export const colors: { [index: string]: number } = {
     "IndianRed": 0xCD5C5C,

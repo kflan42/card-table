@@ -290,7 +290,12 @@ function handleMoveCard(newState: Game, moveCard: MoveCard): [Game, string?] {
             }
         }
     }
-    let line = `moved a card from ${moveCard.srcOwner}'s ${moveCard.srcZone} to ${moveCard.tgtOwner}'s ${moveCard.tgtZone}`
+    let whichCard = moveCard.tgtZone === BATTLEFIELD || moveCard.srcZone === BATTLEFIELD
+        ? getCardName(newState, moveCard.cardId)
+        : "a card"
+    let whoseSrcZone = moveCard.who === moveCard.srcOwner ? "their" : `${moveCard.srcOwner}'s`
+    let whoseTgtZone = moveCard.who === moveCard.tgtOwner ? "their" : `${moveCard.tgtOwner}'s`
+    let line = `moved ${whichCard} from ${whoseSrcZone} ${moveCard.srcZone} to ${whoseTgtZone} ${moveCard.tgtZone}`
     if(sameOwner && moveCard.srcZone === LIBRARY && moveCard.tgtZone === HAND) {
         line = 'drew a card'
     } else if (sameOwner && moveCard.srcZone === HAND && moveCard.tgtZone === BATTLEFIELD) {

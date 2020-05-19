@@ -15,8 +15,8 @@ def test_table() -> MagicTable:
     # add players
     table.add_player(JoinRequest(name='alice', table='test', deck_list=arena_deck, color='Green'))
     table.add_player(JoinRequest(name='bob', table='test', deck_list=txt_deck, color='Red'))
-    table.add_player(JoinRequest(name='chad', table='test', deck_list=arena_deck_w_side, color='Blue'))
-    table.add_player(JoinRequest(name='dude', table='test', deck_list=tapped_out_deck, color='White'))
+    table.add_player(JoinRequest(name='Cool Person', table='test', deck_list=arena_deck_w_side, color='Blue'))
+    table.add_player(JoinRequest(name='Definitely Dude', table='test', deck_list=tapped_out_deck, color='White'))
 
     # make it busy
     game = table.table.game
