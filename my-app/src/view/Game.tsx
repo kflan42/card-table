@@ -238,6 +238,11 @@ const Game: React.FC = () => {
     const isHoveredCard = !(hoveredCard.cardId === null || hoveredCard.cardId === undefined)
 
     const keyPress = (event: React.KeyboardEvent<HTMLDivElement>) => {
+        if (event.target && (event.target as HTMLDivElement).className === "Game") {
+            // keyboard action
+        } else {
+            return // likely in an input box inside Game
+        }
         switch (event.key) {
             case 'v':
                 if (cardPopupShown === hoveredCard.cardId || (cardPopupShown != null && !isHoveredCard)) {
@@ -257,6 +262,7 @@ const Game: React.FC = () => {
                 break;
             case 'U':
                 playerDispatch(untapAll())
+                event.preventDefault()
                 break;
             case 'F':
                 if (isHoveredCard) {
