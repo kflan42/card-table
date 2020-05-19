@@ -80,7 +80,7 @@
 
 .Playmat {
   margin: 0.1em;
-  min-height: 20em;
+  min-height: 24em;
   height: 49%; /* buffer a pinch for scrollbar */
   width: 40%; /* make adjustable for 2,4,6 players*/
   display: flex;
@@ -116,6 +116,7 @@
   height: 100%;
   position: relative;
   overflow: auto;
+  font-size: small;
 }
 
 .Hand {
@@ -163,14 +164,14 @@
 }
 
 .DragLayer .Card {
-  height: 7em;
-  width: 5em;
+  height: 8em;
+  width: 5.725em;
   opacity: 0.75;
 }
 
 .Battlefield .Card {
-  height: 7em;
-  width: 5em;
+  height: 8em;
+  width: 5.725em;
 }
 
 .StackPopUpBox {

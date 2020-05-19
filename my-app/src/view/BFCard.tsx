@@ -102,7 +102,7 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
             <div
                 key={counterLabel}
                 style={{
-                    fontSize: "smaller",
+                    fontSize: "small",
                     fontFamily: "Arial",
                     backgroundColor: "goldenrod",
                     color: "black",

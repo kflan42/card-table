@@ -79,7 +79,7 @@ const HandCard: React.FC<HandCardProps> = ({
 
     return (
         <div ref={(node) => drag(drop(node))} style={{ opacity, margin:"0.25em" }}>
-            <Card cardId={cardId} ></Card>
+            <Card cardId={cardId} imageSize={"normal"} ></Card>
         </div>
     )
 }
