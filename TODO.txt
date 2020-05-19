@@ -1,0 +1,38 @@
+Bugs:
+
+ - table names monday and Monday means only former is loadable
+ - auto-reload on new player join not firing
+ - [fixed] keyboard actions catching instead of Library search input (but create Token input ok)
+ - [fixed] player A acting on player B's things not shown in red
+ - [can't repro] Ashton dragged a mountain from his hand to my battlefield and it vanished
+ - - then later Niall tapping a land tapped one of Ashton's cards and vice-versa
+ - - - even later Ashton creating 2 tokens led to an "undefined card" and react error handler fired
+
+User Feature Requests:
+
+ - [done] slightly larger cards by default
+ - build options form for playerPrefs (non-game)
+ - - adjustable card size: bf & hand. (need bf pos relative to card size)
+ - - higher quality card image option
+ - - adjustable log width
+ - support Xmage deck format (Alex's decks)
+ - image upload for playmat
+ - delete token on graveyard drop
+ - [not an issue after a few rounds] number in player boxes to see turn order more clearly
+ - [not necessary] draw 7 shortcut for game start (option on library? shuffle too, w/o open)
+ - [done] log line names use player colors
+
+
+My ideas:
+ - prompt to confirm (or hold shift to enable) acting on other player's things
+ - end turn button (output a log line for clarity)
+ - post-game stats screen, show count and types of actions
+ - ability to hide a player if they've left the game
+ - undo as a server side operation: delete last action & force reload (join can use same force reload)
+
+Long term:
+ - move reducer game update logic to server, just send updated objects to client
+ - - do random property based testing on it
+
+Longer term:
+ - planes walkers with default loyalty counter (need more SF data)
