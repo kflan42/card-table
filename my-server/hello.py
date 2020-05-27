@@ -25,6 +25,7 @@ from test_table import test_table
 # then run this
 
 def is_test(table_name: str) -> bool:
+    table_name = table_name.lower()
     return "test" in table_name and table_name[:4] == "test"
 
 
@@ -67,46 +68,53 @@ def main(args: argparse.Namespace):
         else:
             return send_from_directory(os.path.join(build_dir), 'index.html')
 
-    def get_table(table_name):
+    def get_table(table_name) -> typing.Tuple[str, MagicTable]:
+        table_name = table_name.lower()  # lower case table names since windows filesystem case insensitive
         if table_name in tables:  # check memory
-            return tables[table_name]
+            return table_name, tables[table_name]
         elif is_test(table_name):
-            tables[table_name] = test_table()
-            return tables[table_name]
+            table = test_table()
+            tables[table_name] = table
+            return table_name, table
         else:
             table = MagicTable.load(table_name)  # check disk
+            logging.info("loaded table " + table_name)
             if table:
                 tables[table_name] = table  # keep in memory
-            return table
+            return table_name, table
 
     @app.route('/api/table/<path:table_name>', methods=['GET', 'POST'])
-    def join_table(table_name):
-        table = get_table(table_name)
+    def join_table(table_name: str):
+        table_name, table = get_table(table_name=table_name)
         if request.method == 'POST':
             if is_test(table_name):
-                return "Can't join test tables.", 400
+                return "Can't create test tables.", 400
             try:
                 logging.info(request.data.decode('utf-8'))
+                created = False
                 if not table:
                     table = MagicTable(table_name)  # create if joining
+                    logging.info("created table " + table_name)
+                    tables[table_name] = table
+                    created = True
                 d = json.loads(request.data)
                 join_request = JoinRequest(**d)
                 if table.add_player(join_request):
                     table.save()
-                    return "Joined table.", 201
+                    return ("Created table", 201) if created else ("Joined table.", 202)
                 else:
                     return "Already at table.", 409
             except Exception as e:
                 logging.exception(e)
-                return "Error joining table.", 500
+                return "Error joining table: " + str(e), 500
         else:
             if table:
                 return table.table.game.to_json()
-            return "Table not found.", 404
+            return {"message": "Table not found."}, 404
 
     @app.route('/api/table/<path:table_name>/cards', methods=['GET'])
     def get_cards(table_name):
-        table = get_table(table_name)
+        table_name, table = get_table(table_name)
         if table:
             return table.get_cards()
         else:
@@ -114,7 +122,7 @@ def main(args: argparse.Namespace):
 
     @app.route('/api/table/<path:table_name>/actions', methods=['GET'])
     def get_actions(table_name):
-        table = get_table(table_name)
+        table_name, table = get_table(table_name)
         if table:
             return jsonify(table.get_actions())
         else:
@@ -132,7 +140,7 @@ def main(args: argparse.Namespace):
     def on_player_action(data):
         logging.info('player_action %s', data)
         table_name = data['table']
-        table = get_table(table_name=table_name)
+        table_name, table = get_table(table_name=table_name)
         if table:
             # send it out
             emit('player_action', data, room=table_name, broadcast=True)   # on('player_action'
@@ -149,7 +157,7 @@ def main(args: argparse.Namespace):
     def on_player_draw(data):
         logging.info('player_draw %s', data)
         table_name = data['table']
-        table = get_table(table_name=table_name)
+        table_name, table = get_table(table_name=table_name)
         if table:
             # send it out
             emit('player_draw', data, room=table_name, broadcast=True)  # on('player_draw'
@@ -168,7 +176,7 @@ def main(args: argparse.Namespace):
         """Join a table, which has its own socket.io room."""
         logging.info("join %s", data)
         table_name = data['table']
-        table = get_table(table_name)
+        table_name, table = get_table(table_name)
         if table:
             # put client into socket.io room
             join_room(table_name)

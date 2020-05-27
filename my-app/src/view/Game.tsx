@@ -142,7 +142,7 @@ const Game: React.FC = () => {
                     return dispatch(msg);
                 })
                 MySocket.get_socket().on('joined', function (msg: { table: string, username: string }) {
-                    if (msg.username.startsWith('(') && !players.hasOwnProperty(msg.username)) {
+                    if (!msg.username.startsWith('(') && !players.hasOwnProperty(msg.username)) {
                         // new player joined table since we loaded it, need to reload table data
                         console.log(`reloading since ${msg.username} joined ${Object.keys(players)}`)
                         loadGame()

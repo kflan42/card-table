@@ -1,7 +1,9 @@
+== 5/18 First night with other players ==
+
 Bugs:
 
- - table names monday and Monday means only former is loadable
- - auto-reload on new player join not firing
+ - [fixed] table names monday and Monday means only former is loadable
+ - [fixed] auto-reload on new player join not firing
  - [fixed] keyboard actions catching instead of Library search input (but create Token input ok)
  - [fixed] player A acting on player B's things not shown in red
  - [can't repro] Ashton dragged a mountain from his hand to my battlefield and it vanished
@@ -15,7 +17,7 @@ User Feature Requests:
  - - adjustable card size: bf & hand. (need bf pos relative to card size)
  - - higher quality card image option
  - - adjustable log width
- - support Xmage deck format (Alex's decks)
+ - [done] support Xmage deck format (Alex's decks)
  - image upload for playmat
  - delete token on graveyard drop
  - [not an issue after a few rounds] number in player boxes to see turn order more clearly

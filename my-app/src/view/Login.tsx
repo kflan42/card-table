@@ -26,6 +26,7 @@ interface LoginP {
 
 class Login extends React.Component<LoginP> {
     state: JoinRequest
+    response: string
 
     constructor(props: LoginP) {
         super(props);
@@ -35,12 +36,14 @@ class Login extends React.Component<LoginP> {
             deck_list: '',
             color: ''
         }
+        this.response = ''
 
         this.handleNameChange = this.handleNameChange.bind(this);
         this.handleTableChange = this.handleTableChange.bind(this);
         this.handleFileChange = this.handleFileChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
-        this.pickColor = this.pickColor.bind(this);
+        this.handlePickColor = this.handlePickColor.bind(this);
+        this.setErrorMsg = this.setErrorMsg.bind(this);
     }
 
     componentDidMount() {
@@ -53,6 +56,11 @@ class Login extends React.Component<LoginP> {
         if (color !== null) {
             this.setState({color})
         }
+    }
+
+    setErrorMsg(msg: string) {
+        this.response = msg;
+        this.forceUpdate()
     }
 
     handleNameChange(event: ChangeEvent<HTMLInputElement>) {
@@ -75,11 +83,16 @@ class Login extends React.Component<LoginP> {
         }
     }
 
+    handlePickColor(color: string) {
+        this.setState({color: color})
+    }
+
     handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         if (this.state.color === '') {
             return;
         }
+        this.setErrorMsg('...');
 
         localStorage.setItem('userName', this.state.name)
         localStorage.setItem('userColor', this.state.color)
@@ -95,9 +108,9 @@ class Login extends React.Component<LoginP> {
 
                 // check for error response
                 if (!response.ok) {
-                    const data = await response.json()
+                    const data = await response.text()  // server uses text rather than json for these specifically
                     // get error message from body or default to response status
-                    const error = (data && data.message) || response.status;
+                    const error = data || response.status;
                     return Promise.reject(error);
                 }
 
@@ -108,6 +121,7 @@ class Login extends React.Component<LoginP> {
             })
             .catch(error => {
                 console.error('There was an error!', error);
+                this.setErrorMsg(error);
             });
     }
 
@@ -120,10 +134,6 @@ class Login extends React.Component<LoginP> {
         };
         return fetch(`/api/table/${this.state.table}`, requestOptions)
 
-    }
-
-    pickColor(color: string) {
-        this.setState({color: color})
     }
 
     render() {
@@ -140,7 +150,7 @@ class Login extends React.Component<LoginP> {
                 colorItems.push(<span
                     key={color}
                     style={{backgroundColor: color, color: brightness < 128 * 3 ? "white" : "black", cursor: "pointer"}}
-                    onClick={() => this.pickColor(color)}
+                    onClick={() => this.handlePickColor(color)}
                 >{color}</span>)
             }
             //   }
@@ -174,8 +184,10 @@ class Login extends React.Component<LoginP> {
                             </div>
                         </div>
                         <br/> <br/>
-                        <input className="DivButton" type="submit" value="Join Table"/>
-                        <br/> <br/>
+                        <input className="DivButton" type="submit" value="Join Table"/>&nbsp;
+                        <span style={{color:"red"}}> {this.response ? this.response : null} </span>
+                        <br/>
+                        <br/>
                         Deck: <br/>
                         <textarea value={this.state.deck_list} readOnly={true} cols={30} rows={25}/>
                     </div>

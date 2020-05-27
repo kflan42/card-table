@@ -3,8 +3,9 @@ import sys
 import unittest
 
 from magic_models import JoinRequest
-from magic_table import MagicTable, parse_deck, CardResolver
-from test_table import arena_deck, txt_deck, test_table
+from magic_table import MagicTable
+from magic_cards import CardResolver, parse_deck
+from test_table import arena_deck, txt_deck, test_table, xmage_deck
 
 logging.basicConfig(format='%(asctime)s %(message)s', stream=sys.stdout, level=logging.DEBUG)
 
@@ -14,9 +15,12 @@ class MyTestCase(unittest.TestCase):
     def test_deck_parsing(self):
         deck0 = parse_deck(arena_deck)
         deck1 = parse_deck(txt_deck)
+        deck2 = parse_deck(xmage_deck)
         print(deck0)
         print(deck1)
+        print(deck2)
         self.assertEqual(len(deck0), len(deck1))
+        self.assertEqual(len(deck0), len(deck2))
 
     def test_load_tokens(self):
         print(MagicTable.get_all_cards()[-1])
