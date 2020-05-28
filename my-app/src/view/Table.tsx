@@ -14,13 +14,13 @@ const Table: React.FC = () => {
     });
 
     const mats = []
-    const width = 1.0/Math.ceil(Object.keys(playersState).length/2)
+    const width = 1.0/Math.ceil(Object.keys(playersState).length/2) - 0.005 // - padding for scrollbar
     for (const player in playersState) {
         mats.push(<Playmat key={player} player={player} width={width} />)
     }
 
     return (
-        <div className="Table">
+        <div className="Table" style={{flexDirection: mats.length > 2 ? "row": "column"}}>
             {mats}
         </div>
     )

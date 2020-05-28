@@ -9,7 +9,7 @@ export interface ClientState {
 }
 
 export interface Drawing {
-    first: string|null
+    first: string | null
     lines: EntityLine[]
 }
 
@@ -55,4 +55,18 @@ export function index_game(game: GameT): Game {
         actionLog: game.action_log,
         processedActions: new Set<string>()
     };
+}
+
+export function whichZone(card_id: number, game: Game): { zone: Zone, bfId: number | undefined } {
+    for (const zone of Object.values(game.zones)) {
+        if (zone.name === BATTLEFIELD) {
+            const bfId = zone.cards.find(i => game.battlefieldCards[i].card_id === card_id)
+            if (bfId !== undefined) {
+                return {zone, bfId}
+            }
+        } else if (zone.cards.includes(card_id)) {
+            return {zone, bfId: undefined}
+        }
+    }
+    throw new Error(`Card ${card_id} not found`)
 }

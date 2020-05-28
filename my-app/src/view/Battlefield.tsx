@@ -11,9 +11,12 @@ import {usePlayerDispatch} from '../PlayerDispatch';
 
 /** Takes px and returns %. */
 export function snapToGrid(x: number, y: number, width: number, height: number) {
-    // proportion * 10 * 10 = %. round in middle to grid to 10%.
-    const snappedX = Math.round((x / width) * 20) * 5
-    const snappedY = Math.round((y / height) * 20) * 5
+    // ensure x and y are on battlefield in case drop got weird coords
+    x = Math.min(Math.max(0, x), width - 1)
+    y = Math.min(Math.max(0, y), height - 1)
+    // proportion * 10 * 10 = %. round in middle to grid.
+    const snappedX = Math.round((x / width) * 32) * 3 + 2
+    const snappedY = Math.round((y / height) * 32) * 3 + 2
     return [snappedX, snappedY]
 }
 

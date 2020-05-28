@@ -71,18 +71,16 @@
   vertical-align: middle;
   background-color: saddlebrown;
   display: flex;
-  flex-direction: column;
   flex-wrap: wrap;
-  justify-content: flex-start;
-  overflow-x: auto;
-  padding: 0.1em;
+  align-content: space-between;
+  justify-content: space-between;
+  overflow-y: scroll;
 }
 
 .Playmat {
   margin: 0.1em;
   min-height: 24em;
-  height: 49%; /* buffer a pinch for scrollbar */
-  width: 40%; /* make adjustable for 2,4,6 players*/
+  height: 49.5%; /* buffer a pinch for scrollbar */
   display: flex;
   flex-direction: row;
 }
@@ -126,10 +124,9 @@
   flex-direction: row;
   overflow-x: auto;
   align-items: center;
-  /* these for parent */
-  /* flex-shrink: 1; */
   min-width: 20em;
   min-height: fit-content;
+  border-top: 0.1em solid black;
 }
 
 .Popup {

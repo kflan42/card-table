@@ -5,7 +5,7 @@ import './_style.css';
 import Hand from './Hand';
 import Table from './Table';
 import {useDispatch, useSelector} from 'react-redux';
-import {ClientState, HAND, index_game, LIBRARY} from '../ClientState';
+import {ClientState, HAND, index_game, LIBRARY, whichZone} from '../ClientState';
 import {
     cardAction, clearLines,
     createTokenCopy,
@@ -35,6 +35,8 @@ const Game: React.FC = () => {
     const isDrawing = useSelector((state: ClientState) => state.drawing.first !== null)
     const drawLines = useSelector((state: ClientState) => state.drawing.lines)
     const players = useSelector((state: ClientState) => state.game.players)
+    const srcZone = useSelector((state: ClientState) =>
+        cardUnderCursor ? whichZone(cardUnderCursor.card_id, state.game) : null)
 
     const [cardPopupShown, setCardPopupShown] = useState<number | null>(null)
     const [cardPopupTransformed, setCardPopupTransformed] = useState(false)
@@ -187,6 +189,22 @@ const Game: React.FC = () => {
         playerDispatch(cardMove)
     }
 
+    function bottomLibraryCard() {
+        if(!cardUnderCursor) return
+        if(!srcZone) return
+        const cardMove = {
+            type: MOVE_CARD,
+            bfId: srcZone.bfId, // battlefield zones use bfIds instead of cardIds
+            cardId: cardUnderCursor.card_id,
+            srcZone: srcZone.zone.name,
+            srcOwner: srcZone.zone.owner,
+            tgtZone: LIBRARY,
+            tgtOwner: cardUnderCursor.owner,
+            toIdx: undefined // put last
+        }
+        playerDispatch(cardMove)
+    }
+
     const tokenPopup = () => {
         if (userName === undefined) return
         const choices = cardUnderCursor ? ["Copy " + CardDB.getCard(cardUnderCursor.sf_id).name] : []
@@ -290,6 +308,10 @@ const Game: React.FC = () => {
                 break;
             case 'D':
                 drawCard()
+                event.preventDefault()
+                break;
+            case 'B':
+                bottomLibraryCard()
                 event.preventDefault()
                 break;
         }
