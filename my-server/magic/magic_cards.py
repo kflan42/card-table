@@ -55,7 +55,6 @@ class CardResolver:
 
     def find_card(self, name, set_name=None, number=None) -> SFCard:
         try:
-            name = name.replace(" / ", " // ")  # some deck formats use single slash instead of double
             name_map = self.card_map[name]
             official_set = set_name and len(set_name) == 3
             if official_set and number and set_name in name_map:
@@ -68,18 +67,17 @@ class CardResolver:
             random_set = random.choice(list(name_map.values()))
             return random.choice(random_set)
         except Exception as e:
-            logging.exception(f"Card data not found for {name} {set_name} {number}", e)
+            msg = f"Card not found for {{name: {name}, set:{set_name}, number:{number}}}"
+            logging.exception(msg)
+            ex = Exception(msg)
+            raise ex
 
 
 def parse_deck(deck_text: str) -> List[Tuple[str, Optional[str], Optional[str]]]:
     cards = []
     for line in deck_text.strip().splitlines():
         try:
-            xm = re.match(r'(SB: )?\d+ \[(\w+):(\w+)] .*', line)
-            if xm:
-                count, card = parse_xmage_line(line)
-            else:
-                count, card = parse_line(line)
+            count, card = parse_line(line)
             for _ in range(count):
                 cards.append(card)
         except Exception as e:
@@ -88,47 +86,62 @@ def parse_deck(deck_text: str) -> List[Tuple[str, Optional[str], Optional[str]]]
 
 
 def parse_line(line: str) -> Tuple[int, Optional[Tuple[str, Optional[str], Optional[str]]]]:
+    """
+    NOTE name doesn't have '[', ' - ', or '(' except un-sets or Japanese full art lands
+    """
     card_parts = line.strip().split(" ")
-    if len(card_parts) < 2:  # shortest is count "name"
+    if len(card_parts) < 2:
         return 0, None  # blanks separate sideboard sometimes
+    if card_parts[0] == "SB:":
+        card_parts.pop(0)  # XMage sideboard thing
+
+    # minimum listing is count "name"
     m = re.match(r'[rx]?(\d+)[rx]?', card_parts[0])
     if m:
         count = int(m[1])
     else:
         return 0, None
-    set_name = None
+
+    # ALL count "name ... name"
+    # TappedOut (set) num | TCGPlayer (num) [set] | XMage [set:num]
+    set_name = None  # scryfall set names are lowercase
     set_number = None
-    if len(card_parts) > 3:  # count "name" (set) num // plus spaces in name
-        m = re.match(r'\((\w+)\)', card_parts[-2])
-        if m:
-            set_name = m[1].lower()
-            set_number = card_parts[-1].lower()  # not always numeric
-    if len(card_parts) > 2:  # count "name" (set) // plus spaces in name
-        m = re.match(r'\((\w+)\)', card_parts[-1])
-        if m:
-            set_name = m[1].lower()
-            # no set number if set last
-    # else just count "name" // plus spaces in name
-    name_parts = len(card_parts) - 1 - (1 if set_name else 0) - (1 if set_number else 0)
-    name = " ".join(card_parts[1: name_parts + 1])
+    set_name_or_number = None
+    name_words = []
+    ignoring = False
+    for i, word in enumerate(card_parts[1:]):
+        m_p = re.match(r'\((\w+)\)', word)
+        m_b = re.match(r'\[(\w+)\]', word)
+        m_x = re.match(r'\[(\w+):(\w+)\]', word)
+        if m_p:
+            if set_name_or_number is None:
+                set_name_or_number = m_p[1].lower()  # TappedOut (set) or TCGPlayer (num)
+        elif m_b:
+            set_name = m_b[1].lower()  # TCGPlayer [set]
+            if set_name_or_number:
+                set_number = set_name_or_number
+        elif m_x:
+            set_name = m_x[1].lower()  # XMage [set:
+            set_number = m_x[2].lower()  # Xmage :num]
+        elif word == "-":
+            ignoring = True  # TCGPlayer can have " - Full Art" before [set] for special prints
+        elif word[0] == "(":
+            ignoring = True
+        elif word[-1] == ")":
+            ignoring = False
+        elif not ignoring:
+            if set_name_or_number:  # TappedOut num
+                set_name = set_name_or_number
+                set_number = word  # TappedOut
+                set_name_or_number = None
+            elif word == "/":
+                name_words.append("//")  # some deck formats use single slash instead of double like scryfall
+            else:
+                name_words.append(word)
+
+    if set_name_or_number and not set_name:
+        set_name = set_name_or_number  # TappedOut without num
+
+    name = " ".join(name_words)
     return count, (name, set_name, set_number)
 
-
-def parse_xmage_line(line: str) -> Tuple[int, Optional[Tuple[str, Optional[str], Optional[str]]]]:
-    """
-    e.g.
-    1 [ISD:71] Rooftop Storm
-    SB: 1 [ARB:113] Thraximundar
-    """
-    card_parts = line.strip().split(" ")
-    if card_parts[0] == "SB:":
-        card_parts.pop(0)
-    count = int(card_parts[0])
-    m = re.match(r'\[(\w+):(\w+)]', card_parts[1])
-    if m:
-        set_name = m[1].lower()
-        set_number = m[2].lower()  # not always numeric
-        name = " ".join(card_parts[2:])
-        return count, (name, set_name, set_number)
-    else:
-        return 0, None

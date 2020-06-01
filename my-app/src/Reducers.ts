@@ -2,7 +2,7 @@ import {combineReducers} from 'redux'
 import update from 'immutability-helper'
 
 
-import {CLEAR_LINES, DRAWING, DRAWLINE, HOVERED_BFCARD, HOVERED_CARD, SET_USER_PREFS,} from './Actions'
+import {CLEAR_LINES, DRAWING, DRAWLINE, HOVERED_BFCARD, HOVERED_CARD, SET_USER_PREFS, TOGGLE_PLAYMAT,} from './Actions'
 import {Drawing, HoveredCard} from './ClientState'
 import {gameReducer} from "./GameReducer";
 
@@ -41,6 +41,14 @@ const stateReducer = combineReducers({
                 return x;
         }
     },
+    hiddenPlaymats: (x: string[] = [], y) => {
+        switch (y.type) {
+            case TOGGLE_PLAYMAT:
+                return x.includes(y.player) ? x.filter(s => s !== y.player) : x.concat([y.player])
+            default:
+                return x
+        }
+    }
 })
 
 export default stateReducer

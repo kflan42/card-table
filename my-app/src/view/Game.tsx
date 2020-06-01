@@ -15,7 +15,7 @@ import {
     setCardCounter,
     setGame,
     TOGGLE_FACEDOWN_CARD,
-    TOGGLE_TRANSFORM_CARD, untapAll
+    TOGGLE_TRANSFORM_CARD, untapAll, togglePlaymat
 } from '../Actions';
 import CardPopup from './CardPopup';
 import CustomDragLayer from './CustomDragLayer';
@@ -255,6 +255,18 @@ const Game: React.FC = () => {
 
     const isHoveredCard = !(hoveredCard.cardId === null || hoveredCard.cardId === undefined)
 
+    function hidePlayerPrompt() {
+        confirmation( {
+            choices: Object.keys(players),
+            catchOnCancel: true,
+            title: "Hide Player",
+            description: "Remove a player's playmat from your screen. (Or show a hidden one.)"
+        })
+            .then((s: ConfirmationResult) => {
+                dispatch(togglePlaymat(s.choice))
+            });
+    }
+
     const keyPress = (event: React.KeyboardEvent<HTMLDivElement>) => {
         if (event.target && (event.target as HTMLDivElement).className === "Game") {
             // keyboard action
@@ -312,6 +324,10 @@ const Game: React.FC = () => {
                 break;
             case 'B':
                 bottomLibraryCard()
+                event.preventDefault()
+                break;
+            case 'H':
+                hidePlayerPrompt()
                 event.preventDefault()
                 break;
         }

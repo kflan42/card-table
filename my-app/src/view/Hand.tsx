@@ -8,6 +8,7 @@ import MemoizeHandCard from './HandCard';
 import {ItemTypes, DragCard} from './DnDUtils';
 import {MOVE_CARD} from '../Actions';
 import {usePlayerDispatch} from '../PlayerDispatch';
+import {analyzeColor} from "./Login";
 
 export interface HandProps {
 }
@@ -17,6 +18,10 @@ const Hand: React.FC<HandProps> = () => {
     const zoneState = useSelector((state: ClientState) => {
         return state.game.zones[`${state.playerPrefs.name}-${HAND}`]
     })
+
+    const playerColor = useSelector((state: ClientState) => {
+        return state.game.players[state.playerPrefs.name].color;
+    });
 
     const playerDispatch = usePlayerDispatch().action
 
@@ -51,10 +56,18 @@ const Hand: React.FC<HandProps> = () => {
         }
     }
 
+    const {brightness} = analyzeColor(playerColor)
+    const frontColor = brightness > 128 * 3 ? "black" : "white"
+
     return (
-        <div ref={drop} className="Hand">
+        <div ref={drop} className="Hand" style={{backgroundColor: playerColor}}>
             <span
-                style={{userSelect: "none", writingMode: "vertical-lr", textOrientation: "upright", minHeight: "13em"}}>
+                style={{
+                    userSelect: "none",
+                    color: frontColor,
+                    writingMode: "vertical-lr", textOrientation: "upright",
+                    minHeight: "13em"
+                }}>
                 Hand
             </span>
             {listItems}

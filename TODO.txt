@@ -1,8 +1,6 @@
 Bugs:
 
- - [fixed] drag and drop sometimes ends up on a battlefield but with x or y way off screen
- - [] properly report exception when card not found (see hello_my_ports.log)
- - if someone reloads during a game, sometimes 1 other person ends up in an error
+ - [no repro] if someone reloads during a game, sometimes 1 other person ends up in an error
 
 User Feature Requests:
 
@@ -10,16 +8,11 @@ User Feature Requests:
  - -[] adjustable card size: bf & hand.
  - -[] higher quality card image option
  - -[] adjustable log width
- - [done] tighter battlefield grid
- - [] image upload for playmat
+ - [] image url for playmat (avoid hosting user images)
  - delete token on graveyard drop
- - [covered by D and B] draw 7 shortcut for game start (option on library? shuffle too, w/o open) mulligan
  - support TCGPlayer card lists
- - [done] 'B' shortcut card to top/bottom of library, esp from Hand
- - [] kick/leave function (hide battlefield)
  - [] list games on login screen?
  - timestamp in log when people taking too long (perhaps output minute or turn clock red if > last action + 60s)
- - [done] order players like english writing when > 2
 
 My ideas:
  - prompt to confirm (or hold shift to enable) acting on other player's things

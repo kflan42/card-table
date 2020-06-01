@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {useRef} from 'react'
 
 import './_style.css';
 import Playmat from './Playmat';
@@ -13,10 +13,15 @@ const Table: React.FC = () => {
         return state.game.players;
     });
 
+    const hiddenPlayers = useSelector((state: ClientState) => {
+        return state.hiddenPlaymats;
+    });
+
     const mats = []
     const width = 1.0/Math.ceil(Object.keys(playersState).length/2) - 0.005 // - padding for scrollbar
     for (const player in playersState) {
-        mats.push(<Playmat key={player} player={player} width={width} />)
+        if (!hiddenPlayers.includes(player))
+            mats.push(<Playmat key={player} player={player} width={width} />)
     }
 
     return (

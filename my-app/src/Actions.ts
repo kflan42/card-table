@@ -8,6 +8,14 @@ export function setUserPrefs(name: string, color: string) {
     }
 }
 
+export const TOGGLE_PLAYMAT = 'TOGGLE_PLAYMAT'
+export function togglePlaymat(player: string) {
+    return {
+        type: TOGGLE_PLAYMAT,
+        player
+    }
+}
+
 export const DRAWING = 'DRAWING'
 export function drawing(first: string|null) {
     return {type: DRAWING, first}

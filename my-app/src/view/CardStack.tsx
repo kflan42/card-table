@@ -37,7 +37,7 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
         if (!shown) {
             if (zoneState.name === LIBRARY) {
                 confirmation({
-                    choices: [ "Search", "Look at Top _"].concat(zoneState.owner === playerName ? ["Draw 1"] : []),
+                    choices: ["Search", "Look at Top _"].concat(zoneState.owner === playerName ? ["Draw _"] : []),
                     catchOnCancel: true,
                     title: `${zoneState.name} Action?`,
                     description: "",
@@ -45,17 +45,19 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
                 })
                     .then((s: ConfirmationResult) => {
                         switch (s.choice) {
-                            case "Draw 1":
-                                const cardMove = {
-                                    type: MOVE_CARD,
-                                    cardId: zoneState.cards[0],
-                                    srcZone: zoneState.name,
-                                    srcOwner: owner,
-                                    tgtZone: HAND,
-                                    tgtOwner: owner,
-                                    toIdx: 0 // put first
+                            case "Draw _":
+                                for (let i = 0; i < s.n; i++) {
+                                    const cardMove = {
+                                        type: MOVE_CARD,
+                                        cardId: zoneState.cards[i],
+                                        srcZone: zoneState.name,
+                                        srcOwner: owner,
+                                        tgtZone: HAND,
+                                        tgtOwner: owner,
+                                        toIdx: 0 // put first
+                                    }
+                                    playerDispatch(cardMove)
                                 }
-                                playerDispatch(cardMove)
                                 return; // don't want to show
                             case "Search":
                                 setTopN([]);
@@ -97,7 +99,7 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
 
     const label = icon ? icon : name;
 
-    const [{isOver}, drop] = useDrop({
+    const [{isOver, dragCardOwner}, drop] = useDrop({
         accept: [ItemTypes.BFCARD, ItemTypes.CARD],
         drop(item: DragCard, monitor: DropTargetMonitor) {
             if (item.srcOwner === owner && item.srcZone === zoneState.name) {
@@ -138,7 +140,8 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
             }
         },
         collect: (monitor: DropTargetMonitor) => ({
-            isOver: monitor.isOver()
+            isOver: monitor.isOver(),
+            dragCardOwner: monitor.getItem()?.srcOwner
         }),
     })
 
@@ -202,14 +205,17 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
         <>
             <div ref={drop} className="buttontooltip"
                  style={{
-                     backgroundColor: isOver ? "darkGray" : undefined,
+                     backgroundColor:
+                         !dragCardOwner ? (isOver ? "darkGray" : undefined)
+                             : dragCardOwner !== owner ? (isOver ? "#AA8888" : "#D9A393")
+                             : (isOver ? "#88AA88" : "#A3D993"),  // same owner
                      border: shown ? "0.1em solid black" : undefined,
                  }}>
                 <div onClick={e => stackButtonClicked(e)} className="DivButton">
                     {label} {`${size}`}
                 </div>
                 <span className="buttontooltiptext" style={{visibility: isOver ? "visible" : undefined}}>
-                    {name}
+                    {owner === playerName ? name : `${owner}'s ${name}`}
                 </span>
                 {shown ? renderPopupBox() : null}
             </div>

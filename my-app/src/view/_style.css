@@ -69,18 +69,20 @@
   flex-grow: 1;
   text-align: center;
   vertical-align: middle;
-  background-color: saddlebrown;
+  background-color: #461F07;
   display: flex;
   flex-wrap: wrap;
   align-content: space-between;
   justify-content: space-between;
-  overflow-y: scroll;
+  overflow-y: auto;
 }
 
 .Playmat {
   margin: 0.1em;
+  border-width: 0.1em;
+  border-style: solid;
   min-height: 24em;
-  height: 49.5%; /* buffer a pinch for scrollbar */
+  height: 49%; /* buffer a pinch for margins, borders, and scrollbars */
   display: flex;
   flex-direction: row;
 }
@@ -126,7 +128,7 @@
   align-items: center;
   min-width: 20em;
   min-height: fit-content;
-  border-top: 0.1em solid black;
+  border-top: 0.1em solid #461F07;
 }
 
 .Popup {
