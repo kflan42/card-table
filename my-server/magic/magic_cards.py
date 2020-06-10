@@ -7,7 +7,7 @@ import time
 from collections import defaultdict
 from typing import List, Tuple, Optional
 
-from magic_models import SFCard, Face
+from magic.magic_models import SFCard, Face
 
 
 def load_cards(what="cards") -> List[SFCard]:

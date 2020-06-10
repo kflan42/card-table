@@ -3,8 +3,8 @@ import logging
 import os
 from random import shuffle
 
-from magic_cards import load_cards, CardResolver, parse_deck
-from magic_models import SFCard, JoinRequest, Player, Card, Zone, ZONES, Game, LIBRARY, Table, Counter, EXILE, \
+from magic.magic_cards import load_cards, CardResolver, parse_deck
+from magic.magic_models import SFCard, JoinRequest, Player, Card, Zone, ZONES, Game, LIBRARY, Table, Counter, EXILE, \
     COMMAND_ZONE
 
 

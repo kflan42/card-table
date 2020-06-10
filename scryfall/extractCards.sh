@@ -4,13 +4,23 @@
 
 DEFAULT_JSON="scryfall-default-cards.json"
 
-if [[ $(date -r "${DEFAULT_JSON}" "+%m-%d-%Y") != $(date "+%m-%d-%Y") && \
-      $(date -r "${DEFAULT_JSON}" "+%m-%d-%Y") != $(date "+%m-%d-%Y" "--date" "yesterday") ]]; then
-  echo "stale json"
-  mv "${DEFAULT_JSON}" "${DEFAULT_JSON}.old"
-  wget "https://archive.scryfall.com/json/${DEFAULT_JSON}" && rm "${DEFAULT_JSON}.old"
+if [[ -f "${DEFAULT_JSON}" ]]; then
+  if [[ $(date -r "${DEFAULT_JSON}" "+%m-%d-%Y") != $(date "+%m-%d-%Y") && \
+        $(date -r "${DEFAULT_JSON}" "+%m-%d-%Y") != $(date "+%m-%d-%Y" "--date" "yesterday") ]]; then
+    echo "stale json, moving to .old"
+    rm "${DEFAULT_JSON}.old"
+    mv "${DEFAULT_JSON}" "${DEFAULT_JSON}.old"
+    DOWNLOAD_JSON=1
+  else
+    echo "new enough ${DEFAULT_JSON}"
+  fi
 else
-  echo "new enough ${DEFAULT_JSON}"
+  echo "${DEFAULT_JSON} not present"
+  DOWNLOAD_JSON=1
+fi
+
+if [[ $DOWNLOAD_JSON ]]; then
+  curl -o "${DEFAULT_JSON}" "https://archive.scryfall.com/json/${DEFAULT_JSON}"
 fi
 
 # subject 2 from line number to get array index for examples

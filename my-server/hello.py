@@ -11,20 +11,26 @@ from flask import request
 from flask_socketio import SocketIO, join_room, emit
 
 # note that flask logs to stderr by default
-from magic_models import JoinRequest
-from magic_table import MagicTable
-from test_table import test_table
+from magic.magic_models import JoinRequest
+from magic.magic_table import MagicTable
+from magic.test_table import test_table
 from collections import defaultdict
 from threading import Lock
 
-
-# to run from fresh checkout
-# -1 setup venv for py
-# 0 setup npm stuff (maybe not necessary)
-# 1 scryfall/extractCards.sh
-# 2 my-server/genTsInterfaces.sh
-# 3 my-app npm build
-# then run this
+"""
+To run from fresh checkout:
+cd my-server
+python3 -m venv "venv"
+source venv/bin/activate
+pip3 install -r ../../requirements.txt
+cd my-app; npm install
+cd ../card-table;
+cd scryfall; extractCards.sh
+cd ..; my-server/genTsInterfaces.sh
+cd my-app; npm install; npm build
+Then run this with the python path = my-server
+Optionally run a dev ui from cd my-app;npm start
+"""
 
 def is_test(table_name: str) -> bool:
     table_name = table_name.lower()
