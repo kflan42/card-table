@@ -4,7 +4,7 @@ import LineTo from 'react-lineto';
 import './_style.css';
 import Hand from './Hand';
 import Table from './Table';
-import {useDispatch, useSelector} from 'react-redux';
+import {batch, useDispatch, useSelector} from 'react-redux';
 import {ClientState, HAND, index_game, LIBRARY, whichZone} from '../ClientState';
 import {
     cardAction, clearLines,
@@ -73,13 +73,15 @@ const Game: React.FC = () => {
                 // replay any actions
                 const actions = await r.json() as any[]
                 console.log(`${actions.length} actions loaded from server, catching up now ...`)
-                for (const action of actions) {
-                    try {
-                        dispatch(action)
-                    } catch (e) {
-                        console.error('Problem dispatching', action, e)
+                batch(()=>{
+                    for (const action of actions) {
+                        try {
+                            dispatch(action)
+                        } catch (e) {
+                            console.error('Problem dispatching', action, e)
+                        }
                     }
-                }
+                })
                 console.log(`caught up on ${actions.length} actions loaded from server`)
             }
 

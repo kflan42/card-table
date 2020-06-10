@@ -1,6 +1,13 @@
 Bugs:
 
  - [no repro] if someone reloads during a game, sometimes 1 other person ends up in an error
+ - draw n doesn't work due to sending actions too fast (need multi card action)
+ - loading cards got wacky for 2nd game for some players, missing cards, extra cards (race condition in server?)
+ -- game banana
+ --- 2 players move 2 cards from bf to graveyard, end up with 1 dupe in graveyard and 1 missing
+ ---- Solterranean moved Sphinx's Revelation from their Battlefield to their Graveyard,
+ ---- Kerran moved Sphinx's Revelation from Solterranean's Battlefield to Solterranean's Graveyard
+ - BLOCKER - undef in looking up a battlefield card, moving cardId 494 from BF to GY but it's not in BF?
 
 User Feature Requests:
 

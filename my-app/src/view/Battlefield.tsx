@@ -74,13 +74,17 @@ const Battlefield: React.FC<BFP> = ({player}) => {
     })
 
     const listItems = []
-    if (zoneState) {
-        for (const bfId of zoneState.cards) {
-            listItems.push(<BFCard key={bfId} bfId={bfId} fieldOwner={player}/>)
+    try {
+        if (zoneState) {
+            for (const bfId of zoneState.cards) {
+                listItems.push(<BFCard key={bfId} bfId={bfId} fieldOwner={player}/>)
+            }
         }
+        // sort most recent changes to last so they end up on top
+        listItems.sort((a, b) => bfCardsState[a.props.bfId].last_touched - bfCardsState[b.props.bfId].last_touched)
+    } catch (e) {
+        console.error(e, zoneState.cards, bfCardsState)
     }
-    // sort most recent changes to last so they end up on top
-    listItems.sort((a, b) => bfCardsState[a.props.bfId].last_touched - bfCardsState[b.props.bfId].last_touched)
 
     return (
         <div ref={bf} style={{

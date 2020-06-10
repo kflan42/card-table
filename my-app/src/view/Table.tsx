@@ -17,11 +17,11 @@ const Table: React.FC = () => {
         return state.hiddenPlaymats;
     });
 
+    const shownPlayers = Object.keys(playersState).filter(p => !hiddenPlayers.includes(p))
     const mats = []
-    const width = 1.0/Math.ceil(Object.keys(playersState).length/2) - 0.005 // - padding for scrollbar
-    for (const player in playersState) {
-        if (!hiddenPlayers.includes(player))
-            mats.push(<Playmat key={player} player={player} width={width} />)
+    const width = 1.0/Math.ceil(shownPlayers.length/2) - 0.005 // - padding for scrollbar
+    for (const player of shownPlayers) {
+        mats.push(<Playmat key={player} player={player} width={width} />)
     }
 
     return (
