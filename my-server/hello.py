@@ -14,6 +14,8 @@ from flask_socketio import SocketIO, join_room, emit
 from magic_models import JoinRequest
 from magic_table import MagicTable
 from test_table import test_table
+from collections import defaultdict
+from threading import Lock
 
 
 # to run from fresh checkout
@@ -55,6 +57,7 @@ def main(args: argparse.Namespace):
     # so i manually set the socketio port in MySocket.ts
 
     tables: typing.Dict[str, MagicTable] = {}  # dict to track active tables
+    table_locks: typing.Dict[str, Lock] = defaultdict(Lock)
 
     # gross, but the static_url_path='/' ends up messing with react-router quite a bit and 404'ing all routes
     @app.route('/', defaults={'path': ''})
@@ -92,18 +95,20 @@ def main(args: argparse.Namespace):
             try:
                 logging.info(request.data.decode('utf-8'))
                 created = False
-                if not table:
-                    table = MagicTable(table_name)  # create if joining
-                    logging.info("created table " + table_name)
-                    tables[table_name] = table
-                    created = True
-                d = json.loads(request.data)
-                join_request = JoinRequest(**d)
-                if table.add_player(join_request):
-                    table.save()
-                    return ("Created table", 201) if created else ("Joined table.", 202)
-                else:
-                    return "Already at table.", 409
+                # todo - this will work for single process dev server but not multi process prod
+                with table_locks[table_name]:
+                    if not table:
+                        table = MagicTable(table_name)  # create if joining
+                        logging.info("created table " + table_name)
+                        tables[table_name] = table
+                        created = True
+                    d = json.loads(request.data)
+                    join_request = JoinRequest(**d)
+                    if table.add_player(join_request):
+                        table.save()
+                        return ("Created table", 201) if created else ("Joined table.", 202)
+                    else:
+                        return "Already at table.", 409
             except Exception as e:
                 logging.exception(e)
                 return "Error joining table: " + str(e), 500
@@ -142,12 +147,14 @@ def main(args: argparse.Namespace):
         table_name = data['table']
         table_name, table = get_table(table_name=table_name)
         if table:
-            # send it out
-            emit('player_action', data, room=table_name, broadcast=True)   # on('player_action'
-            # store action for late joiners or refresh
-            table.add_action(data)
-            if not is_test(table_name):  # don't save test tables
-                table.save()
+            # todo - this will work for single process dev server but not multi process prod
+            with table_locks[table_name]:
+                # send it out
+                emit('player_action', data, room=table_name, broadcast=True)   # on('player_action'
+                # store action for late joiners or refresh
+                table.add_action(data)
+                if not is_test(table_name):  # don't save test tables
+                    table.save()
         else:
             emit('error', {'error': 'Unable to do action. Table does not exist.'})
             return False
@@ -159,9 +166,11 @@ def main(args: argparse.Namespace):
         table_name = data['table']
         table_name, table = get_table(table_name=table_name)
         if table:
-            # send it out
-            emit('player_draw', data, room=table_name, broadcast=True)  # on('player_draw'
-            # don't need to store draw
+             # todo - this will work for single process dev server but not multi process prod
+            with table_locks[table_name]:
+                # send it out
+                emit('player_draw', data, room=table_name, broadcast=True)  # on('player_draw'
+                # don't need to store draw
         else:
             emit('error', {'error': 'Unable to do action. Table does not exist.'})
             return False
@@ -178,10 +187,12 @@ def main(args: argparse.Namespace):
         table_name = data['table']
         table_name, table = get_table(table_name)
         if table:
-            # put client into socket.io room
-            join_room(table_name)
-            # send a message about it so other players reload table
-            emit('joined', data, room=table_name, broadcast=True)  # on('joined'
+             # todo - this will work for single process dev server but not multi process prod
+            with table_locks[table_name]:
+                # put client into socket.io room
+                join_room(table_name)
+                # send a message about it so other players reload table
+                emit('joined', data, room=table_name, broadcast=True)  # on('joined'
         else:
             emit('error', {'error': 'Unable to join table. Table does not exist.'})
 

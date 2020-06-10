@@ -46,7 +46,7 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
                     .then((s: ConfirmationResult) => {
                         switch (s.choice) {
                             case "Draw _":
-                                for (let i = 0; i < s.n; i++) {
+                                for (let i = 0; i < 1; i++) { // todo use s.n instead of 1 once able to send multiple actions quickly
                                     const cardMove = {
                                         type: MOVE_CARD,
                                         cardId: zoneState.cards[i],

@@ -305,9 +305,8 @@ function handleMoveCard(newState: Game, moveCard: MoveCard): [Game, string?] {
 }
 
 function addNewBfCard(newState: Game, owner: string, cardId: number, toX?: number, toY?: number,) {
-    const maxId = Object.keys(newState.battlefieldCards).map(k => Number.parseInt(k)).reduce((p, c) => Math.max(p, c), 0)
     const bfc: BattlefieldCard = {
-        bf_id: maxId + 1,
+        bf_id: cardId,  // need a stable id, in case player client process moves into/out of bf in diff orders
         card_id: cardId,
         x: toX ? toX : 5,
         y: toY ? toY : 5,

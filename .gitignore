@@ -141,3 +141,4 @@ scryfall/samples/
 /scryfall/tappedout/
 
 #
+.vscode/settings.json

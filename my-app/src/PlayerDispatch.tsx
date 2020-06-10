@@ -19,13 +19,13 @@ export function usePlayerDispatch() {
         if (gameId === 'static_test') {
             dispatch(playerAction)
         } else {
-            console.log(`sending to ${gameId}`, playerAction, new Date(playerAction.when).toLocaleTimeString())
             if(outstanding) {
                 console.warn("action still outstanding, dropping this one")
                 window.alert("Your last action hasn't resolved yet, please wait and retry.")
                 return
             }
             setOutstanding(true)
+            console.log(`sending to ${gameId}`, playerAction, new Date(playerAction.when).toLocaleTimeString())
             MySocket.get_socket().emit(eventName, {...playerAction, table: gameId}, (ack: boolean) => {
                 console.log('got ack for ', playerAction, ack)
                 setOutstanding(false)
