@@ -136,7 +136,7 @@ scryfall/samples/
 /my-app/public/cards.json
 /my-app/public/tokens.json
 /my-server/data/
-/scryfall/scryfall-default-cards.json
+/scryfall/*.json*
 /scryfall/symbology/
 /scryfall/tappedout/
 

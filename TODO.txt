@@ -3,15 +3,18 @@ Bugs:
  - [no repro] if someone reloads during a game, sometimes 1 other person ends up in an error
  - [disabled] draw n doesn't work due to sending actions too fast (need multi card action)
  - [maybe fixed by locks] loading cards got wacky for 2nd game for some players, missing cards, extra cards (race condition in server?)
- -- game banana
- --- 2 players move 2 cards from bf to graveyard, end up with 1 dupe in graveyard and 1 missing
- ---- Solterranean moved Sphinx's Revelation from their Battlefield to their Graveyard,
- ---- Kerran moved Sphinx's Revelation from Solterranean's Battlefield to Solterranean's Graveyard
- - BLOCKER - undef in looking up a battlefield card, moving cardId 494 from BF to GY but it's not in BF?
- -- [maybe fixed] by using cardId as bfId so it can't be diff if clients apply createBF/move BF actions in diff order
+ - - game banana, 2 players move 2 cards from bf to graveyard, end up with 1 dupe in graveyard and 1 missing
+ - - - Solterranean moved Sphinx's Revelation from their Battlefield to their Graveyard,
+ - - - Kerran moved Sphinx's Revelation from Solterranean's Battlefield to Solterranean's Graveyard
+ - BROKEN GAME: undef in looking up a battlefield card, moving cardId 494 from BF to GY but it's not in BF?
+ - - [maybe fixed] by using cardId as bfId so it can't be diff if clients apply createBF/move BF actions in diff order
+ - when 3 players joined 'blue' after many actions, I lost Garruk from my BF and odd ones ended up in my GY
+ - adventure cards lookup by name, kamigawa split too, expecting // but they're not there.
 
 User Feature Requests:
-
+ - G for graveyard
+ - replay mode to review what happened? (season scoring reference)
+ - remove limit on log lines, but need virtual scroll trick to avoid too many elements
  - [] build options form for playerPrefs (non-game)
  - -[] adjustable card size: bf & hand.
  - -[] higher quality card image option
@@ -26,7 +29,7 @@ My ideas:
  - prompt to confirm (or hold shift to enable) acting on other player's things
  - end turn button (output a log line for clarity)
  - post-game stats screen, show count and types of actions
- - ability to hide a player if they've left the game
+ - show deck lists including set
  - undo as a server side operation: delete last action & force reload (join can use same force reload)
 
 Long term:
