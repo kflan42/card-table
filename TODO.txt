@@ -10,8 +10,11 @@ Bugs:
  - - [maybe fixed] by using cardId as bfId so it can't be diff if clients apply createBF/move BF actions in diff order
  - when 3 players joined 'blue' after many actions, I lost Garruk from my BF and odd ones ended up in my GY
  - adventure cards lookup by name, kamigawa split too, expecting // but they're not there.
+ - avoid non-ascii chars in card names, eg Lim-Dul's Vault
+ - Gal. played a card and it ended up on player 1 and player 3 BFs. same card id tho.
 
 User Feature Requests:
+ - i to identify set / number
  - G for graveyard
  - replay mode to review what happened? (season scoring reference)
  - remove limit on log lines, but need virtual scroll trick to avoid too many elements
