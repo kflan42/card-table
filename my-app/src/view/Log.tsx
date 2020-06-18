@@ -30,15 +30,19 @@ const Log: React.FC = () => {
         let otherPlayers = Object.keys(players).filter(p => p !== logLine.who)
         const crossPlayer = otherPlayers.find(p => logLine.line.includes(p)) !== undefined
         const whoColor = players[logLine.who]?.color || "black"
+        const {luminance} = analyzeColor(whoColor)
+        const frontColor = luminance > 0.5 ? "black" : "white"
 
-        const {brightness} = analyzeColor(whoColor)
-        const frontColor = brightness > 128 * 3 ? "black" : "white"
+        const when = new Date(logLine.when).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+          }).substring(0,5) // strip am/pm
         return <div key={i++} style={{ margin: "0.1em", color: crossPlayer ? "DarkRed" : undefined }}>
             <span style={{
                 color: frontColor,
                 backgroundColor: whoColor,
                 fontWeight: "bold"
-            }}>{logLine.who}</span> {logLine.line}
+            }}>{when} {logLine.who}</span> {logLine.line}
         </div>
     }
 

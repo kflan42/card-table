@@ -8,10 +8,11 @@ from collections import defaultdict
 from typing import List, Tuple, Optional
 
 from magic.magic_models import SFCard, Face
+import unicodedata
 
 
 def load_cards(what="cards") -> List[SFCard]:
-    with open(os.path.join('data', 'cards', f'{what}.json')) as f:
+    with open(os.path.join('data', 'cards', f'{what}.json'), encoding='UTF-8') as f:
         t0 = time.time()
         # too slow card_list = [CardSchema().load(c) for c in json.load(f)]
         # this is about 50x faster, bypassing Schema logic
@@ -37,6 +38,9 @@ def load_cards(what="cards") -> List[SFCard]:
         logging.info(f"{len(card_list)} {what} loaded in {t1 - t0:.3f}s, eg {card_list[0]}")
         return card_list
 
+def _uni2ascii(word:str) -> str:
+    """Lim-Dûl's Vault --> Lim-Dul's Vault"""
+    return unicodedata.normalize('NFD', word).encode('ascii', 'ignore').decode() 
 
 class CardResolver:
 
@@ -45,16 +49,18 @@ class CardResolver:
         self.card_map = defaultdict(lambda: defaultdict(list))
         for card in cards:
             if card.face:
-                self.card_map[card.name][card.set_name].append(card)
-            elif card.faces:
+                self.card_map[_uni2ascii(card.name)][card.set_name].append(card)
+            if card.faces:
                 for face in card.faces:
-                    self.card_map[face.name][card.set_name].append(card)
-                self.card_map[" // ".join([f.name for f in card.faces])][card.set_name].append(card)
-            else:
+                    self.card_map[_uni2ascii(face.name)][card.set_name].append(card)
+                compound = " // ".join([_uni2ascii(f.name) for f in card.faces])
+                self.card_map[compound][card.set_name].append(card)
+            if not card.face and not card.faces:
                 logging.error('Failed to map %s', card)
 
     def find_card(self, name, set_name=None, number=None) -> SFCard:
         try:
+            name = _uni2ascii(name)
             name_map = self.card_map[name]
             official_set = set_name and len(set_name) == 3
             if official_set and number and set_name in name_map:

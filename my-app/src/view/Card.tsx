@@ -40,6 +40,10 @@ const Card: React.FC<CardProps> = ({cardId, imageSize}) => {
             let face = sfCard.face
             if (sfCard.faces.length > 0) {
                 face = card.transformed ? sfCard.faces[1] : sfCard.faces[0]
+                // split cards have faces but only main face has images
+                if (!face.normal) {
+                    face = sfCard.face
+                }
             }
             // small is 10.8k (memory cache after 1st). fuzzy text, hard to read
             // normal is 75.7k (memory cache after 1st). readable

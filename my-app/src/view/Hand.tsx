@@ -56,8 +56,8 @@ const Hand: React.FC<HandProps> = () => {
         }
     }
 
-    const {brightness} = analyzeColor(playerColor)
-    const frontColor = brightness > 128 * 3 ? "black" : "white"
+    const {luminance} = analyzeColor(playerColor)
+    const frontColor = luminance > 0.5 ? "black" : "white"
 
     return (
         <div ref={drop} className="Hand" style={{backgroundColor: playerColor}}>

@@ -17,7 +17,7 @@ import {
     TOGGLE_TAP_CARD,
     TOGGLE_TRANSFORM_CARD, UNTAP_ALL,
 } from './Actions'
-import {BATTLEFIELD, Game, HAND, LIBRARY} from './ClientState'
+import {BATTLEFIELD, Game, HAND, LIBRARY, GRAVEYARD} from './ClientState'
 import {shuffleArray} from './Utilities'
 import CardDB from "./CardDB";
 import {BattlefieldCard, Card} from "./magic_models";
@@ -190,7 +190,7 @@ export function gameReducer(
         console.log('applied', gameAction)
         if (logLine) {
             // record to user visible game log
-            if (newState.actionLog.length > 256) {
+            if (newState.actionLog.length > 1024) {
                 // drop first (oldest)
                 newState = update(newState, {actionLog: {$splice: [[0, 1]]}})
             }
@@ -241,6 +241,10 @@ function handleMoveCard(newState: Game, moveCard: MoveCard): [Game, string?] {
         if (moveCard.srcZone === BATTLEFIELD && moveCard.bfId !== undefined) {
             const zoneId = `${moveCard.srcOwner}-${BATTLEFIELD}`
             const srcBfCardIdx = newState.zones[zoneId].cards.indexOf(moveCard.bfId)
+            if (srcBfCardIdx === undefined) {
+                console.error("srcBfCardIdx undef for", moveCard);
+                return [newState, undefined] // do nothing
+            }
             newState = update(newState, {zones: {[zoneId]: {cards: {$splice: [[srcBfCardIdx, 1]]}}}})
             if (moveCard.tgtZone !== BATTLEFIELD) {
                 // if destination isn't battlefield, need to destry bf card
@@ -249,6 +253,10 @@ function handleMoveCard(newState: Game, moveCard: MoveCard): [Game, string?] {
         } else {
             const srcZoneId = `${moveCard.srcOwner}-${moveCard.srcZone}`
             const originalIdx = newState.zones[srcZoneId].cards.indexOf(moveCard.cardId)
+            if (originalIdx === undefined) {
+                console.error("originalIdx undef for", moveCard);
+                return [newState, undefined] // do nothing
+            }
             newState = update(newState, {
                 zones: {
                     [srcZoneId]: {
@@ -271,7 +279,7 @@ function handleMoveCard(newState: Game, moveCard: MoveCard): [Game, string?] {
                 newState = addNewBfCard(newState, moveCard.tgtOwner, moveCard.cardId, moveCard.toX, moveCard.toY)
             }
         } else {
-            // not moving to battlefield
+            // move to non-battlefied regular zone
             const tgtZoneId = `${moveCard.tgtOwner}-${moveCard.tgtZone}`
             if (moveCard.toIdx !== undefined) {
                 newState = update(newState, {
@@ -291,6 +299,7 @@ function handleMoveCard(newState: Game, moveCard: MoveCard): [Game, string?] {
         }
     }
     let whichCard = moveCard.tgtZone === BATTLEFIELD || moveCard.srcZone === BATTLEFIELD
+        || moveCard.tgtZone === GRAVEYARD || moveCard.srcZone === GRAVEYARD
         ? getCardName(newState, moveCard.cardId)
         : "a card"
     let whoseSrcZone = moveCard.who === moveCard.srcOwner ? "their" : `${moveCard.srcOwner}'s`

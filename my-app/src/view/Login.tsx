@@ -143,13 +143,13 @@ class Login extends React.Component<LoginP> {
             //   for (let g = 0; g <= 3; g++) {
             //     for (let b = 0; b <= 3; b++) {
             // const color = "#" + (r * 64 + 16).toString(16) + (g * 64 + 16).toString(16) + (b * 64 + 16).toString(16)
-            const {brightness} = analyzeColor(color);
+            const {luminance} = analyzeColor(color);
             // let too_pale = r < 0xa0 || g < 0xa0 || b < 0xa0;
             // let too_bright = r > 0x40 || g > 0x40 || b > 0x40;
             if (true) {
                 colorItems.push(<span
                     key={color}
-                    style={{backgroundColor: color, color: brightness < 128 * 3 ? "white" : "black", cursor: "pointer"}}
+                    style={{backgroundColor: color, color: luminance < 0.5 ? "white" : "black", cursor: "pointer"}}
                     onClick={() => this.handlePickColor(color)}
                 >{color}</span>)
             }
@@ -205,8 +205,10 @@ export function analyzeColor(color: string) {
     const g = (v & 0x00ff00) >> 8
     const b = v & 0x0000ff
     const brightness = r + g + b
+    // Counting the perceptive luminance - human eye favors green color... 
+    const luminance = ( 0.299 * r + 0.587 * g + 0.114 * b)/255;
     // const s = r.toString(16) + g.toString(16) + b.toString(16)
-    return {r, g, b, brightness};
+    return {r, g, b, brightness, luminance};
 }
 
 export const colors: { [index: string]: number } = {

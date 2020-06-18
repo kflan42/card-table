@@ -29,13 +29,20 @@ fi
 # test to filter for "Official sets always have a three-letter set code". weird cards have 4 letter. tokens have "t..."
 
 CORE='sf_id: .id, name: .name, set_name: .set, number: .collector_number'
-FACE='.image_uris | {small: .small, normal: .normal}'
 
-CARD='if .image_uris then
-    {'${CORE}', face: '${FACE}'}
+CARD='
+{'${CORE}', 
+  face: (if .image_uris then 
+    .image_uris | {small: .small, normal: .normal}
   else
-    {'${CORE}', faces: [.card_faces[] | {name: .name, small: .image_uris.small, normal: .image_uris.normal } ] }
-  end'
+    null
+  end), 
+  faces: (if .card_faces then
+      [.card_faces[] | {name: .name, small: .image_uris.small, normal: .image_uris.normal } ]
+    else
+      []
+    end),
+}'
 
 OUT_DIR="../my-server/data/cards"
 

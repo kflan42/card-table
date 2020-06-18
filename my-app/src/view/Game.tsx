@@ -5,7 +5,7 @@ import './_style.css';
 import Hand from './Hand';
 import Table from './Table';
 import {batch, useDispatch, useSelector} from 'react-redux';
-import {ClientState, HAND, index_game, LIBRARY, whichZone} from '../ClientState';
+import {ClientState, HAND, index_game, LIBRARY, whichZone, GRAVEYARD} from '../ClientState';
 import {
     cardAction, clearLines,
     createTokenCopy,
@@ -207,6 +207,22 @@ const Game: React.FC = () => {
         playerDispatch(cardMove)
     }
 
+    function graveyardCard() {
+        if(!cardUnderCursor) return
+        if(!srcZone) return
+        const cardMove = {
+            type: MOVE_CARD,
+            bfId: srcZone.bfId, // battlefield zones use bfIds instead of cardIds
+            cardId: cardUnderCursor.card_id,
+            srcZone: srcZone.zone.name,
+            srcOwner: srcZone.zone.owner,
+            tgtZone: GRAVEYARD,
+            tgtOwner: cardUnderCursor.owner,
+            toIdx: undefined // put last
+        }
+        playerDispatch(cardMove)
+    }
+
     const tokenPopup = () => {
         if (userName === undefined) return
         const choices = cardUnderCursor ? ["Copy " + CardDB.getCard(cardUnderCursor.sf_id).name] : []
@@ -326,6 +342,10 @@ const Game: React.FC = () => {
                 break;
             case 'B':
                 bottomLibraryCard()
+                event.preventDefault()
+                break;
+            case 'G':
+                graveyardCard()
                 event.preventDefault()
                 break;
             case 'H':

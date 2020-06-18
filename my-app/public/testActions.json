@@ -27,6 +27,24 @@
     "who": "alice"
   },
   {
+    "kind": "Poison",
+    "player": "chad",
+    "table": "test",
+    "type": "SET_PLAYER_COUNTER",
+    "value": 10,
+    "when": 1589509515458,
+    "who": "bob"
+  },
+  {
+    "kind": "Poison",
+    "player": "dude",
+    "table": "test",
+    "type": "SET_PLAYER_COUNTER",
+    "value": 10,
+    "when": 1589509515459,
+    "who": "chad"
+  },
+  {
     "cardId": 44,
     "srcOwner": "alice",
     "srcZone": "Hand",
