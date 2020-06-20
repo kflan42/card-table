@@ -7,7 +7,6 @@ Bugs:
 User Feature Requests:
  - i to identify set / number
  - replay mode to review what happened? (season scoring reference)
- - remove limit on log lines, but need virtual scroll trick to avoid too many elements
  - [] build options form for playerPrefs (non-game)
  - -[] adjustable card size: bf & hand.
  - -[] higher quality card image option
@@ -17,6 +16,7 @@ User Feature Requests:
  - [] list games on login screen?
 
 My ideas:
+ - remove limit on log lines, but need virtual scroll trick to avoid too many elements
  - prompt to confirm (or hold shift to enable) acting on other player's things
  - end turn button (output a log line for clarity)
  - post-game stats screen, show count and types of actions

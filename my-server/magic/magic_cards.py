@@ -81,7 +81,9 @@ class CardResolver:
 
 def parse_deck(deck_text: str) -> List[Tuple[str, Optional[str], Optional[str]]]:
     cards = []
-    for line in deck_text.strip().splitlines():
+    lines = deck_text.strip().splitlines()
+    lines = [l for l in lines if "CMDR" not in l] + [l for l in lines if "CMDR" in l]
+    for line in lines:
         try:
             count, card = parse_line(line)
             for _ in range(count):
@@ -93,7 +95,7 @@ def parse_deck(deck_text: str) -> List[Tuple[str, Optional[str], Optional[str]]]
 
 def parse_line(line: str) -> Tuple[int, Optional[Tuple[str, Optional[str], Optional[str]]]]:
     """
-    NOTE name doesn't have '[', ' - ', or '(' except un-sets or Japanese full art lands
+    NOTE name doesn't have '*', '[', ' - ', or '(' except un-sets or Japanese full art lands
     """
     card_parts = line.strip().split(" ")
     if len(card_parts) < 2:
@@ -142,7 +144,7 @@ def parse_line(line: str) -> Tuple[int, Optional[Tuple[str, Optional[str], Optio
                 set_name_or_number = None
             elif word == "/":
                 name_words.append("//")  # some deck formats use single slash instead of double like scryfall
-            else:
+            elif word[0] != '*':
                 name_words.append(word)
 
     if set_name_or_number and not set_name:

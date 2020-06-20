@@ -41,6 +41,7 @@ class Login extends React.Component<LoginP> {
         this.handleNameChange = this.handleNameChange.bind(this);
         this.handleTableChange = this.handleTableChange.bind(this);
         this.handleFileChange = this.handleFileChange.bind(this);
+        this.handleDeckChange = this.handleDeckChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handlePickColor = this.handlePickColor.bind(this);
         this.setErrorMsg = this.setErrorMsg.bind(this);
@@ -49,12 +50,16 @@ class Login extends React.Component<LoginP> {
     componentDidMount() {
         const name = localStorage.getItem('userName')
         const color = localStorage.getItem('userColor')
+        const deckList = localStorage.getItem('deckList')
 
         if (name !== null) {
             this.setState({name})
         }
         if (color !== null) {
             this.setState({color})
+        }
+        if (deckList !== null) {
+            this.setState({ deck_list: deckList })
         }
     }
 
@@ -83,6 +88,10 @@ class Login extends React.Component<LoginP> {
         }
     }
 
+    handleDeckChange(event: ChangeEvent<HTMLTextAreaElement>){
+        this.setState({deck_list: event.target.value})
+    }
+
     handlePickColor(color: string) {
         this.setState({color: color})
     }
@@ -96,6 +105,7 @@ class Login extends React.Component<LoginP> {
 
         localStorage.setItem('userName', this.state.name)
         localStorage.setItem('userColor', this.state.color)
+        localStorage.setItem('deckList', this.state.deck_list)
 
         console.log("joining table...", this.state)
         if (this.state.table === 'test') {
@@ -168,14 +178,7 @@ class Login extends React.Component<LoginP> {
                         Your Name: &nbsp;
                         <input type="text" value={this.state.name} required={true} onChange={this.handleNameChange}/>
                         <br/> <br/>
-                        Table Name: &nbsp;
-                        <input type="text" value={this.state.table} required={true} onChange={this.handleTableChange}/>
-                        <br/> <br/>
-                        Deck File:  &nbsp;
-                        <input className="DivButton" accept=".txt,.dek,*" type="file" required={true}
-                               onChange={this.handleFileChange}/>
-                        <br/> <br/>
-                        Sleeve Color: &nbsp;
+                        Your Card Sleeve Color: &nbsp;
                         <div className="dropdown">
                             <button
                                 style={{backgroundColor: this.state.color}}>{this.state.color ? "Chosen" : "Choose"}</button>
@@ -184,12 +187,17 @@ class Login extends React.Component<LoginP> {
                             </div>
                         </div>
                         <br/> <br/>
-                        <input className="DivButton" type="submit" value="Join Table"/>&nbsp;
+                        Table Name: &nbsp;
+                        <input type="text" value={this.state.table} required={true} onChange={this.handleTableChange}/>
+                        &nbsp;<input className="DivButton" type="submit" value="Create/Join Table"/>&nbsp;
                         <span style={{color:"red"}}> {this.response ? this.response : null} </span>
-                        <br/>
-                        <br/>
-                        Deck: <br/>
-                        <textarea value={this.state.deck_list} readOnly={true} cols={30} rows={25}/>
+                        <br/> <br/>
+                        Upload Deck File:  &nbsp;
+                        <input className="DivButton" accept=".txt,.dek,*" type="file" required={false} onChange={this.handleFileChange}/>
+                        <br/> <br/>
+                        Your Deck:<br/>
+                        <span style={{fontSize:"small"}}>Please either put your commander last or append *CMDR* to its line.</span><br/>
+                        <textarea value={this.state.deck_list} required={true} onChange={this.handleDeckChange} cols={30} rows={30}/>
                     </div>
                 </form>
             </div>
