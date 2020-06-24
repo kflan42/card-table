@@ -82,7 +82,7 @@ class CardResolver:
 def parse_deck(deck_text: str) -> List[Tuple[str, Optional[str], Optional[str]]]:
     cards = []
     lines = deck_text.strip().splitlines()
-    lines = [l for l in lines if "CMDR" not in l] + [l for l in lines if "CMDR" in l]
+    lines = [l for l in lines if "*CMDR*" not in l] + [l for l in lines if "*CMDR*" in l]
     for line in lines:
         try:
             count, card = parse_line(line)
@@ -102,6 +102,8 @@ def parse_line(line: str) -> Tuple[int, Optional[Tuple[str, Optional[str], Optio
         return 0, None  # blanks separate sideboard sometimes
     if card_parts[0] == "SB:":
         card_parts.pop(0)  # XMage sideboard thing
+    if card_parts[0].startswith('///'):
+        return 0, None  # .dec file and non-scryfall id on this line
 
     # minimum listing is count "name"
     m = re.match(r'[rx]?(\d+)[rx]?', card_parts[0])
