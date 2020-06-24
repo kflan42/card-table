@@ -46,6 +46,10 @@ export function gameReducer(
 ) {
     // we get local action directly and from server so must de-dupe
     let actionKey = `${gameAction.who}@${gameAction.when}`;
+    if (gameAction.type === MOVE_CARD) {
+        // handle moving many cards at once, e.g. draw 7
+        actionKey += `.${(gameAction as MoveCard).cardId}`
+    }
     if (state.processedActions.has(actionKey)) {
         return state; // nothing to do
     } else {
