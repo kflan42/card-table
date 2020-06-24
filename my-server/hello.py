@@ -11,6 +11,7 @@ import redis
 import socket
 import sys
 import typing
+from datetime import datetime
 
 from flask import Flask, send_from_directory, jsonify
 from flask import request
@@ -233,12 +234,12 @@ if __name__ == '__main__':
     import logging.handlers
 
     # socket.io doesn't handle rotating file appender, gets stuck on old one after the move (at least on windows)
-    # os.makedirs(os.path.join('data', 'logs'), exist_ok=True)
-    # h = logging.handlers.RotatingFileHandler(filename=os.path.join('data', 'logs', 'hello.log'),
-    #                                          mode='a', maxBytes=int(1e6), backupCount=10)
-    # f = logging.Formatter('%(asctime)s %(name)s %(levelname)-8s %(message)s')
-    # h.setFormatter(f)
-    # logging.getLogger().addHandler(h)
+    os.makedirs(os.path.join('data', 'logs'), exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    h = logging.FileHandler(filename=os.path.join('data', 'logs', f'hello_{timestamp}.log'), mode='a')
+    f = logging.Formatter('%(asctime)s %(name)s %(levelname)-8s %(message)s')
+    h.setFormatter(f)
+    logging.getLogger().addHandler(h)
 
     logging.info("hello from logging")
     main()

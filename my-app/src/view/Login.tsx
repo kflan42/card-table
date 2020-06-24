@@ -193,7 +193,7 @@ class Login extends React.Component<LoginP> {
                         <span style={{color:"red"}}> {this.response ? this.response : null} </span>
                         <br/> <br/>
                         Upload Deck File:  &nbsp;
-                        <input className="DivButton" accept=".txt,.dek,*" type="file" required={false} onChange={this.handleFileChange}/>
+                        <input className="DivButton" accept=".txt,.dek,.dec,*" type="file" required={false} onChange={this.handleFileChange}/>
                         <br/> <br/>
                         Your Deck:<br/>
                         <span style={{fontSize:"small"}}>Please either put your commander last or append *CMDR* to its line.</span><br/>
