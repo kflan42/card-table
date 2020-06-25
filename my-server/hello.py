@@ -122,8 +122,6 @@ def get_table(table_name) -> typing.Tuple[str, MagicTable]:
 def join_table(table_name: str):
     table_name, table = get_table(table_name=table_name)
     if request.method == 'POST':
-        if is_test(table_name):
-            return "Can't create test tables.", 400
         try:
             logging.info(request.data.decode('utf-8'))
             created = False

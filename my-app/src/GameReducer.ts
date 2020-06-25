@@ -165,18 +165,22 @@ export function gameReducer(
             logLine = ` set ${getBfCardName(newState, action.bfId)}'s ${action.kind} counter to ${action.value}`
             break;
         case CREATE_TOKEN:
-            action = gameAction as { type: string, who: string, when: number, owner: string, copyOfCardId?: number, sf_id?: string }
+            let ct_action = gameAction as { type: string, who: string, when: number, owner: string, copyOfCardId?: number, sf_id?: string }
             // create card for it
-            const maxId = Object.keys(state.cards).map(k => Number.parseInt(k)).reduce((p, c) => Math.max(p, c))
-            const sourceCard = action.copyOfCardId ? state.cards[action.copyOfCardId] : {
-                sf_id: action.sf_id as string,
+            const ownerBaseId = (Object.keys(state.players).indexOf(ct_action.owner)+1)*1000
+            const ownerMaxId = Object.values(state.cards)
+                .filter(c => c.owner === ct_action.owner)
+                .map(c => c.card_id)
+                .reduce((p,c) => Math.max(p, c), ownerBaseId)
+            const sourceCard = ct_action.copyOfCardId ? state.cards[ct_action.copyOfCardId] : {
+                sf_id: ct_action.sf_id as string,
                 facedown: false,
                 transformed: false
             }
-            const newCard: Card = {...sourceCard, card_id: maxId + 1, owner: action.owner, token: true}
+            const newCard: Card = {...sourceCard, card_id: ownerMaxId + 1, owner: ct_action.owner, token: true}
             newState = update(state, {cards: {$merge: {[newCard.card_id]: newCard}}})
             // create bfCard
-            newState = addNewBfCard(newState, action.owner, newCard.card_id)
+            newState = addNewBfCard(newState, ct_action.owner, newCard.card_id)
             logLine = ` created  ${getCardName(newState, newCard.card_id)}`
             break;
         case ADD_LOG_LINE:
@@ -191,6 +195,17 @@ export function gameReducer(
     }
 
     if (newState !== undefined) {
+        // safety check - did we lose any cards?
+        const startingCards = Object.values(state.zones).flatMap(z => z.cards).length
+        const endingCards = Object.values(newState.zones).flatMap(z => z.cards).length
+        const okay = gameAction?.type === SET_GAME || 
+            startingCards === endingCards ||
+            (gameAction?.type === CREATE_TOKEN && (startingCards + 1) === endingCards)
+        if (!okay) {
+            // losing or duplicating cards is bad, drop this action
+            console.error('ignoring due to loss / gain of cards', gameAction)
+            return state
+        }
         console.log('applied', gameAction)
         if (logLine) {
             // record to user visible game log
@@ -211,17 +226,21 @@ function handleMoveCard(newState: Game, moveCard: MoveCard): [Game, string?] {
     const sameZone = moveCard.tgtZone === moveCard.srcZone
     // set things if moving around field
     if (moveCard.bfId !== undefined && moveCard.toX !== undefined && moveCard.toY !== undefined) {
-        newState = update(newState, {
-            battlefieldCards: {
-                [moveCard.bfId]: {
-                    $merge: {
-                        x: moveCard.toX,
-                        y: moveCard.toY,
-                        last_touched: moveCard.when
+        if (moveCard.bfId in newState.battlefieldCards) {        
+            newState = update(newState, {
+                battlefieldCards: {
+                    [moveCard.bfId]: {
+                        $merge: {
+                            x: moveCard.toX,
+                            y: moveCard.toY,
+                            last_touched: moveCard.when
+                        }
                     }
                 }
-            }
-        })
+            })
+        } else {
+            console.error("not moving card with bfId missing from battlefieldCards")
+        }
     }
     // re ordering hand
     if (moveCard.tgtZone === HAND && moveCard.srcZone === HAND && sameOwner && moveCard.toIdx !== undefined) {
@@ -245,20 +264,20 @@ function handleMoveCard(newState: Game, moveCard: MoveCard): [Game, string?] {
         if (moveCard.srcZone === BATTLEFIELD && moveCard.bfId !== undefined) {
             const zoneId = `${moveCard.srcOwner}-${BATTLEFIELD}`
             const srcBfCardIdx = newState.zones[zoneId].cards.indexOf(moveCard.bfId)
-            if (srcBfCardIdx === undefined) {
-                console.error("srcBfCardIdx undef for", moveCard);
+            if (srcBfCardIdx === undefined || srcBfCardIdx < 0) {
+                console.error("srcBfCardIdx bad for", moveCard);
                 return [newState, undefined] // do nothing
             }
             newState = update(newState, {zones: {[zoneId]: {cards: {$splice: [[srcBfCardIdx, 1]]}}}})
             if (moveCard.tgtZone !== BATTLEFIELD) {
-                // if destination isn't battlefield, need to destry bf card
+                // if destination isn't battlefield, need to destroy bf card
                 newState = update(newState, {battlefieldCards: {$unset: [moveCard.bfId]}})
             }
         } else {
             const srcZoneId = `${moveCard.srcOwner}-${moveCard.srcZone}`
             const originalIdx = newState.zones[srcZoneId].cards.indexOf(moveCard.cardId)
-            if (originalIdx === undefined) {
-                console.error("originalIdx undef for", moveCard);
+            if (originalIdx === undefined || originalIdx < 0) {
+                console.error("originalIdx bad for", moveCard);
                 return [newState, undefined] // do nothing
             }
             newState = update(newState, {

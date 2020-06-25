@@ -66,7 +66,7 @@ const Hand: React.FC<HandProps> = () => {
                     userSelect: "none",
                     color: frontColor,
                     writingMode: "vertical-lr", textOrientation: "upright",
-                    minHeight: "13em"
+                    minHeight: "10.2em"
                 }}>
                 Hand
             </span>

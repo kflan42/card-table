@@ -15,8 +15,8 @@ export function snapToGrid(x: number, y: number, width: number, height: number) 
     x = Math.min(Math.max(0, x), width - 1)
     y = Math.min(Math.max(0, y), height - 1)
     // proportion * 10 * 10 = %. round in middle to grid.
-    const snappedX = Math.round((x / width) * 32) * 3 + 2
-    const snappedY = Math.round((y / height) * 32) * 3 + 2
+    const snappedX = Math.round((x / width) * 50) * 2
+    const snappedY = Math.round((y / height) * 50) * 2
     return [snappedX, snappedY]
 }
 
@@ -77,6 +77,9 @@ const Battlefield: React.FC<BFP> = ({player}) => {
     try {
         if (zoneState) {
             for (const bfId of zoneState.cards) {
+                if (!(bfId in bfCardsState)) {
+                    console.error(bfId, "in", zoneState.owner, zoneState.name, "but not bfCardState")
+                }
                 listItems.push(<BFCard key={bfId} bfId={bfId} fieldOwner={player}/>)
             }
         }

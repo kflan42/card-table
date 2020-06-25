@@ -47,7 +47,8 @@ const Card: React.FC<CardProps> = ({cardId, imageSize}) => {
             }
             // small is 10.8k (memory cache after 1st). fuzzy text, hard to read
             // normal is 75.7k (memory cache after 1st). readable
-            const img = imageSize === "normal" ? face?.normal : face?.small
+            // todo config option? const img = imageSize === "normal" ? face?.normal : face?.small
+            const img = face?.normal
             return img ? [sfCard.name, img] : ["Card Image Not Found", "/react_logo_skewed.png"]
         } else
             return ["Card Not Found", "/react_logo_skewed.png"]

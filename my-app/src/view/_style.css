@@ -116,7 +116,6 @@
   height: 100%;
   position: relative;
   overflow: auto;
-  font-size: small;
 }
 
 .Hand {
@@ -152,25 +151,25 @@
 }
 
 .Hand .Card {
-  /* need to scale these together ~ small image is 146 × 204*/
-  height: 15.3em;
-  width: 10.95em;
+  /* need to scale these together ~ small image 146 × 204, normal 488 x 680 */
+  height: 17em;
+  width: 12.2em;
 }
 
 .DragHandCard .Card { /* used for custom drag layer */
-  height: 15.3em;
-  width: 10.95em;
+  height: 13.6em;
+  width: 9.76em;
 }
 
 .DragLayer .Card {
-  height: 8em;
-  width: 5.725em;
+  height: 9.52em;
+  width: 6.832em;
   opacity: 0.75;
 }
 
 .Battlefield .Card {
-  height: 8em;
-  width: 5.725em;
+  height: 9.52em;
+  width: 6.832em;
 }
 
 .StackPopUpBox {

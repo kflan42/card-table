@@ -1,7 +1,8 @@
 Bugs:
 
  - need to support new rolling URLs for card data https://scryfall.com/blog/category/api
- - when 3 players joined 'blue' after many actions, I lost Garruk from my BF and odd ones ended up in my GY
+ - card moves can result in lost or duplicates sometimes
+   - hardening move logic against bad moves
    - maybe js actions / events from old game got resolved and sent with new game name. 
    - I've seen actions sent after refresh, need game set earlier in js and server to enforce they're for the right game
 

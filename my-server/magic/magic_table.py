@@ -71,18 +71,24 @@ class MagicTable:
         zones = [Zone(name=z, z_id=zid + i, owner=join_request.name, cards=[]) for i, z in enumerate(ZONES)]
         table.game.zones.extend(zones)
 
-        if len(cards) >= 100:
-            # start with cards shuffled in library, last in command zone, extras in sideboard
-            c_ids = [c.card_id for c in cards]
-            library_cards = c_ids[:99]
-            shuffle(library_cards)
-            [z for z in zones if z.name == LIBRARY][0].cards.extend(library_cards)
-            [z for z in zones if z.name == COMMAND_ZONE][0].cards.append(c_ids[-1])
-        if len(c_ids) > 100:
-            [z for z in zones if z.name == EXILE][0].cards.extend(c_ids[99:-1])
-        z_ids = [z.z_id for z in zones]
+        c_ids = [c.card_id for c in cards]
+        if len(c_ids) >= 100:
+            # commander format - last card into command zone
+            [z for z in zones if z.name == COMMAND_ZONE][0].cards.append(c_ids.pop(-1))
+            library_size = 99
+        else:
+            # standard
+            library_size = 60
+
+        # start with cards shuffled in library
+        library_cards, leftover_cards = c_ids[:library_size], c_ids[library_size:]
+        shuffle(library_cards)
+        [z for z in zones if z.name == LIBRARY][0].cards.extend(library_cards)
+        # extras into exile
+        [z for z in zones if z.name == EXILE][0].cards.extend(leftover_cards)
 
         # setup player
+        z_ids = [z.z_id for z in zones]
         player = Player(name=join_request.name, color=join_request.color, counters=[], zones=z_ids)
         player.counters.append(Counter(name="Life", value=40))
         table.game.players.append(player)

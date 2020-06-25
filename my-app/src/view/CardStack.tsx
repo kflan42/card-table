@@ -153,7 +153,7 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
         const cards_per_col = Math.round(cardsShown / target_cols)
         const cardPortionShown = Math.max(1 / 8, Math.min(2 / cards_per_col, 1))
         const cardHeight = 15.3 * cardPortionShown
-        const cardWidth = (cardHeight / cardPortionShown * 146) / 204 // show top 1/7th, use small image ratio
+        const cardWidth = (cardHeight / cardPortionShown * 488) / 680 // show top 1/7th, use small image ratio
         const boxHeight = cardHeight * cards_per_col * 1.1; // .1 margins, scrollbar
         const boxWidth = cardWidth * Math.min(target_cols, 4)
         const listItems = []
