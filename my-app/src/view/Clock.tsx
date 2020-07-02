@@ -38,10 +38,12 @@ const Clock: React.FC = () => {
       {state.date.toLocaleTimeString([], {
         hour: 'numeric',
         minute: '2-digit',
+        second: '2-digit'
       })}
       <Help />
     </div>
   );
 }
 
-export default Clock
+const MemoizedClock = React.memo(Clock)
+export default MemoizedClock
