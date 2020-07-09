@@ -3,13 +3,15 @@ import update from 'immutability-helper'
 
 
 import {CLEAR_LINES, DRAWING, DRAWLINE, HOVERED_BFCARD, HOVERED_CARD, SET_USER_PREFS, TOGGLE_PLAYMAT,} from './Actions'
-import {Drawing, HoveredCard} from './ClientState'
+import {Drawing, HoveredCard, PlayerPrefs} from './ClientState'
 import {gameReducer} from "./GameReducer";
 
 
 const stateReducer = combineReducers({
-    playerPrefs: (x = {name: undefined, color: undefined}, y) => {
-        if (y.type === SET_USER_PREFS) return y.payload;
+    playerPrefs: (x: PlayerPrefs = {name: "", handCardSize: 1, bfCardSize: 1}, y) => {
+        if (y.type === SET_USER_PREFS) {
+            return Object.assign({}, x, y.payload);
+        }
         else return x;
     },
     game: gameReducer,

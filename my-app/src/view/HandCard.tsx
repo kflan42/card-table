@@ -6,10 +6,10 @@ import { DropTargetMonitor, useDrag, useDrop } from 'react-dnd';
 import Card from './Card';
 import { ItemTypes, DragCard } from './DnDUtils';
 import { MOVE_CARD } from '../Actions';
-import { HAND } from '../ClientState';
+import { HAND, ClientState } from '../ClientState';
 import { getEmptyImage } from 'react-dnd-html5-backend';
 import { usePlayerDispatch } from '../PlayerDispatch';
-import {useDispatch} from "react-redux";
+import {useDispatch, useSelector} from "react-redux";
 
 
 interface HandCardProps {
@@ -24,6 +24,10 @@ const HandCard: React.FC<HandCardProps> = ({
     handIdx,
     owner
 }) => {
+    const cardHeight = useSelector((state: ClientState) => {
+        return state.playerPrefs.handCardSize;
+    })
+
     const playerDispatch = usePlayerDispatch().action
 
     const dragCard: DragCard = {
@@ -78,8 +82,8 @@ const HandCard: React.FC<HandCardProps> = ({
     const opacity = isDragging ? 0 : 1
 
     return (
-        <div ref={(node) => drag(drop(node))} style={{ opacity, margin:"0.25em" }}>
-            <Card cardId={cardId} imageSize={"normal"} ></Card>
+        <div ref={(node) => drag(drop(node))} style={{ opacity, margin:"0.1em" }}>
+            <Card cardId={cardId} imageSize={"normal"} cardHeight={cardHeight} ></Card>
         </div>
     )
 }

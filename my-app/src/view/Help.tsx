@@ -33,6 +33,7 @@ const Help: React.FC = () => {
                         <tr><td><b>U</b></td><td>untap all your tapped cards</td></tr>
                         <tr><td><b>v</b></td><td>view a close up popup of the card under the cursor, then v to close</td></tr>
                         <tr><td><b>H</b></td><td>open a dialog to hide a player (or show a hidden one)</td></tr>
+                        <tr><td><b>O</b></td><td>open the options dialog</td></tr>
                     </tbody>
                 </table>
                 <p>Click on the table to focus input there then press the key.</p>

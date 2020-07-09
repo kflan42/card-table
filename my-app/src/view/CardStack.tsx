@@ -147,15 +147,17 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
 
     const size = zoneState ? zoneState.cards.length : 0
     const cardsShown = topN.length > 0 ? topN.length : size
+    const cardHeight = useSelector((state: ClientState) => {
+        return state.playerPrefs.bfCardSize;
+    })
 
     function renderPopupBox() {
         const target_cols = 1 + Math.floor(cardsShown / 8)
         const cards_per_col = Math.round(cardsShown / target_cols)
         const cardPortionShown = Math.max(1 / 8, Math.min(2 / cards_per_col, 1))
-        const cardHeight = 15.3 * cardPortionShown
-        const cardWidth = (cardHeight / cardPortionShown * 488) / 680 // show top 1/7th, use small image ratio
-        const boxHeight = cardHeight * cards_per_col * 1.1; // .1 margins, scrollbar
-        const boxWidth = cardWidth * Math.min(target_cols, 4)
+        const shownHeight = cardHeight * cardPortionShown
+        const cardWidth = shownHeight / cardPortionShown * 146 / 204.0 // show top 1/7th, use small image ratio
+        const boxHeight = shownHeight * cards_per_col * 1.1; // .1 margins, scrollbar
         const listItems = []
         if (zoneState) {
             const cardsToShow = topN.length > 0 ? topN : zoneState.cards
@@ -168,7 +170,7 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
                     || cards[cardId].facedown
                     || CardDB.getCard(cards[cardId].sf_id).name.toLowerCase().indexOf(query.toLowerCase()) > -1) {
                     listItems.push(
-                        <StackCard key={cardId} cardId={cardId} height={cardHeight} width={cardWidth}
+                        <StackCard key={cardId} cardId={cardId} height={shownHeight} width={cardWidth}
                                    zone={name} owner={owner}/>
                     )
                 }
@@ -193,7 +195,6 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
                 <div className="CardStack" style={{
                     fontSize: "small", // match Card
                     height: `${boxHeight}em`,
-                    width: `${boxWidth}em`
                 }}>
                     {listItems}
                 </div>

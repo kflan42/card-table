@@ -1,10 +1,10 @@
 import {EntityLine, Game} from "./ClientState";
 
 export const SET_USER_PREFS = 'SET_USER_PREFS'
-export function setUserPrefs(name: string, color: string) {
+export function setUserPrefs(prefs: Object) {
     return {
         type: SET_USER_PREFS,
-        payload: { name, color },
+        payload: prefs,
     }
 }
 

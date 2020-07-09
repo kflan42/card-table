@@ -26,6 +26,7 @@ import {useParams} from "react-router-dom";
 import {Game as GameT} from "../magic_models";
 import CardDB, {parseDeckCard} from "../CardDB";
 import MySocket from "../MySocket";
+import { OptionsDialog } from './OptionsDialog';
 
 const Game: React.FC = () => {
     const userName = useSelector((state: ClientState) => state.playerPrefs.name) as string | undefined
@@ -46,8 +47,17 @@ const Game: React.FC = () => {
     const {action: playerDispatch, draw: drawDispatch} = usePlayerDispatch()
     const {gameId} = useParams()
     const [loadedId, setLoadedId] = useState('')
+    const [optionsOpen, setOptionsOpen] = useState(false)
 
     const confirmation = useConfirmation();
+
+    const loadOptions = () => {
+        let bfCardSize = localStorage.getItem('bfCardSize')
+        bfCardSize = bfCardSize ? bfCardSize : "7"
+        let handCardSize = localStorage.getItem('handCardSize')
+        handCardSize = handCardSize ? handCardSize : "14"
+        dispatch(setUserPrefs({bfCardSize, handCardSize}))
+    }
 
     const loadGame = useCallback(
         () => {
@@ -57,8 +67,9 @@ const Game: React.FC = () => {
             const cardsUrl = gameId === 'static_test' ? '/testCards.json' : `/api/table/${gameId}/cards`
 
             async function onGameLoaded(r: Response) {
+                loadOptions()
                 await CardDB.loadCards(cardsUrl)
-                // now that cards are loaded, load the game
+                // now that cards are loaded, initialize the game
                 const data = r.json()
                 const game: GameT = await data
                 let indexedGame = index_game(game);
@@ -103,7 +114,7 @@ const Game: React.FC = () => {
 
     useEffect(() => {
             const playerNames = Object.keys(players)
-            if (userName === undefined && playerNames.length > 0) {
+            if (!userName && playerNames.length > 0) {
                 playerNames.push('Spectator *')
                 confirmation({
                     title: "Who are you?",
@@ -113,9 +124,9 @@ const Game: React.FC = () => {
                 })
                     .then((s: ConfirmationResult) => {
                         if (players.hasOwnProperty(s.choice)) {
-                            dispatch(setUserPrefs(s.choice, players[s.choice].color))
+                            dispatch(setUserPrefs({name: s.choice}))
                         } else if (s.choice === 'Spectator *') {
-                            dispatch(setUserPrefs(`(${s.s})`, "gray"))
+                            dispatch(setUserPrefs({name: `(${s.s})`}))
                         }
                     })
                     .catch(() => null)
@@ -126,7 +137,7 @@ const Game: React.FC = () => {
         [userName, players, dispatch])
 
     useEffect(() => {
-        if (gameId !== 'static_test' && userName !== undefined && Object.keys(players).length > 0 && !hasSockets) {
+        if (gameId !== 'static_test' && userName && Object.keys(players).length > 0 && !hasSockets) {
             // if we have already loaded a real game object, now it is socket time
             connectSockets();
             setHasSockets(true);
@@ -224,7 +235,7 @@ const Game: React.FC = () => {
     }
 
     const tokenPopup = () => {
-        if (userName === undefined) return
+        if (!userName) return
         const choices = cardUnderCursor ? ["Copy " + CardDB.getCard(cardUnderCursor.sf_id).name] : []
         choices.push("New Token $")
         confirmation({
@@ -352,6 +363,10 @@ const Game: React.FC = () => {
                 hidePlayerPrompt()
                 event.preventDefault()
                 break;
+            case 'O':
+                setOptionsOpen(true)
+                event.preventDefault()
+                break;
         }
     }
 
@@ -369,11 +384,12 @@ const Game: React.FC = () => {
             }}>
                 <Table/>
                 {players.hasOwnProperty(userName) ? <Hand/> : null}
+                {lines}
                 {cardPopupShown !== null
                     ? <CardPopup cardId={cardPopupShown} transformed={cardPopupTransformed}/>
                     : undefined}
-                {lines}
                 <CustomDragLayer/>
+                {optionsOpen ? <OptionsDialog onClose={()=> setOptionsOpen(false)} /> : undefined}
             </div>
         )
         : <div/>

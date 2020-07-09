@@ -72,17 +72,15 @@
   background-color: #461F07;
   display: flex;
   flex-wrap: wrap;
-  align-content: space-between;
-  justify-content: space-between;
   overflow-y: auto;
+  align-items: stretch;
 }
 
 .Playmat {
   margin: 0.1em;
   border-width: 0.1em;
   border-style: solid;
-  min-height: 24em;
-  height: 49%; /* buffer a pinch for margins, borders, and scrollbars */
+  min-height: 22em;
   display: flex;
   flex-direction: row;
 }
@@ -137,10 +135,6 @@
   background-color: transparent;
 }
 
-.Card {
-  font-size: small;
-}
-
 .Card > img {
   border-width: medium;
   border-style: solid;
@@ -150,26 +144,12 @@
   border-radius: 5%;
 }
 
-.Hand .Card {
-  /* need to scale these together ~ small image 146 × 204, normal 488 x 680 */
-  height: 17em;
-  width: 12.2em;
-}
-
 .DragHandCard .Card { /* used for custom drag layer */
-  height: 13.6em;
-  width: 9.76em;
-}
-
-.DragLayer .Card {
-  height: 9.52em;
-  width: 6.832em;
   opacity: 0.75;
 }
 
-.Battlefield .Card {
-  height: 9.52em;
-  width: 6.832em;
+.DragLayer .Card {
+  opacity: 0.75;
 }
 
 .StackPopUpBox {
@@ -228,9 +208,10 @@
 .cardtooltip {
     position: relative;
     display: inline-block;
-}
-
+  }
+  
 .cardtooltiptext {
+  font-size: small;
   visibility: hidden;
 }
 

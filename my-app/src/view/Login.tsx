@@ -124,8 +124,8 @@ class Login extends React.Component<LoginP> {
                     return Promise.reject(error);
                 }
 
-                // set user name and color in app memory
-                this.props.setUserPrefs(setUserPrefs(this.state.name, this.state.color))
+                // set user name in app memory
+                this.props.setUserPrefs(setUserPrefs({name: this.state.name}))
                 // route over to table
                 this.props.routeChange('/table/' + this.state.table)
             })

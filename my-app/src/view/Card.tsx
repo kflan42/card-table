@@ -12,9 +12,10 @@ export interface CardProps {
     cardId: number,
     borderStyle?: string,
     imageSize?: string,
+    cardHeight?: number
 }
 
-const Card: React.FC<CardProps> = ({cardId, imageSize}) => {
+const Card: React.FC<CardProps> = ({cardId, imageSize, cardHeight}) => {
 
     const card = useSelector((state: ClientState) => state.game.cards[cardId])
     const ownerColor = useSelector((state: ClientState) => state.game.players[card?.owner]?.color)
@@ -31,6 +32,9 @@ const Card: React.FC<CardProps> = ({cardId, imageSize}) => {
     }
     const sfCard = CardDB.getCard(card?.sf_id);
 
+    const ratio = imageSize === "normal" ? 488 / 680.0 : 146 / 204.0;
+    const cardWidth = cardHeight ? cardHeight * ratio : undefined;
+
     // altText, url
     const getFront = () => {
         if (card.facedown) {
@@ -45,10 +49,9 @@ const Card: React.FC<CardProps> = ({cardId, imageSize}) => {
                     face = sfCard.face
                 }
             }
-            // small is 10.8k (memory cache after 1st). fuzzy text, hard to read
-            // normal is 75.7k (memory cache after 1st). readable
-            // todo config option? const img = imageSize === "normal" ? face?.normal : face?.small
-            const img = face?.normal
+            // small is 10.8k (memory cache after 1st). fuzzy text, hard to read. 146 x 204
+            // normal is 75.7k (memory cache after 1st). readable. 488 x 680
+            const img = imageSize === "normal" ? face?.normal : face?.small
             return img ? [sfCard.name, img] : ["Card Image Not Found", "/react_logo_skewed.png"]
         } else
             return ["Card Not Found", "/react_logo_skewed.png"]
@@ -76,6 +79,10 @@ const Card: React.FC<CardProps> = ({cardId, imageSize}) => {
              onMouseOver={() => dispatch(hoveredCard(cardId))}
              onMouseOut={() => dispatch(hoveredCard(null))}
              onClick={click}
+             style={{
+                 height: cardHeight ? cardHeight + "em" : undefined, 
+                 width: cardWidth ? cardWidth + "em" : undefined
+             }}
         >
             {card.facedown ? null
                 : <span className="cardtooltiptext">
