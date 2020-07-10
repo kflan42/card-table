@@ -14,9 +14,9 @@ export function snapToGrid(x: number, y: number, width: number, height: number) 
     // ensure x and y are on battlefield in case drop got weird coords
     x = Math.min(Math.max(0, x), width - 1)
     y = Math.min(Math.max(0, y), height - 1)
-    // proportion * 10 * 10 = %. round in middle to grid.
-    const snappedX = Math.round((x / width) * 50) * 2
-    const snappedY = Math.round((y / height) * 50) * 2
+    // proportion * 10 * 10 = %. round in middle to grid. playmat usually a wide rectangle
+    const snappedX = Math.round((x / width) * 33) * 3
+    const snappedY = Math.round((y / height) * 25) * 4
     return [snappedX, snappedY]
 }
 

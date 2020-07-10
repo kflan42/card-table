@@ -51,6 +51,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--port", type=int, default=5000, required=False)
 parser.add_argument("--static_port", type=int, default=3000, required=False)
 parser.add_argument("--public_ip", type=str, default='0.0.0.0', required=False)
+parser.add_argument("--redis", type=bool, default=False, required=False)
 args = parser.parse_args()
 
 app = Flask(__name__,
@@ -70,7 +71,7 @@ socketio = SocketIO(app,
                         # '*'  # would allow clients served from anywhere, not a good idea
                     ],
                     # if using multiple server processes, need a queue, e.g. 
-                    message_queue='redis://localhost:6379'
+                    message_queue='redis://localhost:6379' if args.redis else None
                  )
 # can specify all these port args for websocket (but not http api) development
 # create react app proxy doesn't work with websocket https://github.com/facebook/create-react-app/issues/5280

@@ -29,7 +29,8 @@ import MySocket from "../MySocket";
 import { OptionsDialog } from './OptionsDialog';
 
 const Game: React.FC = () => {
-    const userName = useSelector((state: ClientState) => state.playerPrefs.name) as string | undefined
+    const [userName, rightClickPopup]= useSelector((state: ClientState) => 
+        [state.playerPrefs.name as string | undefined, state.playerPrefs.rightClickPopup])
     const hoveredCard = useSelector((state: ClientState) => state.hoveredCard)
     const cardUnderCursor = useSelector((state: ClientState) =>
         state.hoveredCard.cardId ? state.game.cards[state.hoveredCard.cardId] : null)
@@ -52,11 +53,15 @@ const Game: React.FC = () => {
     const confirmation = useConfirmation();
 
     const loadOptions = () => {
+        let bfImageQuality = localStorage.getItem('bfImageQuality')
+        bfImageQuality = bfImageQuality ? bfImageQuality : "low"
         let bfCardSize = localStorage.getItem('bfCardSize')
         bfCardSize = bfCardSize ? bfCardSize : "7"
         let handCardSize = localStorage.getItem('handCardSize')
         handCardSize = handCardSize ? handCardSize : "14"
-        dispatch(setUserPrefs({bfCardSize, handCardSize}))
+        let rightClickPopup = localStorage.getItem('rightClickPopup') === 'true'
+        rightClickPopup = rightClickPopup ? rightClickPopup : false;
+        dispatch(setUserPrefs({bfImageQuality, bfCardSize, handCardSize, rightClickPopup}))
     }
 
     const loadGame = useCallback(
@@ -296,6 +301,17 @@ const Game: React.FC = () => {
             });
     }
 
+    function togglePopup(event: React.SyntheticEvent) {
+        if (cardPopupShown === hoveredCard.cardId || (cardPopupShown != null && !isHoveredCard)) {
+            setCardPopupShown(null) // view again to close or event anywhere to close
+            event.preventDefault()
+        } else if (isHoveredCard) {
+            setCardPopupShown(hoveredCard.cardId)
+            setCardPopupTransformed(false)
+            event.preventDefault()
+        }
+    }
+
     const keyPress = (event: React.KeyboardEvent<HTMLDivElement>) => {
         if (event.target && (event.target as HTMLDivElement).className === "Game") {
             // keyboard action
@@ -304,14 +320,7 @@ const Game: React.FC = () => {
         }
         switch (event.key) {
             case 'v':
-                if (cardPopupShown === hoveredCard.cardId || (cardPopupShown != null && !isHoveredCard)) {
-                    setCardPopupShown(null) // view again to close or 'v' anywhere to close
-                    event.preventDefault()
-                } else if (isHoveredCard) {
-                    setCardPopupShown(hoveredCard.cardId)
-                    setCardPopupTransformed(false)
-                    event.preventDefault()
-                }
+                togglePopup(event);
                 break;
             case 'T':
                 if (isHoveredCard) {
@@ -370,6 +379,12 @@ const Game: React.FC = () => {
         }
     }
 
+    const onContextMenu = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+        if (event.button === 2 && rightClickPopup) {
+            togglePopup(event);
+        }
+    }
+
     const lines = drawLines
         .map(entityLine => <LineTo key={`${entityLine.from}-${entityLine.to}`} from={entityLine.from} to={entityLine.to}
                                    borderColor={entityLine.color} borderWidth={2}
@@ -379,7 +394,7 @@ const Game: React.FC = () => {
     //tabIndex means it can receive focus which means it can receive keyboard events
     return userName
         ? (
-            <div className="Game" onKeyPress={keyPress} tabIndex={0} style={{
+            <div className="Game" onKeyPress={keyPress} onContextMenu={onContextMenu} tabIndex={0} style={{
                 cursor: isDrawing ? "crosshair" : undefined
             }}>
                 <Table/>

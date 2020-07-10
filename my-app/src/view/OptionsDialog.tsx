@@ -36,9 +36,35 @@ export const OptionsDialog: React.FC<OptionsDialogProps> = ({
 
             <div style={{
                 display: "flex", alignItems: "center"
-            }} key="BFCardHeight">
+            }} key="rightClickPopup">
+                Right Click to toggle Card Popup
+                <input className="DivButton"
+                    style={{ marginLeft: "0.5em", marginRight: "0.5em", marginTop: "1em", marginBottom: "1em" }}
+                    type="checkbox" id="x" name="x"
+                    checked={prefs.rightClickPopup} onChange={e => {
+                        const rightClickPopup = e.currentTarget.checked
+                        setPrefs({ ...prefs, rightClickPopup })
+                    }} />
+            </div>
+
+            <div style={{
+                display: "flex", alignItems: "center"
+            }} key="bfImageQuality">
+                Use Low Quality Battlefield Card Images
+                <input className="DivButton"
+                    style={{ marginLeft: "0.5em", marginRight: "0.5em", marginTop: "1em", marginBottom: "1em" }}
+                    type="checkbox" id="x" name="x"
+                    checked={prefs.bfImageQuality === "low"} onChange={e => {
+                        const bfImageQuality = e.currentTarget.checked ? "low" : "normal"
+                        setPrefs({ ...prefs, bfImageQuality })
+                    }} />
+            </div>
+
+            <div style={{
+                display: "flex", alignItems: "center"
+            }} key="bfCardSize">
                 Battlefield Card Height
-                <input className="DivButton" key="BFCardHeight"
+                <input className="DivButton"
                     style={{ marginLeft: "0.5em", marginRight: "0.5em", marginTop: "1em", marginBottom: "1em" }}
                     type="number" id="x" name="x" min="0" max="1000"
                     value={prefs.bfCardSize} onChange={e => {
@@ -49,9 +75,9 @@ export const OptionsDialog: React.FC<OptionsDialogProps> = ({
 
             <div style={{
                 display: "flex", alignItems: "center"
-            }} key="CardHeight">
+            }} key="handCardSize">
                 Hand Card Height
-                <input className="DivButton" key="CardHeight"
+                <input className="DivButton"
                     style={{ marginLeft: "0.5em", marginRight: "0.5em", marginTop: "1em", marginBottom: "1em" }}
                     type="number" id="x" name="x" min="0" max="1000"
                     value={prefs.handCardSize} onChange={e => {
@@ -76,8 +102,10 @@ export const OptionsDialog: React.FC<OptionsDialogProps> = ({
                     }}
                     onClick={() => {
                         dispatch(setUserPrefs(prefs))
-                        localStorage.setItem('bfCardSize', ''+prefs.bfCardSize)
-                        localStorage.setItem('handCardSize', ''+prefs.handCardSize)
+                        localStorage.setItem('rightClickPopup', '' + prefs.rightClickPopup)
+                        localStorage.setItem('bfImageQuality', prefs.bfImageQuality)
+                        localStorage.setItem('bfCardSize', '' + prefs.bfCardSize)
+                        localStorage.setItem('handCardSize', '' + prefs.handCardSize)
                         onClose()
                     }}>
                     Ok

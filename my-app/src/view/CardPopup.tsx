@@ -26,7 +26,7 @@ const CardPopup: React.FC<CardPopupProps> = ({ cardId }) => {
                 height: height + "px",
             }}
         >
-            <Card cardId={cardId} borderStyle="0.3em solid" imageSize="normal" ></Card>
+            <Card cardId={cardId} borderStyle="0.3em solid" imageSize="normal" showCollectorInfo={true}></Card>
         </div>
     )
 

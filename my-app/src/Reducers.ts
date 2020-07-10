@@ -8,7 +8,7 @@ import {gameReducer} from "./GameReducer";
 
 
 const stateReducer = combineReducers({
-    playerPrefs: (x: PlayerPrefs = {name: "", handCardSize: 1, bfCardSize: 1}, y) => {
+    playerPrefs: (x: PlayerPrefs = {name: "", handCardSize: 1, bfCardSize: 1, bfImageQuality: "", rightClickPopup: false}, y) => {
         if (y.type === SET_USER_PREFS) {
             return Object.assign({}, x, y.payload);
         }

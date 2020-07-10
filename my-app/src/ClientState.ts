@@ -28,7 +28,9 @@ export interface HoveredCard {
 export interface PlayerPrefs {
     name: string,
     handCardSize: number,
-    bfCardSize: number
+    bfCardSize: number,
+    bfImageQuality: string,
+    rightClickPopup: boolean
 }
 
 export const HAND: string = "Hand"

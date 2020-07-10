@@ -12,10 +12,11 @@ export interface CardProps {
     cardId: number,
     borderStyle?: string,
     imageSize?: string,
-    cardHeight?: number
+    cardHeight?: number,
+    showCollectorInfo?: boolean
 }
 
-const Card: React.FC<CardProps> = ({cardId, imageSize, cardHeight}) => {
+const Card: React.FC<CardProps> = ({cardId, imageSize, cardHeight, showCollectorInfo}) => {
 
     const card = useSelector((state: ClientState) => state.game.cards[cardId])
     const ownerColor = useSelector((state: ClientState) => state.game.players[card?.owner]?.color)
@@ -49,10 +50,13 @@ const Card: React.FC<CardProps> = ({cardId, imageSize, cardHeight}) => {
                     face = sfCard.face
                 }
             }
+            const text = showCollectorInfo 
+                ? `${face?.name || sfCard.name} (${sfCard.set_name.toUpperCase()}) ${sfCard.number}`
+                : `${face?.name || sfCard.name}`
             // small is 10.8k (memory cache after 1st). fuzzy text, hard to read. 146 x 204
             // normal is 75.7k (memory cache after 1st). readable. 488 x 680
             const img = imageSize === "normal" ? face?.normal : face?.small
-            return img ? [sfCard.name, img] : ["Card Image Not Found", "/react_logo_skewed.png"]
+            return img ? [text, img] : ["Card Image Not Found", "/react_logo_skewed.png"]
         } else
             return ["Card Not Found", "/react_logo_skewed.png"]
     }
@@ -86,7 +90,7 @@ const Card: React.FC<CardProps> = ({cardId, imageSize, cardHeight}) => {
         >
             {card.facedown ? null
                 : <span className="cardtooltiptext">
-                    {`${front[0]}${card.token ? " (Token)" : ""}`} </span>}
+                    {`${front[0]}`} </span>}
             <img style={{borderColor: ownerColor}} src={front[1]} alt={front[0]}/>
         </div>
     )
