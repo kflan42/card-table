@@ -98,7 +98,8 @@
 
 .PlayerBox > div {
   background-color: Gainsboro;
-  margin: 0.05em;
+  margin-bottom: 0.15em;
+  margin-right: 0.1em;
 }
 
 .DivButton, button {
