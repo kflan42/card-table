@@ -61,9 +61,8 @@ const Log: React.FC = () => {
         return <div key={i++} style={{ margin: "0.1em", color: crossPlayer ? "DarkRed" : undefined }}>
             <span style={{
                 color: frontColor,
-                backgroundColor: whoColor,
-                fontWeight: "bold"
-            }}>{when} {logLine.who}</span> {logLine.line}
+                backgroundColor: whoColor
+            }}>{when} {logLine.who}:</span> {logLine.line}
         </div>
     }
 
@@ -78,8 +77,6 @@ const Log: React.FC = () => {
                 flexGrow: 1,
                 overflowY: "scroll",
                 padding: "0.1em",
-                minWidth: "20em",
-                maxWidth: "20em",
                 fontSize: "small",
 
             }}>

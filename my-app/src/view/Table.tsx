@@ -19,7 +19,8 @@ const Table: React.FC = () => {
 
     const shownPlayers = Object.keys(playersState).filter(p => !hiddenPlayers.includes(p))
     const mats = []
-    const width = 1.0/Math.ceil(shownPlayers.length/2) - 0.005 // - padding for scrollbar
+    const playersPerRow = Math.ceil(shownPlayers.length/2)
+    const width = (1.0 - 0.008 * playersPerRow) / playersPerRow // margins and borders
     for (const player of shownPlayers) {
         mats.push(<Playmat key={player} player={player} width={width} />)
     }

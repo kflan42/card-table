@@ -3,7 +3,9 @@ import { XYCoord, useDragLayer } from 'react-dnd'
 import { ItemTypes, DragCard } from './DnDUtils'
 import BFCard from './BFCard'
 import Card from './Card'
-import { HAND } from '../ClientState'
+import { HAND, ClientState } from '../ClientState'
+import { useSelector } from 'react-redux'
+import { snapToGrid } from './Battlefield'
 
 const layerStyles: React.CSSProperties = {
     position: 'fixed',
@@ -21,6 +23,7 @@ const layerStyles: React.CSSProperties = {
 function getItemStyles(
     initialOffset: XYCoord | null,
     currentOffset: XYCoord | null,
+    bf: HTMLDivElement | null,
 ) {
     if (!initialOffset || !currentOffset) {
         return {
@@ -29,13 +32,15 @@ function getItemStyles(
     }
 
     let { x, y } = currentOffset
-
-    // x -= initialOffset.x
-    // y -= initialOffset.y
-    // //requires width x height of BF we're over. Snaps on actual move anyway though. ;[x, y] = snapToGrid(x, y)
-    // x += initialOffset.x
-    // y += initialOffset.y
-
+    if (bf) {
+        // snap to bf grid if we're over the bf
+        const snappedBfOffsetPc = snapToGrid(bf, currentOffset, false)
+        if (snappedBfOffsetPc) {
+            const r = bf.getBoundingClientRect()
+            x = r.left + snappedBfOffsetPc[0]/100.0 * r.width
+            y = r.top + snappedBfOffsetPc[1]/100.0 * r.height
+        }
+    }
 
     const transform = `translate(${x}px, ${y}px)`
     return {
@@ -63,6 +68,8 @@ const CustomDragLayer: React.FC = () => {
         pointerOffset: monitor.getClientOffset(),
         isDragging: monitor.isDragging(),
     }))
+
+    const hoveredBf = useSelector((state: ClientState) => { return state.hoveredCard.bf })
 
     function renderItem() {
         switch (itemType) {
@@ -94,7 +101,7 @@ const CustomDragLayer: React.FC = () => {
     return (
         <div style={layerStyles} className="DragLayer">
             <div
-                style={getItemStyles(initialOffset, currentOffset)}
+                style={getItemStyles(initialOffset, currentOffset, hoveredBf)}
             >
                 {renderItem()}
             </div>

@@ -70,7 +70,7 @@ const PlayerBox: React.FC<PlayerBoxP> = ({ player }) => {
         <div className="PlayerBox" style={{ backgroundColor: playerState.color }}>
             <div className={`p-${player}`} style={{
                 whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                maxWidth: "6em",
+                maxWidth: "5em",
                 }} onClick={click}>
                 <strong>{player}</strong>
             </div>

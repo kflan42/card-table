@@ -2,7 +2,7 @@ import {combineReducers} from 'redux'
 import update from 'immutability-helper'
 
 
-import {CLEAR_LINES, DRAWING, DRAWLINE, HOVERED_BFCARD, HOVERED_CARD, SET_USER_PREFS, TOGGLE_PLAYMAT,} from './Actions'
+import {CLEAR_LINES, DRAWING, DRAWLINE, HOVERED_BFCARD, HOVERED_CARD, SET_USER_PREFS, TOGGLE_PLAYMAT, HOVERED_BATTLEFIELD,} from './Actions'
 import {Drawing, HoveredCard, PlayerPrefs} from './ClientState'
 import {gameReducer} from "./GameReducer";
 
@@ -15,12 +15,14 @@ const stateReducer = combineReducers({
         else return x;
     },
     game: gameReducer,
-    hoveredCard: (x: HoveredCard = {cardId: null, bfId: null}, y) => {
+    hoveredCard: (x: HoveredCard = {cardId: null, bfId: null, bf: null}, y) => {
         switch (y.type) {
             case HOVERED_CARD:
                 return {cardId: y.cardId, bfId: x.bfId};
             case HOVERED_BFCARD:
                 return {cardId: y.cardId, bfId: y.bfId};
+            case HOVERED_BATTLEFIELD:
+                return {...x, bf:y.bf}
         }
         return x;
     },

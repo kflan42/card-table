@@ -1,4 +1,5 @@
 import {EntityLine, Game} from "./ClientState";
+import { XYCoord } from "react-dnd";
 
 export const SET_USER_PREFS = 'SET_USER_PREFS'
 export function setUserPrefs(prefs: Object) {
@@ -73,6 +74,15 @@ export function hoveredBFCard(bfId: number | null, cardId?: number) {
         type: HOVERED_BFCARD,
         bfId,
         cardId
+    }
+}
+
+export const HOVERED_BATTLEFIELD = 'HOVERED_BATTLEFIELD'
+export function hoveredBattlefield(bf: HTMLDivElement|null, sourceClientOffset: XYCoord|null) {
+    return {
+        type: HOVERED_BATTLEFIELD,
+        bf,
+        sourceClientOffset
     }
 }
 

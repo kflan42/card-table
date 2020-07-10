@@ -182,7 +182,7 @@ class Login extends React.Component<LoginP> {
                         <div className="dropdown">
                             <button
                                 style={{backgroundColor: this.state.color}}>{this.state.color ? "Chosen" : "Choose"}</button>
-                            <div className="dropdown-content" style={{maxHeight: colorItems.length * 2 / 5 + "em"}}>
+                            <div className="dropdown-content" style={{maxHeight: colorItems.length / 4 + "em"}}>
                                 {colorItems}
                             </div>
                         </div>
@@ -197,7 +197,7 @@ class Login extends React.Component<LoginP> {
                         <br/> <br/>
                         Your Deck:<br/>
                         <span style={{fontSize:"small"}}>Please either put your commander last or append *CMDR* to its line.</span><br/>
-                        <textarea value={this.state.deck_list} required={true} onChange={this.handleDeckChange} cols={30} rows={30}/>
+                        <textarea value={this.state.deck_list} required={true} onChange={this.handleDeckChange} cols={60} rows={30}/>
                     </div>
                 </form>
             </div>

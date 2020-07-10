@@ -1,22 +1,32 @@
 import React, {useRef} from 'react'
 
 import './_style.css';
-import {useSelector} from 'react-redux';
+import {useSelector, useDispatch} from 'react-redux';
 import {ClientState, BATTLEFIELD} from '../ClientState';
 import BFCard from './BFCard';
-import {useDrop} from 'react-dnd';
+import {useDrop, XYCoord} from 'react-dnd';
 import {ItemTypes, DragCard} from "./DnDUtils";
-import {MOVE_CARD} from '../Actions';
+import {MOVE_CARD, hoveredBattlefield} from '../Actions';
 import {usePlayerDispatch} from '../PlayerDispatch';
 
 /** Takes px and returns %. */
-export function snapToGrid(x: number, y: number, width: number, height: number) {
-    // ensure x and y are on battlefield in case drop got weird coords
-    x = Math.min(Math.max(0, x), width - 1)
-    y = Math.min(Math.max(0, y), height - 1)
+export function snapToGrid(c: HTMLDivElement, sourceClientOffset: XYCoord, clipToBounds: boolean) {
+    let { x, y } = sourceClientOffset
+    // convert to relative
+    const r = c.getBoundingClientRect()
+    x = x - r.left;
+    y = y - r.top;
+    if (clipToBounds){
+        // ensure x and y are on battlefield in case drop got weird coords
+        x = Math.min(Math.max(0, x), r.width - 1)
+        y = Math.min(Math.max(0, y), r.height - 1)
+    } else if (x < 0 || x > r.width || y < 0 || y > r.height) {
+        // outside bounds, can't snap sensibly
+        return undefined
+    }
     // proportion * 10 * 10 = %. round in middle to grid. playmat usually a wide rectangle
-    const snappedX = Math.round((x / width) * 33) * 3
-    const snappedY = Math.round((y / height) * 25) * 4
+    const snappedX = Math.round((x / r.width) * 33) * 3
+    const snappedY = Math.round((y / r.height) * 25) * 4
     return [snappedX, snappedY]
 }
 
@@ -35,42 +45,40 @@ const Battlefield: React.FC<BFP> = ({player}) => {
     })
 
     const playerDispatch = usePlayerDispatch().action
-
+    const dispatch = useDispatch()
+    
     const bf = useRef<HTMLDivElement>(null);
 
     const [, drop] = useDrop({
         accept: [ItemTypes.BFCARD, ItemTypes.CARD],
         drop(item: DragCard, monitor) {
-            const pos = monitor.getSourceClientOffset() as {
-                x: number
-                y: number
-            }
             // clientOffset seems to be where mouse pointer is
             // sourceClientOffset seems to be where element dragged is (regardless of where clicked)
             // console.log(monitor.getClientOffset(), monitor.getInitialClientOffset(),
             //     monitor.getSourceClientOffset(), monitor.getInitialSourceClientOffset())
-            let left = Math.round(pos.x);
-            let top = Math.round(pos.y);
             const c = bf.current
             if (c) {
-                // convert to relative
-                const r = c.getBoundingClientRect()
-                left = left - r.left;
-                top = top - r.top;
-                [left, top] = snapToGrid(left, top, r.width, r.height)
-            }
+                const [left, top] = snapToGrid(c, monitor.getSourceClientOffset() as XYCoord, true) as Number[]
 
-            const cardMove = {
-                ...item,
-                type: MOVE_CARD,
-                when: Date.now(),
-                tgtZone: BATTLEFIELD,
-                tgtOwner: player,
-                toX: left,
-                toY: top
+                const cardMove = {
+                    ...item,
+                    type: MOVE_CARD,
+                    when: Date.now(),
+                    tgtZone: BATTLEFIELD,
+                    tgtOwner: player,
+                    toX: left,
+                    toY: top
+                }
+                playerDispatch(cardMove)
             }
-            playerDispatch(cardMove)
         },
+        collect(monitor) {
+            const xy = monitor.getSourceClientOffset()
+            if(monitor.isOver() && xy && bf.current) {
+                dispatch(hoveredBattlefield(bf.current, xy))
+                console.log("hovered", xy)
+            }
+        }
     })
 
     const listItems = []

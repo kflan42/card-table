@@ -22,7 +22,8 @@ export interface EntityLine {
 
 export interface HoveredCard {
     cardId: number | null,
-    bfId: number | null
+    bfId: number | null,
+    bf: HTMLDivElement | null,
 }
 
 export interface PlayerPrefs {
