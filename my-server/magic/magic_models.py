@@ -94,11 +94,63 @@ class Game(Interface, DataClassJsonMixin):
 
 HAND = "Hand"
 LIBRARY = "Library"
+LOOK = "Look"  # Used for scry, look at top N, reveal, etc.
 GRAVEYARD = "Graveyard"
 COMMAND_ZONE = "Command Zone"
 EXILE = "Exile"
 BATTLEFIELD = "Battlefield"
-ZONES = [HAND, LIBRARY, GRAVEYARD, COMMAND_ZONE, EXILE, BATTLEFIELD]
+ZONES = [HAND, LIBRARY, LOOK, GRAVEYARD, COMMAND_ZONE, EXILE, BATTLEFIELD]
+
+
+@dataclass
+class CardMove(Interface, DataClassJsonMixin):
+    card_id: int
+    src_zone: str
+    src_owner: str
+    tgt_zone: str
+    tgt_owner: str
+    bf_id: Optional[int] = None
+    to_x: Optional[int] = None
+    to_y: Optional[int] = None
+    to_idx: Optional[int] = None
+
+
+@dataclass
+class CardChange(Interface, DataClassJsonMixin):
+    """Tap, Transform, Flip"""
+    card_id: int
+
+
+@dataclass
+class CounterChange(Interface, DataClassJsonMixin):
+    """Either bf_id or player."""
+    label: str
+    value: int
+    bf_id: Optional[int] = None
+    player: Optional[str] = None
+
+
+@dataclass
+class CreateToken(Interface, DataClassJsonMixin):
+    """Almost idempotent: limit to 1 per time unit per player. 
+    Never deleted but sometimes moved to not be in any zone."""
+    owner: str
+    copy_card_id: int
+    sf_id: str
+
+
+@dataclass
+class PlayerAction(Interface, DataClassJsonMixin):
+    """Should be idempotent."""
+    table: str
+    kind: str
+    who: str
+    when: int
+    card_moves: List[CardMove]
+    card_changes: List[CardChange]
+    counter_changes: List[CounterChange]
+    create_tokens: List[CreateToken]
+    message: Optional[str] = None
 
 
 @dataclass
@@ -106,7 +158,7 @@ class Table(Interface, DataClassJsonMixin):
     name: str
     game: Game
     sf_cards: List[SFCard]
-    actions: List
+    actions: List[PlayerAction]
 
 
 def get_zone(game: Game, player: str, zone: str) -> Zone:

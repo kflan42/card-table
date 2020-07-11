@@ -1,6 +1,8 @@
+import json
 import logging
 import sys
 import unittest
+from typing import List
 
 from magic.magic_models import JoinRequest
 from magic.magic_table import MagicTable

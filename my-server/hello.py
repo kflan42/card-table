@@ -18,7 +18,7 @@ from flask import request
 from flask_socketio import SocketIO, join_room, emit
 
 # note that flask logs to stderr by default
-from magic.magic_models import JoinRequest
+from magic.magic_models import JoinRequest, PlayerAction
 from magic.magic_table import MagicTable
 from magic.test_table import test_table
 from collections import defaultdict
@@ -33,7 +33,7 @@ pip3 install -r ../../requirements.txt
 cd my-app; npm install
 cd ../card-table;
 cd scryfall; extractCards.sh
-cd ..; my-server/genTsInterfaces.sh
+cd ../my-server; genTsInterfaces.sh
 cd my-app; npm install; npm build
 
 Run redis via:
@@ -178,12 +178,13 @@ def on_player_action(data):
     table_name = data['table']
     table_name, table = get_table(table_name=table_name)
     if table:
-        # TODO - this will work for single process dev server but not multi process prod
+        # warning this will work for single process dev server but not multi process production setup
         with table_locks[table_name]:
+            player_action = PlayerAction(**data)
+            # resolve action
+            game_update = table.resolve_action(player_action)
             # send it out
-            emit('player_action', data, room=table_name, broadcast=True)   # on('player_action'
-            # store action for late joiners or refresh
-            table.add_action(data)
+            emit('game_update', game_update.to_json(), room=table_name, broadcast=True)   # on('game_update'
             if not is_test(table_name):  # don't save test tables
                 table.save()
     else:

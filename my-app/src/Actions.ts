@@ -151,10 +151,15 @@ export function addLogLine(line: string) {
     }
 }
 
-export interface GameSet extends PlayerAction {
+export interface GameSet extends PlayerAction { // todo don't extend, rename SetGame
     game: Game
 }
 export const SET_GAME = 'SET_GAME';
 export function setGame(game: Game): GameSet {
+    return {type: SET_GAME, who: 'Table', when: Date.now(), game: game}
+}
+
+export const GAME_UPDATE = 'GAME_UPDATE';
+export function gameUpdate(game: Game): GameSet {
     return {type: SET_GAME, who: 'Table', when: Date.now(), game: game}
 }

@@ -5,7 +5,7 @@ from random import shuffle
 
 from magic.magic_cards import load_cards, CardResolver, parse_deck
 from magic.magic_models import SFCard, JoinRequest, Player, Card, Zone, ZONES, Game, LIBRARY, Table, Counter, EXILE, \
-    COMMAND_ZONE
+    COMMAND_ZONE, PlayerAction
 
 
 class MagicTable:
@@ -94,8 +94,9 @@ class MagicTable:
         table.game.players.append(player)
         return True
 
-    def add_action(self, action):
+    def resolve_action(self, action: PlayerAction) -> Game:
         self.table.actions.append(action)
+        return self.table.game
 
     def save(self):
         file_path = os.path.join(MagicTable.get_tables_path(), self.table.name + ".json")

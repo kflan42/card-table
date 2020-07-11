@@ -23,12 +23,12 @@ import {useConfirmation} from './ConfirmationService';
 import {ConfirmationResult} from './ConfirmationDialog';
 import {usePlayerDispatch} from '../PlayerDispatch';
 import {useParams} from "react-router-dom";
-import {Game as GameT} from "../magic_models";
+import {Game} from "../magic_models";
 import CardDB, {parseDeckCard} from "../CardDB";
 import MySocket from "../MySocket";
 import { OptionsDialog } from './OptionsDialog';
 
-const Game: React.FC = () => {
+const GameView: React.FC = () => {
     const [userName, rightClickPopup]= useSelector((state: ClientState) => 
         [state.playerPrefs.name as string | undefined, state.playerPrefs.rightClickPopup])
     const hoveredCard = useSelector((state: ClientState) => state.hoveredCard)
@@ -52,20 +52,20 @@ const Game: React.FC = () => {
 
     const confirmation = useConfirmation();
 
-    const loadOptions = () => {
-        let bfImageQuality = localStorage.getItem('bfImageQuality')
-        bfImageQuality = bfImageQuality ? bfImageQuality : "low"
-        let bfCardSize = localStorage.getItem('bfCardSize')
-        bfCardSize = bfCardSize ? bfCardSize : "7"
-        let handCardSize = localStorage.getItem('handCardSize')
-        handCardSize = handCardSize ? handCardSize : "14"
-        let rightClickPopup = localStorage.getItem('rightClickPopup') === 'true'
-        rightClickPopup = rightClickPopup ? rightClickPopup : false;
-        dispatch(setUserPrefs({bfImageQuality, bfCardSize, handCardSize, rightClickPopup}))
-    }
-
     const loadGame = useCallback(
         () => {
+            const loadOptions = () => {
+                let bfImageQuality = localStorage.getItem('bfImageQuality')
+                bfImageQuality = bfImageQuality ? bfImageQuality : "low"
+                let bfCardSize = localStorage.getItem('bfCardSize')
+                bfCardSize = bfCardSize ? bfCardSize : "7"
+                let handCardSize = localStorage.getItem('handCardSize')
+                handCardSize = handCardSize ? handCardSize : "14"
+                let rightClickPopup = localStorage.getItem('rightClickPopup') === 'true'
+                rightClickPopup = rightClickPopup ? rightClickPopup : false;
+                dispatch(setUserPrefs({bfImageQuality, bfCardSize, handCardSize, rightClickPopup}))
+            }
+
             // enable testing off static assets
             const gameUrl = gameId === 'static_test' ? '/testGame.json' : `/api/table/${gameId}`
             const actionsUrl = gameId === 'static_test' ? '/testActions.json' : `/api/table/${gameId}/actions`
@@ -76,7 +76,7 @@ const Game: React.FC = () => {
                 await CardDB.loadCards(cardsUrl)
                 // now that cards are loaded, initialize the game
                 const data = r.json()
-                const game: GameT = await data
+                const game: Game = await data
                 let indexedGame = index_game(game);
                 dispatch(setGame(indexedGame))
 
@@ -157,6 +157,10 @@ const Game: React.FC = () => {
                     console.log('received player_action', msg)
                     return dispatch(msg);
                 })
+                MySocket.get_socket().on('game_update', function (msg: Game) {
+                    console.log('received game_update', msg)
+                    // TODO return dispatch(msg);
+                })
                 MySocket.get_socket().on('player_draw', function (msg: object) {
                     console.log('received player_draw', msg)
                     return dispatch(msg);
@@ -167,6 +171,9 @@ const Game: React.FC = () => {
                         console.log(`reloading since ${msg.username} joined ${Object.keys(players)}`)
                         loadGame()
                     }
+                })
+                MySocket.get_socket().on('error', function (msg: any) {
+                    console.log('received error', msg)
                 })
             } catch (e) {
                 console.error(e)
@@ -410,4 +417,4 @@ const Game: React.FC = () => {
         : <div/>
 }
 
-export default Game
+export default GameView
