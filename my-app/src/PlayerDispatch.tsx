@@ -6,7 +6,7 @@ import { useState } from "react";
 import { PlayerAction } from "./magic_models";
 
 
-export function usePlayerDispatch() {
+export function usePlayerActions() {
     const dispatch = useDispatch()
 
     const { gameId } = useParams()
@@ -15,7 +15,7 @@ export function usePlayerDispatch() {
 
     const [outstanding, setOutstanding] = useState(0)
 
-    function send(playerAction: PlayerAction, eventName: string) {
+    function sendOverSocket(playerAction: PlayerAction, eventName: string) {
 
         if (outstanding > 7) {
             console.warn("too many actions outstanding, dropping this one")
@@ -27,19 +27,19 @@ export function usePlayerDispatch() {
         MySocket.get_socket().emit(eventName, { ...playerAction, table: gameId }, (ack: boolean) => {
             console.log('got ack for ', playerAction, ack)
             setOutstanding(outstanding - 1)
-            if (ack) {
-                //dispatch(playerAction)
-            }
         })
 
     }
 
-    function action(action: { type: string }) {
-        const playerAction: PlayerAction = {
-            table: "", kind: action.type, who: playerName, when: Date.now(),
+    function baseAction(): PlayerAction {
+        return {
+            table: gameId as string, kind: "", who: playerName, when: Date.now(),
             message: "", card_moves: [], card_changes: [], counter_changes: [], create_tokens: []
         }
-        send(playerAction, 'player_action');
+    }
+
+    function send(action: PlayerAction) {
+        sendOverSocket({ ...action, table: gameId as string, who: playerName, when: Date.now() }, 'player_action');
     }
 
     function draw(action: { type: string }) {
@@ -57,5 +57,5 @@ export function usePlayerDispatch() {
         }
     }
 
-    return { action, draw }
+    return { action: send, draw, baseAction }
 }

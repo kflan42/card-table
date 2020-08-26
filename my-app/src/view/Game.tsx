@@ -1,35 +1,32 @@
-import React, {useCallback, useEffect, useState} from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import LineTo from 'react-lineto';
 
 import './_style.css';
 import Hand from './Hand';
 import Table from './Table';
-import {batch, useDispatch, useSelector} from 'react-redux';
-import {ClientState, HAND, index_game, LIBRARY, whichZone, GRAVEYARD} from '../ClientState';
+import { useDispatch, useSelector } from 'react-redux';
+import { ClientState, HAND, LIBRARY, whichZone, GRAVEYARD, EXILE } from '../ClientState';
 import {
-    cardAction, clearLines,
-    createTokenCopy,
-    createTokenNew, drawing,
-    setUserPrefs, MOVE_CARD,
-    PlayerAction,
-    setCardCounter,
+    clearLines,
+    drawing,
+    setUserPrefs,
     setGame,
     TOGGLE_FACEDOWN_CARD,
-    TOGGLE_TRANSFORM_CARD, untapAll, togglePlaymat
+    TOGGLE_TRANSFORM_CARD, togglePlaymat, updateGame, UNTAP_ALL, SET_CARD_COUNTER, CREATE_TOKEN
 } from '../Actions';
 import CardPopup from './CardPopup';
 import CustomDragLayer from './CustomDragLayer';
-import {useConfirmation} from './ConfirmationService';
-import {ConfirmationResult} from './ConfirmationDialog';
-import {usePlayerDispatch} from '../PlayerDispatch';
-import {useParams} from "react-router-dom";
-import {Game} from "../magic_models";
-import CardDB, {parseDeckCard} from "../CardDB";
+import { useConfirmation } from './ConfirmationService';
+import { ConfirmationResult } from './ConfirmationDialog';
+import { usePlayerActions } from '../PlayerDispatch';
+import { useParams } from "react-router-dom";
+import { Game, Card } from "../magic_models";
+import CardDB, { parseDeckCard } from "../CardDB";
 import MySocket from "../MySocket";
 import { OptionsDialog } from './OptionsDialog';
 
 const GameView: React.FC = () => {
-    const [userName, rightClickPopup]= useSelector((state: ClientState) => 
+    const [userName, rightClickPopup] = useSelector((state: ClientState) =>
         [state.playerPrefs.name as string | undefined, state.playerPrefs.rightClickPopup])
     const hoveredCard = useSelector((state: ClientState) => state.hoveredCard)
     const cardUnderCursor = useSelector((state: ClientState) =>
@@ -45,8 +42,8 @@ const GameView: React.FC = () => {
     const [hasSockets, setHasSockets] = useState(false)
 
     const dispatch = useDispatch()
-    const {action: playerDispatch, draw: drawDispatch} = usePlayerDispatch()
-    const {gameId} = useParams()
+    const { action: playerDispatch, baseAction, draw: drawDispatch } = usePlayerActions()
+    const { gameId } = useParams()
     const [loadedId, setLoadedId] = useState('')
     const [optionsOpen, setOptionsOpen] = useState(false)
 
@@ -63,12 +60,11 @@ const GameView: React.FC = () => {
                 handCardSize = handCardSize ? handCardSize : "14"
                 let rightClickPopup = localStorage.getItem('rightClickPopup') === 'true'
                 rightClickPopup = rightClickPopup ? rightClickPopup : false;
-                dispatch(setUserPrefs({bfImageQuality, bfCardSize, handCardSize, rightClickPopup}))
+                dispatch(setUserPrefs({ bfImageQuality, bfCardSize, handCardSize, rightClickPopup }))
             }
 
             // enable testing off static assets
             const gameUrl = gameId === 'static_test' ? '/testGame.json' : `/api/table/${gameId}`
-            const actionsUrl = gameId === 'static_test' ? '/testActions.json' : `/api/table/${gameId}/actions`
             const cardsUrl = gameId === 'static_test' ? '/testCards.json' : `/api/table/${gameId}/cards`
 
             async function onGameLoaded(r: Response) {
@@ -77,28 +73,7 @@ const GameView: React.FC = () => {
                 // now that cards are loaded, initialize the game
                 const data = r.json()
                 const game: Game = await data
-                let indexedGame = index_game(game);
-                dispatch(setGame(indexedGame))
-
-                fetch(actionsUrl)
-                    .then(onActionsLoaded)
-                    .catch(r => console.error("exception loading game actions", r))
-            }
-
-            async function onActionsLoaded(r: Response) {
-                // replay any actions
-                const actions = await r.json() as any[]
-                console.log(`${actions.length} actions loaded from server, catching up now ...`)
-                batch(()=>{
-                    for (const action of actions) {
-                        try {
-                            dispatch(action)
-                        } catch (e) {
-                            console.error('Problem dispatching', action, e)
-                        }
-                    }
-                })
-                console.log(`caught up on ${actions.length} actions loaded from server`)
+                dispatch(setGame(game))
             }
 
             console.log(`loading game from ${gameUrl}`)
@@ -118,25 +93,25 @@ const GameView: React.FC = () => {
     }, [loadGame, gameId, loadedId]);
 
     useEffect(() => {
-            const playerNames = Object.keys(players)
-            if (!userName && playerNames.length > 0) {
-                playerNames.push('Spectator *')
-                confirmation({
-                    title: "Who are you?",
-                    description: "Please select from existing players, else use /login to join the game.",
-                    choices: playerNames,
-                    catchOnCancel: true
+        const playerNames = Object.keys(players)
+        if (!userName && playerNames.length > 0) {
+            playerNames.push('Spectator *')
+            confirmation({
+                title: "Who are you?",
+                description: "Please select from existing players, else use /login to join the game.",
+                choices: playerNames,
+                catchOnCancel: true
+            })
+                .then((s: ConfirmationResult) => {
+                    if (players.hasOwnProperty(s.choice)) {
+                        dispatch(setUserPrefs({ name: s.choice }))
+                    } else if (s.choice === 'Spectator *') {
+                        dispatch(setUserPrefs({ name: `(${s.s})` }))
+                    }
                 })
-                    .then((s: ConfirmationResult) => {
-                        if (players.hasOwnProperty(s.choice)) {
-                            dispatch(setUserPrefs({name: s.choice}))
-                        } else if (s.choice === 'Spectator *') {
-                            dispatch(setUserPrefs({name: `(${s.s})`}))
-                        }
-                    })
-                    .catch(() => null)
-            }
-        },
+                .catch(() => null)
+        }
+    },
         // since it wants confirmation but that changes every render and infinite loops
         // eslint-disable-next-line
         [userName, players, dispatch])
@@ -152,14 +127,11 @@ const GameView: React.FC = () => {
             try {
                 console.log('Connecting sockets...')
                 // now that game is loaded, register for updates to it
-                MySocket.get_socket().emit('join', {table: gameId, username: userName})
-                MySocket.get_socket().on('player_action', function (msg: PlayerAction) {
-                    console.log('received player_action', msg)
-                    return dispatch(msg);
-                })
-                MySocket.get_socket().on('game_update', function (msg: Game) {
-                    console.log('received game_update', msg)
-                    // TODO return dispatch(msg);
+                MySocket.get_socket().emit('join', { table: gameId, username: userName })
+                MySocket.get_socket().on('game_update', function (msg: string) {
+                    const game_update = JSON.parse(msg)
+                    console.log('received game_update', game_update)
+                    dispatch(updateGame(game_update));
                 })
                 MySocket.get_socket().on('player_draw', function (msg: object) {
                     console.log('received player_draw', msg)
@@ -201,54 +173,35 @@ const GameView: React.FC = () => {
 
     function drawCard() {
         const player = userName ? players[userName] : null
-        if (!player || topCard === undefined) return
+        if (!userName || !player || topCard === undefined) return
         const cardMove = {
-            type: MOVE_CARD,
-            cardId: topCard,
-            srcZone: LIBRARY,
-            srcOwner: userName,
-            tgtZone: HAND,
-            tgtOwner: userName,
-            toIdx: 0 // put first
+            card_id: topCard,
+            src_zone: LIBRARY,
+            src_owner: userName,
+            tgt_zone: HAND,
+            tgt_owner: userName,
+            to_idx: 0 // put first
         }
-        playerDispatch(cardMove)
+        playerDispatch({ ...baseAction(), kind:"Draw 1", card_moves: [cardMove] })
     }
 
-    function bottomLibraryCard() {
-        if(!cardUnderCursor) return
-        if(!srcZone) return
+    function moveCard(tgt_zone: string, to_idx: number | null) {
+        if (!cardUnderCursor) return
+        if (!srcZone) return
         const cardMove = {
-            type: MOVE_CARD,
-            bfId: srcZone.bfId, // battlefield zones use bfIds instead of cardIds
-            cardId: cardUnderCursor.card_id,
-            srcZone: srcZone.zone.name,
-            srcOwner: srcZone.zone.owner,
-            tgtZone: LIBRARY,
-            tgtOwner: cardUnderCursor.owner,
-            toIdx: undefined // put last
+            card_id: cardUnderCursor.card_id,
+            src_zone: srcZone.zone.name,
+            src_owner: srcZone.zone.owner,
+            tgt_zone,
+            tgt_owner: cardUnderCursor.owner,
+            to_idx
         }
-        playerDispatch(cardMove)
-    }
-
-    function graveyardCard() {
-        if(!cardUnderCursor) return
-        if(!srcZone) return
-        const cardMove = {
-            type: MOVE_CARD,
-            bfId: srcZone.bfId, // battlefield zones use bfIds instead of cardIds
-            cardId: cardUnderCursor.card_id,
-            srcZone: srcZone.zone.name,
-            srcOwner: srcZone.zone.owner,
-            tgtZone: GRAVEYARD,
-            tgtOwner: cardUnderCursor.owner,
-            toIdx: undefined // put last
-        }
-        playerDispatch(cardMove)
+        playerDispatch({ ...baseAction(), card_moves: [cardMove] })
     }
 
     const tokenPopup = () => {
         if (!userName) return
-        const choices = cardUnderCursor ? ["Copy " + CardDB.getCard(cardUnderCursor.sf_id).name] : []
+        const choices = cardUnderCursor && !cardUnderCursor.facedown ? ["Copy " + CardDB.getCard(cardUnderCursor.sf_id).name] : []
         choices.push("New Token $")
         confirmation({
             choices: choices,
@@ -258,13 +211,27 @@ const GameView: React.FC = () => {
         }).then((s: ConfirmationResult) => {
             switch (s.choice.split(' ')[0]) {
                 case "Copy":
-                    playerDispatch(createTokenCopy(userName, hoveredCard.cardId as number));
+                    playerDispatch({
+                        ...baseAction(),
+                        kind: CREATE_TOKEN,
+                        create_tokens: [{
+                            owner: userName,
+                            sf_id: (cardUnderCursor as Card).sf_id
+                        }]
+                    })
                     break;
                 case "New":
                     const deck_card = parseDeckCard(s.s)
                     try {
                         let foundCard = CardDB.findCardNow(deck_card.name, deck_card.set_name, deck_card.number);
-                        playerDispatch(createTokenNew(userName, foundCard.sf_id))
+                        playerDispatch({
+                            ...baseAction(),
+                            kind: CREATE_TOKEN,
+                            create_tokens: [{
+                                owner: userName,
+                                sf_id: foundCard.sf_id
+                            }]
+                        })
                     } catch (e) {
                         console.error(`Card not found: ${s.s}`)
                     }
@@ -274,22 +241,35 @@ const GameView: React.FC = () => {
             .catch(() => null);
     }
 
-    const counterPopup = (bfCardId: number) => {
+    const counterPopup = (cardId: number) => {
         confirmation({
-            choices: ["+1/+1", "+1/+0", "+0/+1", "Create * _"],
+            choices: ["+1/+1", "+1/+0", "-1/-1", "Create * _"],
             catchOnCancel: true,
             title: "Create Counter",
             description: ""
         })
             .then((s: ConfirmationResult) => {
+                const newCounter = {
+                    player: null,
+                    card_id: cardId,
+                    name: s.s,
+                    value: 0
+                }
                 switch (s.choice) {
                     case "Create * _":
-                        playerDispatch(setCardCounter(bfCardId, s.s, s.n));
+                        newCounter.name = s.s
+                        newCounter.value = s.n
                         break;
                     default:
-                        playerDispatch(setCardCounter(bfCardId, s.choice, s.n));
-                        return;
+                        newCounter.name = s.choice
+                        newCounter.value = s.n
+                        break;
                 }
+                playerDispatch({
+                    ...baseAction(),
+                    kind: SET_CARD_COUNTER,
+                    counter_changes: [newCounter]
+                })
             })
             .catch(() => null);
     }
@@ -297,7 +277,7 @@ const GameView: React.FC = () => {
     const isHoveredCard = !(hoveredCard.cardId === null || hoveredCard.cardId === undefined)
 
     function hidePlayerPrompt() {
-        confirmation( {
+        confirmation({
             choices: Object.keys(players),
             catchOnCancel: true,
             title: "Hide Player",
@@ -331,17 +311,23 @@ const GameView: React.FC = () => {
                 break;
             case 'T':
                 if (isHoveredCard) {
-                    playerDispatch(cardAction(TOGGLE_TRANSFORM_CARD, hoveredCard.cardId as number, hoveredCard.bfId === null))
+                    playerDispatch({
+                        ...baseAction(),
+                        card_changes: [{ change: TOGGLE_TRANSFORM_CARD, card_id: hoveredCard.cardId as number, to_x: null, to_y: null }]
+                    })
                     event.preventDefault()
                 }
                 break;
             case 'U':
-                playerDispatch(untapAll())
+                playerDispatch({ ...baseAction(), kind: UNTAP_ALL })
                 event.preventDefault()
                 break;
             case 'F':
                 if (isHoveredCard) {
-                    playerDispatch(cardAction(TOGGLE_FACEDOWN_CARD, hoveredCard.cardId as number, hoveredCard.bfId === null))
+                    playerDispatch({
+                        ...baseAction(),
+                        card_changes: [{ change: TOGGLE_FACEDOWN_CARD, card_id: hoveredCard.cardId as number, to_x: null, to_y: null }]
+                    })
                     event.preventDefault()
                 }
                 break;
@@ -350,8 +336,8 @@ const GameView: React.FC = () => {
                 event.preventDefault()
                 break;
             case 'c':
-                if (hoveredCard.bfId !== null && hoveredCard.bfId !== undefined) {
-                    counterPopup(hoveredCard.bfId)
+                if (hoveredCard.cardId !== null && hoveredCard.cardId !== undefined) {
+                    counterPopup(hoveredCard.cardId)
                     event.preventDefault()
                 }
                 break;
@@ -368,11 +354,15 @@ const GameView: React.FC = () => {
                 event.preventDefault()
                 break;
             case 'B':
-                bottomLibraryCard()
+                moveCard(LIBRARY, null) // bottom
                 event.preventDefault()
                 break;
             case 'G':
-                graveyardCard()
+                moveCard(GRAVEYARD, 0) // top, face up stack IRL
+                event.preventDefault()
+                break;
+            case 'E':
+                moveCard(EXILE, 0)
                 event.preventDefault()
                 break;
             case 'H':
@@ -394,8 +384,8 @@ const GameView: React.FC = () => {
 
     const lines = drawLines
         .map(entityLine => <LineTo key={`${entityLine.from}-${entityLine.to}`} from={entityLine.from} to={entityLine.to}
-                                   borderColor={entityLine.color} borderWidth={2}
-                                   className={"Line"}
+            borderColor={entityLine.color} borderWidth={2}
+            className={"Line"}
         />)
 
     //tabIndex means it can receive focus which means it can receive keyboard events
@@ -404,17 +394,17 @@ const GameView: React.FC = () => {
             <div className="Game" onKeyPress={keyPress} onContextMenu={onContextMenu} tabIndex={0} style={{
                 cursor: isDrawing ? "crosshair" : undefined
             }}>
-                <Table/>
-                {players.hasOwnProperty(userName) ? <Hand/> : null}
+                <Table />
+                {players.hasOwnProperty(userName) ? <Hand /> : null}
                 {lines}
                 {cardPopupShown !== null
-                    ? <CardPopup cardId={cardPopupShown} transformed={cardPopupTransformed}/>
+                    ? <CardPopup cardId={cardPopupShown} transformed={cardPopupTransformed} />
                     : undefined}
-                <CustomDragLayer/>
-                {optionsOpen ? <OptionsDialog onClose={()=> setOptionsOpen(false)} /> : undefined}
+                <CustomDragLayer />
+                {optionsOpen ? <OptionsDialog onClose={() => setOptionsOpen(false)} /> : undefined}
             </div>
         )
-        : <div/>
+        : <div />
 }
 
 export default GameView

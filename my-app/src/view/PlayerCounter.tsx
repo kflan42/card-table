@@ -1,10 +1,10 @@
 import React from 'react'
 
 import './_style.css';
-import {useConfirmation} from './ConfirmationService';
-import {setPlayerCounter} from '../Actions';
-import {ConfirmationResult} from './ConfirmationDialog';
-import {usePlayerDispatch} from '../PlayerDispatch';
+import { useConfirmation } from './ConfirmationService';
+import { SET_PLAYER_COUNTER } from '../Actions';
+import { ConfirmationResult } from './ConfirmationDialog';
+import { usePlayerActions } from '../PlayerDispatch';
 
 interface PlayerCounterP {
     player: string,
@@ -13,10 +13,10 @@ interface PlayerCounterP {
 }
 
 
-const PlayerCounter: React.FC<PlayerCounterP> = ({player, kind, value}) => {
+const PlayerCounter: React.FC<PlayerCounterP> = ({ player, kind, value }) => {
     const label = kind === "Life" ? "❤️" : kind;
 
-    const playerDispatch = usePlayerDispatch().action
+    const { action: playerDispatch, baseAction } = usePlayerActions()
 
     const confirmation = useConfirmation();
 
@@ -30,17 +30,28 @@ const PlayerCounter: React.FC<PlayerCounterP> = ({player, kind, value}) => {
             initialNumber: value
         })
             .then((s: ConfirmationResult) => {
+                var newValue = s.n;
                 switch (s.choice) {
                     case "▲":
-                        playerDispatch(setPlayerCounter(player, kind, value + 1));
+                        newValue = value + 1;
                         break;
                     case "Set to _":
-                        playerDispatch(setPlayerCounter(player, kind, s.n));
+                        newValue = s.n;
                         break;
                     case "▼":
-                        playerDispatch(setPlayerCounter(player, kind, value - 1));
+                        newValue = value - 1;
                         break;
                 }
+                playerDispatch({
+                    ...baseAction(),
+                    kind: SET_PLAYER_COUNTER,
+                    counter_changes: [{
+                        player,
+                        card_id: null,
+                        name: kind,
+                        value: newValue
+                    }]
+                })
             })
             .catch(() => null);
     }

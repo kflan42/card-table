@@ -46,32 +46,25 @@ export interface Game {
     players: { [index: string]: Player }
     /** indexed by owner-name */
     zones: { [index: string]: Zone }
-    /** index by bfCard bfId */
+    /** index by cardId */
     battlefieldCards: { [index: number]: BattlefieldCard }
     actionLog: LogLine[]
-    processedActions: Set<string>
 }
 
-export function index_game(game: GameT): Game {
+export function indexGame(game: GameT): Game {
     return {
-        players: game.players.reduce((d, x, i) => ({...d, [x.name]: x}), {}),
-        cards: game.cards.reduce((d, x, i) => ({...d, [x.card_id]: x}), {}),
-        zones: game.zones.reduce((d, x, i) => ({...d, [`${x.owner}-${x.name}`]: x}), {}),
-        battlefieldCards: game.battlefield_cards.reduce((d, x, i) => ({...d, [x.bf_id]: x}), {}),
+        players: game.players.reduce((d, x, idx) => ({...d, [x.name]: x}), {}),
+        cards: game.cards.reduce((d, x, idx) => ({...d, [x.card_id]: x}), {}),
+        zones: game.zones.reduce((d, x, idx) => ({...d, [`${x.owner}-${x.name}`]: x}), {}),
+        battlefieldCards: game.battlefield_cards.reduce((d, x, idx) => ({...d, [x.card_id]: x}), {}),
         actionLog: game.action_log,
-        processedActions: new Set<string>()
     };
 }
 
-export function whichZone(card_id: number, game: Game): { zone: Zone, bfId: number | undefined } {
+export function whichZone(card_id: number, game: Game): { zone: Zone } {
     for (const zone of Object.values(game.zones)) {
-        if (zone.name === BATTLEFIELD) {
-            const bfId = zone.cards.find(i => game.battlefieldCards[i].card_id === card_id)
-            if (bfId !== undefined) {
-                return {zone, bfId}
-            }
-        } else if (zone.cards.includes(card_id)) {
-            return {zone, bfId: undefined}
+        if (zone.cards.includes(card_id)) {
+            return {zone}
         }
     }
     throw new Error(`Card ${card_id} not found`)

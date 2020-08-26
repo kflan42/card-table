@@ -4,10 +4,10 @@ import sys
 import unittest
 from typing import List
 
-from magic.magic_models import JoinRequest
-from magic.magic_table import MagicTable
-from magic.magic_cards import CardResolver, parse_deck
-from magic.test_table import arena_deck, txt_deck, test_table, xmage_deck, tcgplayer_deck
+from magic_models import JoinRequest
+from magic_table import MagicTable
+from magic_cards import CardResolver, parse_deck
+from test_table import arena_deck, txt_deck, test_table, xmage_deck, tcgplayer_deck
 
 logging.basicConfig(format='%(asctime)s %(message)s', stream=sys.stdout, level=logging.DEBUG)
 
@@ -56,7 +56,8 @@ class MyTestCase(unittest.TestCase):
         print(table.table.to_json())
 
     def test_test_table(self):
-        print(test_table().table.to_json())
+        table = test_table("test")
+        print(table.table.to_json())
 
 
 if __name__ == '__main__':

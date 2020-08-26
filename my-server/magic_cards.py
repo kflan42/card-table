@@ -7,7 +7,7 @@ import time
 from collections import defaultdict
 from typing import List, Tuple, Optional
 
-from magic.magic_models import SFCard, Face
+from magic_models import SFCard, Face
 import unicodedata
 
 
@@ -75,7 +75,7 @@ class CardResolver:
         except Exception as e:
             msg = f"Card not found for {{name: {name}, set:{set_name}, number:{number}}}"
             logging.exception(msg)
-            ex = Exception(msg)
+            ex = Exception(msg, e)
             raise ex
 
 
@@ -119,7 +119,7 @@ def parse_line(line: str) -> Tuple[int, Optional[Tuple[str, Optional[str], Optio
     set_name_or_number = None
     name_words = []
     ignoring = False
-    for i, word in enumerate(card_parts[1:]):
+    for _, word in enumerate(card_parts[1:]):
         m_p = re.match(r'\((\w+)\)', word)
         m_b = re.match(r'\[(\w+)\]', word)
         m_x = re.match(r'\[(\w+):(\w+)\]', word)

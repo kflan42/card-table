@@ -1,5 +1,6 @@
-import {EntityLine, Game} from "./ClientState";
+import { EntityLine } from "./ClientState";
 import { XYCoord } from "react-dnd";
+import { Game as GameT } from "./magic_models"
 
 export const SET_USER_PREFS = 'SET_USER_PREFS'
 export function setUserPrefs(prefs: Object) {
@@ -18,46 +19,18 @@ export function togglePlaymat(player: string) {
 }
 
 export const DRAWING = 'DRAWING'
-export function drawing(first: string|null) {
-    return {type: DRAWING, first}
+export function drawing(first: string | null) {
+    return { type: DRAWING, first }
 }
 
 export const DRAWLINE = 'DRAWLINE'
 export function drawLine(entityLine: EntityLine) {
-    return {type: DRAWLINE, entityLine}
+    return { type: DRAWLINE, entityLine }
 }
 
 export const CLEAR_LINES = 'CLEAR_LINES'
 export function clearLines(color: string) {
-    return {type:CLEAR_LINES, color}
-}
-
-export const SHUFFLE_LIBRARY = 'SHUFFLE_LIBRARY'
-export function shuffleLibrary(owner: string) {
-    return {
-        type: SHUFFLE_LIBRARY,
-        owner
-    }
-}
-
-export interface PlayerAction {
-    type: string,
-    who: string,
-    when: number
-}
-
-
-export const MOVE_CARD = 'MOVE_CARD'
-export interface MoveCard extends PlayerAction {
-    bfId?: number
-    cardId: number
-    srcZone: string
-    srcOwner: string
-    tgtZone: string
-    tgtOwner: string
-    toX?: number
-    toY?: number
-    toIdx?: number
+    return { type: CLEAR_LINES, color }
 }
 
 export const HOVERED_CARD = 'HOVERED_CARD'
@@ -78,7 +51,7 @@ export function hoveredBFCard(bfId: number | null, cardId?: number) {
 }
 
 export const HOVERED_BATTLEFIELD = 'HOVERED_BATTLEFIELD'
-export function hoveredBattlefield(bf: HTMLDivElement|null, sourceClientOffset: XYCoord|null) {
+export function hoveredBattlefield(bf: HTMLDivElement | null, sourceClientOffset: XYCoord | null) {
     return {
         type: HOVERED_BATTLEFIELD,
         bf,
@@ -86,80 +59,28 @@ export function hoveredBattlefield(bf: HTMLDivElement|null, sourceClientOffset: 
     }
 }
 
+export const SHUFFLE_LIBRARY = 'SHUFFLE_LIBRARY'
+export const MOVE_CARD = 'MOVE_CARD'
 export const TOGGLE_TAP_CARD = 'TOGGLE_TAP_CARD'
 export const TOGGLE_TRANSFORM_CARD = 'TOGGLE_TRANSFORM_CARD'
 export const TOGGLE_FACEDOWN_CARD = 'TOGGLE_FACEDOWN_CARD'
-export interface CardAction { type: string, id: number, silent?:boolean }
-export function cardAction(type: string, id: number, silent?:boolean) : CardAction {
-    return {
-        type,
-        id,
-        silent
-    }
-}
-
 export const UNTAP_ALL = 'UNTAP_ALL'
-export function untapAll() {
-    return {
-        type:UNTAP_ALL,
-    }
-}
-
 export const SET_PLAYER_COUNTER = 'SET_PLAYER_COUNTER'
-export function setPlayerCounter(player: string, kind: string, value: number) {
-    return {
-        type: SET_PLAYER_COUNTER,
-        player,
-        kind,
-        value,
-    }
-}
-
 export const SET_CARD_COUNTER = 'SET_CARD_COUNTER'
-export function setCardCounter(bfId: number, kind: string, value: number) {
-    return {
-        type: SET_CARD_COUNTER,
-        bfId,
-        kind,
-        value,
-    }
-}
-
 export const CREATE_TOKEN = 'CREATE_TOKEN'
-export function createTokenCopy(owner: string, copyOfCardId: number) {
-    return {
-        type: CREATE_TOKEN,
-        owner,
-        copyOfCardId,
-        sf_id: null,
-    }
-}
-export function createTokenNew(owner: string, sf_id: string) {
-    return {
-        type: CREATE_TOKEN,
-        owner,
-        copyOfCardId: null,
-        sf_id,
-    }
-}
+export const MESSAGE = 'MESSAGE'
 
-export const ADD_LOG_LINE = 'ADD_LOG_LINE'
-export function addLogLine(line: string) {
-    return {
-        type: ADD_LOG_LINE,
-        line
-    }
-}
-
-export interface GameSet extends PlayerAction { // todo don't extend, rename SetGame
-    game: Game
+export interface GameUpdate {
+    type: string
+    when: number
+    game: GameT
 }
 export const SET_GAME = 'SET_GAME';
-export function setGame(game: Game): GameSet {
-    return {type: SET_GAME, who: 'Table', when: Date.now(), game: game}
+export function setGame(game: GameT): GameUpdate {
+    return { type: SET_GAME, when: Date.now(), game: game }
 }
 
-export const GAME_UPDATE = 'GAME_UPDATE';
-export function gameUpdate(game: Game): GameSet {
-    return {type: SET_GAME, who: 'Table', when: Date.now(), game: game}
+export const UPDATE_GAME = 'UPDATE_GAME';
+export function updateGame(game: GameT): GameUpdate {
+    return { type: UPDATE_GAME, when: Date.now(), game: game }
 }

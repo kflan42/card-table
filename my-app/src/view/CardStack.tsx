@@ -4,11 +4,12 @@ import {ClientState, LIBRARY, HAND} from '../ClientState'
 import StackCard from './StackCard'
 import {useDrop, DropTargetMonitor} from 'react-dnd'
 import {ItemTypes, DragCard} from './DnDUtils'
-import {MOVE_CARD, shuffleLibrary, addLogLine} from '../Actions'
+import {SHUFFLE_LIBRARY, MESSAGE} from '../Actions'
 import {useConfirmation} from './ConfirmationService'
 import {ConfirmationResult} from './ConfirmationDialog'
-import {usePlayerDispatch} from '../PlayerDispatch'
+import {usePlayerActions} from '../PlayerDispatch'
 import CardDB from "../CardDB";
+import { CardMove } from '../magic_models'
 
 interface CardStackP {
     name: string
@@ -30,7 +31,7 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
     const cards = useSelector((state: ClientState) => state.game.cards)
     const playerName = useSelector((state: ClientState) => state.playerPrefs.name)
 
-    const playerDispatch = usePlayerDispatch().action
+    const {action:playerDispatch, baseAction} = usePlayerActions()
     const confirmation = useConfirmation();
 
     function stackButtonClicked(e: React.MouseEvent<HTMLDivElement, MouseEvent>) {
@@ -46,18 +47,19 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
                     .then((s: ConfirmationResult) => {
                         switch (s.choice) {
                             case "Draw _":
+                                const draws: CardMove[] = []
                                 for (let i = 0; i < s.n; i++) {
                                     const cardMove = {
-                                        type: MOVE_CARD,
-                                        cardId: zoneState.cards[i],
-                                        srcZone: zoneState.name,
-                                        srcOwner: owner,
-                                        tgtZone: HAND,
-                                        tgtOwner: owner,
-                                        toIdx: 0 // put first
+                                        card_id: zoneState.cards[i],
+                                        src_zone: zoneState.name,
+                                        src_owner: owner,
+                                        tgt_zone: HAND,
+                                        tgt_owner: owner,
+                                        to_idx: 0, // put first
                                     }
-                                    playerDispatch(cardMove)
+                                    draws.push(cardMove)
                                 }
+                                playerDispatch({...baseAction(), card_moves:draws, kind:s.choice})
                                 return; // don't want to show
                             case "Search":
                                 setTopN([]);
@@ -68,14 +70,15 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
                         }
                         setShown(true)
                         setQuery('')
-                        playerDispatch(addLogLine(
-                            ` ${s.choice.replace("_", `${s.n} of`)} ${playerName === owner ? "their" : `${owner}'s`} Library`))
+                        playerDispatch({...baseAction(), kind:MESSAGE, 
+                            message:` ${s.choice.replace("_", `${s.n} of`)} ${playerName === owner ? "their" : `${owner}'s`} Library`})
+                            // TODO move library looking / searching stuff to server to avoid client side hacking
                     })
                     .catch(() => setShown(false));
             } else {
-                if (zoneState.name === HAND) {
-                    playerDispatch(addLogLine(
-                        ` looked at ${playerName === owner ? "their" : `${owner}'s`} Hand`))
+                if (zoneState.name === HAND && playerName !== owner) {
+                    playerDispatch({...baseAction(), kind:MESSAGE, message:` looked at ${owner}'s Hand`})
+                    // TODO move hand looking to server to avoid client side hacking
                 }
                 setShown(true)
                 setQuery('')
@@ -90,7 +93,7 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
         if (!shown) {
             setQuery('')
         }
-        playerDispatch(shuffleLibrary(owner))
+        playerDispatch({...baseAction(), kind:`${SHUFFLE_LIBRARY}_${owner}`})
     }
 
     function queryChanged(event: ChangeEvent<HTMLInputElement>) {
@@ -102,41 +105,42 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
     const [{isOver, dragCardOwner}, drop] = useDrop({
         accept: [ItemTypes.BFCARD, ItemTypes.CARD],
         drop(item: DragCard, monitor: DropTargetMonitor) {
-            if (item.srcOwner === owner && item.srcZone === zoneState.name) {
-                return //nothing to do if in same zone, not doing order here like that
-            }
             const cardMove = {
-                ...item,
-                type: MOVE_CARD,
-                tgtZone: name,
-                tgtOwner: owner,
-                toIdx: zoneState.cards.length // drop on bottom
+                card_id: item.cardId,
+                src_zone: item.srcZone,
+                src_owner: item.srcOwner,
+                tgt_zone: name,
+                tgt_owner: owner,
+                to_idx: null as (number | null) // drop on bottom
             }
             if (zoneState.name === LIBRARY) {
                 confirmation({
-                    choices: ["Top", "Insert _ From Top", "Bottom"],
+                    choices: ["Top", "Insert _ from Top", "Bottom"],
                     catchOnCancel: true,
                     title: `Put Card Where?`,
                     description: "",
-                    location: {x: monitor.getClientOffset()?.x || 0, y: monitor.getClientOffset()?.y || 0}
+                    location: {x: monitor.getClientOffset()?.x || 0, y: monitor.getClientOffset()?.y || 0},
+                    initialNumber: 1, // 0 from top would be top
                 })
                     .then((s: ConfirmationResult) => {
                         switch (s.choice) {
                             case "Top":
-                                cardMove.toIdx = 0;
+                                cardMove.to_idx = 0;
                                 break;
-                            case "Insert _ From Top":
-                                cardMove.toIdx = s.n; // 0 based indexing
+                            case "Insert _ from Top":
+                                cardMove.to_idx = s.n; // 0 based indexing
                                 break;
                             case "Bottom":
-                                cardMove.toIdx = zoneState.cards.length;
+                                cardMove.to_idx = null;
                                 break;
                         }
-                        playerDispatch(cardMove)
+                        playerDispatch({...baseAction(), card_moves:[cardMove]})
                     })
                     .catch(() => null);
+            } else if (item.srcOwner === owner && item.srcZone === zoneState.name) {
+                return //nothing to do if in same zone, not doing order here like that
             } else {
-                playerDispatch(cardMove)
+                playerDispatch({...baseAction(), card_moves:[cardMove]})
             }
         },
         collect: (monitor: DropTargetMonitor) => ({

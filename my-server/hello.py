@@ -17,10 +17,9 @@ from flask import Flask, send_from_directory, jsonify
 from flask import request
 from flask_socketio import SocketIO, join_room, emit
 
-# note that flask logs to stderr by default
-from magic.magic_models import JoinRequest, PlayerAction
-from magic.magic_table import MagicTable
-from magic.test_table import test_table
+from magic_models import JoinRequest, PlayerAction
+from magic_table import MagicTable
+from test_table import test_table
 from collections import defaultdict
 from threading import Lock
 
@@ -29,7 +28,7 @@ To run from fresh checkout:
 cd my-server
 python3 -m venv "venv"
 source venv/bin/activate
-pip3 install -r ../../requirements.txt
+pip3 install -r requirements.txt
 cd my-app; npm install
 cd ../card-table;
 cd scryfall; extractCards.sh
@@ -109,7 +108,7 @@ def get_table(table_name) -> typing.Tuple[str, MagicTable]:
     if table_name in tables:  # check memory
         return table_name, tables[table_name]
     elif is_test(table_name):
-        table = test_table()
+        table = test_table(table_name)
         tables[table_name] = table
         return table_name, table
     else:
@@ -183,10 +182,13 @@ def on_player_action(data):
             player_action = PlayerAction(**data)
             # resolve action
             game_update = table.resolve_action(player_action)
-            # send it out
-            emit('game_update', game_update.to_json(), room=table_name, broadcast=True)   # on('game_update'
-            if not is_test(table_name):  # don't save test tables
-                table.save()
+            if game_update:
+                # send it out
+                emit('game_update', game_update.to_json(), room=table_name, broadcast=True)   # on('game_update'
+                if not is_test(table_name):  # don't save test tables
+                    table.save()
+            else:
+                emit('error', {'error': 'Action failed.'})
     else:
         emit('error', {'error': 'Unable to do action. Table does not exist.'})
         return False
@@ -233,6 +235,7 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s %(message)s', stream=sys.stdout, level=logging.INFO)
     import logging.handlers
 
+    # note that flask logs to stderr by default
     # socket.io doesn't handle rotating file appender, gets stuck on old one after the move (at least on windows)
     os.makedirs(os.path.join('data', 'logs'), exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")

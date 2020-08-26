@@ -213,7 +213,6 @@
   }
   
 .cardtooltiptext {
-  font-size: small;
   visibility: hidden;
 }
 
@@ -224,8 +223,6 @@
 }
 
 .cardtooltip .cardtooltiptext {
-  background-color: black;
-  color: #fff;
   text-align: center;
   border-radius: 0.1em;
   left: 0%;

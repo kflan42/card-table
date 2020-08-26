@@ -2,10 +2,10 @@ import React from 'react'
 
 import './_style.css';
 import CardDB from '../CardDB';
-import {ClientState} from '../ClientState';
-import {useSelector, useDispatch} from 'react-redux';
-import {drawing, drawLine, hoveredCard} from '../Actions';
-import {usePlayerDispatch} from "../PlayerDispatch";
+import { ClientState } from '../ClientState';
+import { useSelector, useDispatch } from 'react-redux';
+import { drawing, drawLine, hoveredCard } from '../Actions';
+import { usePlayerActions } from "../PlayerDispatch";
 
 
 export interface CardProps {
@@ -16,7 +16,7 @@ export interface CardProps {
     showCollectorInfo?: boolean
 }
 
-const Card: React.FC<CardProps> = ({cardId, imageSize, cardHeight, showCollectorInfo}) => {
+const Card: React.FC<CardProps> = ({ cardId, imageSize, cardHeight, showCollectorInfo }) => {
 
     const card = useSelector((state: ClientState) => state.game.cards[cardId])
     const ownerColor = useSelector((state: ClientState) => state.game.players[card?.owner]?.color)
@@ -26,9 +26,9 @@ const Card: React.FC<CardProps> = ({cardId, imageSize, cardHeight, showCollector
         ? state.game.players[state.playerPrefs.name].color
         : "gray")
     const dispatch = useDispatch()
-    const {draw: drawDispatch} = usePlayerDispatch()
+    const { draw: drawDispatch } = usePlayerActions()
 
-    if(!card) {
+    if (!card) {
         return <div className={`Card cardtooltip c-${cardId}`}>{`Card ${cardId}`}</div>
     }
     const sfCard = CardDB.getCard(card?.sf_id);
@@ -50,7 +50,7 @@ const Card: React.FC<CardProps> = ({cardId, imageSize, cardHeight, showCollector
                     face = sfCard.face
                 }
             }
-            const text = showCollectorInfo 
+            const text = showCollectorInfo
                 ? `${face?.name || sfCard.name} (${sfCard.set_name.toUpperCase()}) ${sfCard.number}`
                 : `${face?.name || sfCard.name}`
             // small is 10.8k (memory cache after 1st). fuzzy text, hard to read. 146 x 204
@@ -70,28 +70,39 @@ const Card: React.FC<CardProps> = ({cardId, imageSize, cardHeight, showCollector
             return
         }
         if (drawingFirst !== null && drawingFirst !== '') {
-            drawDispatch(drawLine({color: drawerColor, from: drawingFirst, to: `c-${cardId}`}))
+            drawDispatch(drawLine({ color: drawerColor, from: drawingFirst, to: `c-${cardId}` }))
             dispatch(drawing(null))
             event.preventDefault()
             return;
         }
     }
 
+    const link = `https://scryfall.com/card/${sfCard.set_name}/${sfCard.number}`
+
     return (
         // c${cardId} is a class used for line drawing
         <div className={`Card cardtooltip c-${cardId}`}
-             onMouseOver={() => dispatch(hoveredCard(cardId))}
-             onMouseOut={() => dispatch(hoveredCard(null))}
-             onClick={click}
-             style={{
-                 height: cardHeight ? cardHeight + "em" : undefined, 
-                 width: cardWidth ? cardWidth + "em" : undefined
-             }}
+            onMouseOver={() => dispatch(hoveredCard(cardId))}
+            onMouseOut={() => dispatch(hoveredCard(null))}
+            onClick={click}
+            style={{
+                height: cardHeight ? cardHeight + "em" : undefined,
+                width: cardWidth ? cardWidth + "em" : undefined,
+            }}
         >
             {card.facedown ? null
-                : <span className="cardtooltiptext">
-                    {`${front[0]}`} </span>}
-            <img style={{borderColor: ownerColor}} src={front[1]} alt={front[0]}/>
+                : <span className="cardtooltiptext"
+                    style={{
+                        fontSize: showCollectorInfo ? "normal" : "small",
+                        backgroundColor: showCollectorInfo ? "white" : "black",
+                        color: showCollectorInfo ? undefined : "white",
+                    }}
+                >
+                    {!showCollectorInfo ? front[0] :
+                        <a target="_blank" rel="noopener noreferrer" href={link}>{front[0]}</a>
+                    }
+                </span>}
+            <img style={{ borderColor: ownerColor }} src={front[1]} alt={front[0]} />
         </div>
     )
 }

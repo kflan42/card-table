@@ -4,11 +4,11 @@ import './_style.css';
 import PlayerCounter from './PlayerCounter';
 import CardStack from './CardStack';
 import { EXILE, COMMAND_ZONE, GRAVEYARD, LIBRARY, HAND, ClientState } from '../ClientState';
-import {useDispatch, useSelector} from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useConfirmation } from './ConfirmationService';
-import {drawing, drawLine, setPlayerCounter} from '../Actions';
+import { drawing, drawLine, SET_PLAYER_COUNTER } from '../Actions';
 import { ConfirmationResult } from './ConfirmationDialog';
-import { usePlayerDispatch } from '../PlayerDispatch';
+import { usePlayerActions } from '../PlayerDispatch';
 
 interface PlayerBoxP {
     player: string
@@ -22,10 +22,10 @@ const PlayerBox: React.FC<PlayerBoxP> = ({ player }) => {
 
     const counters = []
     for (const counter of playerState.counters) {
-        counters.push(<PlayerCounter key={counter.name} player={player} kind={counter.name} value={counter.value}/>)
+        counters.push(<PlayerCounter key={counter.name} player={player} kind={counter.name} value={counter.value} />)
     }
 
-    const {action:playerDispatch, draw:drawDispatch} = usePlayerDispatch()
+    const { action: playerDispatch, draw: drawDispatch, baseAction } = usePlayerActions()
     const confirmation = useConfirmation();
 
     const addCounter = () => {
@@ -38,7 +38,16 @@ const PlayerBox: React.FC<PlayerBoxP> = ({ player }) => {
             .then((s: ConfirmationResult) => {
                 switch (s.choice) {
                     case "Create Name * Count _":
-                        playerDispatch(setPlayerCounter(player, s.s, s.n));
+                        playerDispatch({
+                            ...baseAction(),
+                            kind: SET_PLAYER_COUNTER,
+                            counter_changes: [{
+                                player,
+                                card_id: null,
+                                name: s.s,
+                                value: s.n
+                            }]
+                        });
                         break;
                 }
             })
@@ -58,7 +67,7 @@ const PlayerBox: React.FC<PlayerBoxP> = ({ player }) => {
             return
         }
         if (drawingFirst !== null && drawingFirst !== '') {
-            drawDispatch(drawLine({color: drawerColor, from: drawingFirst, to: `p-${player}`}))
+            drawDispatch(drawLine({ color: drawerColor, from: drawingFirst, to: `p-${player}` }))
             dispatch(drawing(null))
             event.preventDefault()
             return;
@@ -71,7 +80,7 @@ const PlayerBox: React.FC<PlayerBoxP> = ({ player }) => {
             <div className={`p-${player}`} style={{
                 whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                 maxWidth: "5em",
-                }} onClick={click}>
+            }} onClick={click}>
                 <strong>{player}</strong>
             </div>
             <CardStack name={HAND} owner={player} icon="✋" />
