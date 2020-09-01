@@ -1,5 +1,6 @@
-import eventlet
-eventlet.monkey_patch()  # monkey patching standard library necessary for using redis as socketio message queue
+# import eventlet
+# eventlet.monkey_patch()
+# ^^ monkey patching standard library necessary for using redis as socketio message queue
 # best done as early as possible - https://flask-socketio.readthedocs.io/en/latest/#using-multiple-workers
 # breaks debugger breakpoints, requires "gevent": true in launch.json else crashes in debugger
 
@@ -7,8 +8,6 @@ import argparse
 import json
 import logging
 import os
-import redis
-import socket
 import sys
 import typing
 from datetime import datetime
@@ -30,10 +29,12 @@ python3 -m venv "venv"
 source venv/bin/activate
 pip3 install -r requirements.txt
 cd my-app; npm install
-cd ../card-table;
-cd scryfall; extractCards.sh
-cd ../my-server; genTsInterfaces.sh
-cd my-app; npm install; npm build
+cd ..
+cd scryfall; python3 updateCards.py; extractCards.sh
+cd ..
+cd my-server; genTsInterfaces.sh
+cd ..
+cd my-app; npm install; npm build  # must close IDEs while this runs, else linux npm has issues 
 
 Run redis via:
 windows powershell, bash -l, redis-server /home/linuxbrew/.linuxbrew/etc/redis.conf
@@ -103,6 +104,7 @@ def serve(path: str):
     else:
         return send_from_directory(os.path.join(build_dir), 'index.html')
 
+
 def get_table(table_name) -> typing.Tuple[str, MagicTable]:
     table_name = table_name.lower()  # lower case table names since windows filesystem case insensitive
     if table_name in tables:  # check memory
@@ -117,6 +119,7 @@ def get_table(table_name) -> typing.Tuple[str, MagicTable]:
         if table:
             tables[table_name] = table  # keep in memory
         return table_name, table
+
 
 @app.route('/api/table/<path:table_name>', methods=['GET', 'POST'])
 def join_table(table_name: str):
@@ -147,6 +150,7 @@ def join_table(table_name: str):
             return table.table.game.to_json()
         return {"message": "Table not found."}, 404
 
+
 @app.route('/api/table/<path:table_name>/cards', methods=['GET'])
 def get_cards(table_name):
     table_name, table = get_table(table_name)
@@ -154,6 +158,7 @@ def get_cards(table_name):
         return table.get_cards()
     else:
         return "Table not found.", 404
+
 
 @app.route('/api/table/<path:table_name>/actions', methods=['GET'])
 def get_actions(table_name):
@@ -163,13 +168,16 @@ def get_actions(table_name):
     else:
         return "Table not found.", 404
 
+
 @socketio.on('connect')
 def test_connect():
     logging.info(f'Client connected via {request.referrer} from {request.remote_addr}')
 
+
 @socketio.on('disconnect')
 def test_disconnect():
     logging.info(f'Client disconnected via {request.referrer} from {request.remote_addr}')
+
 
 @socketio.on('player_action')
 def on_player_action(data):
@@ -194,13 +202,14 @@ def on_player_action(data):
         return False
     return True
 
+
 @socketio.on('player_draw')
 def on_player_draw(data):
     logging.info('player_draw %s', data)
     table_name = data['table']
     table_name, table = get_table(table_name=table_name)
     if table:
-            # todo - this will work for single process dev server but not multi process prod
+        # todo - this will work for single process dev server but not multi process prod
         with table_locks[table_name]:
             # send it out
             emit('player_draw', data, room=table_name, broadcast=True)  # on('player_draw'
@@ -210,9 +219,11 @@ def on_player_draw(data):
         return False
     return True
 
+
 @socketio.on('error_report')
 def on_error_report(data):
     logging.error(f'error_report via {request.referrer} from {request.remote_addr} %s', data)
+
 
 @socketio.on('join')
 def on_join(data):
@@ -221,7 +232,7 @@ def on_join(data):
     table_name = data['table']
     table_name, table = get_table(table_name)
     if table:
-            # todo - this will work for single process dev server but not multi process prod
+        # todo - this will work for single process dev server but not multi process prod
         with table_locks[table_name]:
             # put client into socket.io room
             join_room(table_name)

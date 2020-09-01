@@ -66,39 +66,56 @@ class MagicTable:
         table.sf_cards.extend(sf_cards)
 
         # setup player fields
-        commander_sf_card = sf_cards[-1] if len(sf_cards) >= 100 else None  # our deck parser puts commander last
-        # shuffle the cards now, so that cid do not match deck list order
-        seed(self.table.name, version=2)  # seed with table name for consistency in testing/debugging
-        shuffle(sf_cards) 
+        commander_sf_card = None
+        if len(sf_cards) >= 100:
+            commander_sf_card = sf_cards[-1]  # the deck parser puts commander last
+            sf_cards.remove(commander_sf_card)
+            library_size = 99
+        elif len(sf_cards) >= 60:
+            # standard
+            library_size = 60
+        elif len(sf_cards) >= 40:
+            # limited
+            library_size = 40
+        elif len(sf_cards) >= 30:
+            # sealed league round 1
+            library_size = 30
+        else:
+            library_size = len(sf_cards)  # something else
+
+        library_sf_cards, extra_sf_cards = sf_cards[:library_size], sf_cards[library_size:]
+
+        # shuffle the card ids we'll use, so that cid do not match deck list order
         cid = len(table.game.cards)
-        cards = [Card(card_id=cid + i, sf_id=s.sf_id, owner=join_request.name) for i, s in enumerate(sf_cards)]
-        table.game.cards.extend(cards)
+        c_ids = [i for i in range(cid, cid + len(sf_cards) + 1)]
+        seed(self.table.name, version=2)  # seed with table name for consistency in testing/debugging
+        shuffle(c_ids)
 
         zid = len(table.game.zones)
         zones = [Zone(name=z, z_id=zid + i, owner=join_request.name, cards=[]) for i, z in enumerate(ZONES)]
         table.game.zones.extend(zones)
 
-        if commander_sf_card:
-            commander_card = next((c for c in cards if c.sf_id == commander_sf_card.sf_id))
-            # commander format - put commander into command zone
-            cards.remove(commander_card)
-            next((z for z in zones if z.name == COMMAND_ZONE)).cards.append(commander_card.card_id)
-            library_size = 99
-        else:
-            # standard
-            library_size = 60
-
-        c_ids = [c.card_id for c in cards]
         # start with cards in library
-        library_cards, leftover_cards = c_ids[:library_size], c_ids[library_size:]
-        next((z for z in zones if z.name == LIBRARY)).cards.extend(library_cards)
+        lib_cards = [Card(card_id=c_ids.pop(), sf_id=s.sf_id, owner=join_request.name) for s in library_sf_cards]
+        library = next((z for z in zones if z.name == LIBRARY))
+        library.cards.extend([c.card_id for c in lib_cards])
+        shuffle(library.cards)  # shuffle the library
         # extras into exile
-        next((z for z in zones if z.name == EXILE)).cards.extend(leftover_cards)
+        ex_cards = [Card(card_id=c_ids.pop(), sf_id=s.sf_id, owner=join_request.name) for s in extra_sf_cards]
+        next((z for z in zones if z.name == EXILE)).cards.extend([c.card_id for c in ex_cards])
+
+        table.game.cards.extend(lib_cards + ex_cards)
+
+        if commander_sf_card:
+            commander_card = Card(card_id=c_ids.pop(), sf_id=commander_sf_card.sf_id, owner=join_request.name)
+            # commander format - put commander into command zone
+            next((z for z in zones if z.name == COMMAND_ZONE)).cards.append(commander_card.card_id)
+            table.game.cards.append(commander_card)
 
         # setup player
         z_ids = [z.z_id for z in zones]
         player = Player(name=join_request.name, color=join_request.color, counters=[], zones=z_ids)
-        player.counters.append(Counter(name="Life", value=40))
+        player.counters.append(Counter(name="Life", value=40 if commander_sf_card else 20))
         table.game.players.append(player)
         return True
 

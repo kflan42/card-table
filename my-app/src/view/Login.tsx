@@ -1,8 +1,8 @@
-import React, {ChangeEvent, FormEvent} from 'react'
-import {useHistory} from 'react-router-dom';
-import {JoinRequest} from "../magic_models";
-import {setUserPrefs} from "../Actions";
-import {useDispatch} from "react-redux";
+import React, { ChangeEvent, FormEvent } from 'react'
+import { useHistory } from 'react-router-dom';
+import { JoinRequest } from "../magic_models";
+import { setUserPrefs } from "../Actions";
+import { useDispatch } from "react-redux";
 
 
 export const LoginForm: React.FC = (props) => {
@@ -11,10 +11,10 @@ export const LoginForm: React.FC = (props) => {
     const dispatch = useDispatch()
 
     return (
-        <Login
+        <JoinTableForm
             routeChange={(r) => history.push(r)}
             setUserPrefs={(up) => dispatch(up)}
-        ></Login>
+        ></JoinTableForm>
     )
 }
 
@@ -24,7 +24,7 @@ interface LoginP {
 }
 
 
-class Login extends React.Component<LoginP> {
+class JoinTableForm extends React.Component<LoginP> {
     state: JoinRequest
     response: string
 
@@ -43,6 +43,7 @@ class Login extends React.Component<LoginP> {
         this.handleFileChange = this.handleFileChange.bind(this);
         this.handleDeckChange = this.handleDeckChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
+        this.handleWatchTable = this.handleWatchTable.bind(this);
         this.handlePickColor = this.handlePickColor.bind(this);
         this.setErrorMsg = this.setErrorMsg.bind(this);
     }
@@ -53,10 +54,10 @@ class Login extends React.Component<LoginP> {
         const deckList = localStorage.getItem('deckList')
 
         if (name !== null) {
-            this.setState({name})
+            this.setState({ name })
         }
         if (color !== null) {
-            this.setState({color})
+            this.setState({ color })
         }
         if (deckList !== null) {
             this.setState({ deck_list: deckList })
@@ -69,18 +70,18 @@ class Login extends React.Component<LoginP> {
     }
 
     handleNameChange(event: ChangeEvent<HTMLInputElement>) {
-        this.setState({name: event.target.value.replace(/[^A-Za-z0-9 .,]/,'')});
+        this.setState({ name: event.target.value.replace(/[^A-Za-z0-9 .,]/, '') });
     }
 
     handleTableChange(event: ChangeEvent<HTMLInputElement>) {
-        this.setState({table: event.target.value});
+        this.setState({ table: event.target.value });
     }
 
     handleFileChange(event: ChangeEvent<HTMLInputElement>) {
         if (event.target && event.target.files) {
             event.persist() // make name stick next to chooser
             event.target.files[0].text()
-                .then(d => this.setState({deck_list: d}))
+                .then(d => this.setState({ deck_list: d }))
                 .catch(function (reason) {
                     console.log(`Error reading deck file ${reason}`);
                     event.target.value = ''; // to allow upload of same file if error occurs
@@ -88,17 +89,42 @@ class Login extends React.Component<LoginP> {
         }
     }
 
-    handleDeckChange(event: ChangeEvent<HTMLTextAreaElement>){
-        this.setState({deck_list: event.target.value})
+    handleDeckChange(event: ChangeEvent<HTMLTextAreaElement>) {
+        this.setState({ deck_list: event.target.value })
     }
 
     handlePickColor(color: string) {
-        this.setState({color: color})
+        this.setState({ color: color })
+    }
+
+    handleWatchTable(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+        event.preventDefault();
+        if (this.state.table === '') {
+            return;
+        }
+        console.log("watching table...", this.state.table)
+        fetch(`/api/table/${this.state.table}`)
+            .then(async response => {
+                console.log(response)
+                // check for error response
+                if (!response.ok) {
+                    const data = await response.text()  // server uses text rather than json for these specifically
+                    // get error message from body or default to response status
+                    const error = data || response.status;
+                    return Promise.reject(error);
+                }
+                this.props.routeChange('/table/' + this.state.table)
+            })
+            .catch(error => {
+                console.error('There was an error!', error);
+                this.setErrorMsg(error);
+            });
     }
 
     handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         if (this.state.color === '') {
+            this.setErrorMsg("Please pick a sleeve color before joining.");
             return;
         }
         this.setErrorMsg('...');
@@ -125,7 +151,7 @@ class Login extends React.Component<LoginP> {
                 }
 
                 // set user name in app memory
-                this.props.setUserPrefs(setUserPrefs({name: this.state.name}))
+                this.props.setUserPrefs(setUserPrefs({ name: this.state.name }))
                 // route over to table
                 this.props.routeChange('/table/' + this.state.table)
             })
@@ -139,7 +165,7 @@ class Login extends React.Component<LoginP> {
         // POST request using fetch with error handling
         const requestOptions = {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(this.state)
         };
         return fetch(`/api/table/${this.state.table}`, requestOptions)
@@ -153,13 +179,13 @@ class Login extends React.Component<LoginP> {
             //   for (let g = 0; g <= 3; g++) {
             //     for (let b = 0; b <= 3; b++) {
             // const color = "#" + (r * 64 + 16).toString(16) + (g * 64 + 16).toString(16) + (b * 64 + 16).toString(16)
-            const {luminance} = analyzeColor(color);
+            const { luminance } = analyzeColor(color);
             // let too_pale = r < 0xa0 || g < 0xa0 || b < 0xa0;
             // let too_bright = r > 0x40 || g > 0x40 || b > 0x40;
             if (true) {
                 colorItems.push(<span
                     key={color}
-                    style={{backgroundColor: color, color: luminance < 0.5 ? "white" : "black", cursor: "pointer"}}
+                    style={{ backgroundColor: color, color: luminance < 0.5 ? "white" : "black", cursor: "pointer" }}
                     onClick={() => this.handlePickColor(color)}
                 >{color}</span>)
             }
@@ -168,36 +194,44 @@ class Login extends React.Component<LoginP> {
         }
 
         return (
-            <div style={{
+            <div className="myform" style={{
                 paddingTop: "2em",
                 paddingLeft: "2em",
-                display: "block"
             }}>
+                <h2 style={{textAlign:"center"}}>Welcome to my "Card Table"</h2>
                 <form onSubmit={this.handleSubmit} className="Login">
-                    <div style={{textAlign: "justify"}}>
+                    <div>
                         Your Name: &nbsp;
-                        <input type="text" value={this.state.name} required={true} onChange={this.handleNameChange}/>
-                        <br/> <br/>
-                        Your Card Sleeve Color: &nbsp;
+                        <input type="text" value={this.state.name} required={true} onChange={this.handleNameChange} />
+                        Table Name: &nbsp;
+                        <input type="text" value={this.state.table} required={true} onChange={this.handleTableChange} />
+                        <br /><span className="FormSpan" style={{ color: "red" }}> {this.response ? this.response : null} </span>
+                        <div style={{display:"flex", justifyContent:"space-evenly"}}>
+                        <button className="DivButton" onClick={this.handleWatchTable}>Watch Table</button>
+                        <input className="DivButton" type="submit" value="Join Table" />
+                        </div>
+                        <br /><span className="InfoSpan"><b>Join</b> adds you as a player with your deck to the table, creating the table if necessary. 
+                        <br /><b>Watch</b> can be used for spectating or resuming a game as an existing player.</span>
+                        <br /><span className="FormSpan">Your Card Sleeve Color: &nbsp; </span>
                         <div className="dropdown">
                             <button
-                                style={{backgroundColor: this.state.color}}>{this.state.color ? "Chosen" : "Choose"}</button>
-                            <div className="dropdown-content" style={{maxHeight: colorItems.length / 4 + "em"}}>
+                                style={{
+                                    //backgroundColor: this.state.color,
+                                    borderStyle: "solid",
+                                    borderColor: this.state.color,
+                                    borderWidth: "0.5em"
+                                }}>{this.state.color ? "Chosen" : "Choose"}</button>
+                            <div className="dropdown-content" style={{ maxHeight: colorItems.length / 4 + "em" }}>
                                 {colorItems}
                             </div>
                         </div>
-                        <br/> <br/>
-                        Table Name: &nbsp;
-                        <input type="text" value={this.state.table} required={true} onChange={this.handleTableChange}/>
-                        &nbsp;<input className="DivButton" type="submit" value="Create/Join Table"/>&nbsp;
-                        <span style={{color:"red"}}> {this.response ? this.response : null} </span>
-                        <br/> <br/>
-                        Upload Deck File:  &nbsp;
-                        <input className="DivButton" accept=".txt,.dek,.dec,*" type="file" required={false} onChange={this.handleFileChange}/>
-                        <br/> <br/>
-                        Your Deck:<br/>
-                        <span style={{fontSize:"small"}}>Please either put your commander last or append *CMDR* to its line.</span><br/>
-                        <textarea value={this.state.deck_list} required={true} onChange={this.handleDeckChange} cols={60} rows={30}/>
+                        <br />
+                        <span className="FormSpan">Upload Your Deck File: &nbsp; </span>
+                        <input className="DivButton" accept=".txt,.dek,.dec,*" type="file" required={false} onChange={this.handleFileChange} />
+                        <br />
+                        <span className="FormSpan">Or Paste and edit it here. Please put your commander last or append *CMDR* to its line.</span>
+                        <br />
+                        <textarea value={this.state.deck_list} required={true} onChange={this.handleDeckChange} cols={60} rows={30} />
                     </div>
                 </form>
             </div>
@@ -214,9 +248,9 @@ export function analyzeColor(color: string) {
     const b = v & 0x0000ff
     const brightness = r + g + b
     // Counting the perceptive luminance - human eye favors green color... 
-    const luminance = ( 0.299 * r + 0.587 * g + 0.114 * b)/255;
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
     // const s = r.toString(16) + g.toString(16) + b.toString(16)
-    return {r, g, b, brightness, luminance};
+    return { r, g, b, brightness, luminance };
 }
 
 export const colors: { [index: string]: number } = {

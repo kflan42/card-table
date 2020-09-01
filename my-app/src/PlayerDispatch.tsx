@@ -50,9 +50,6 @@ export function usePlayerActions() {
             console.log(`sending to ${gameId}`, playerDraw, new Date(playerDraw.when).toLocaleTimeString())
             MySocket.get_socket().emit('player_draw', { ...playerDraw, table: gameId }, (ack: boolean) => {
                 console.log('got ack for ', playerDraw, ack)
-                if (ack) {
-                    dispatch(playerDraw)
-                }
             })
         }
     }
