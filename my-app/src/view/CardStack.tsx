@@ -1,6 +1,6 @@
 import React, {useState, ChangeEvent} from 'react'
 import {useSelector} from 'react-redux'
-import {ClientState, LIBRARY, HAND} from '../ClientState'
+import {ClientState, LIBRARY, HAND, GRAVEYARD} from '../ClientState'
 import StackCard from './StackCard'
 import {useDrop, DropTargetMonitor} from 'react-dnd'
 import {ItemTypes, DragCard} from './DnDUtils'
@@ -111,7 +111,7 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
                 src_owner: item.srcOwner,
                 tgt_zone: name,
                 tgt_owner: owner,
-                to_idx: null as (number | null) // drop on bottom
+                to_idx: zoneState.name === GRAVEYARD ? 0 : null // drop on bottom
             }
             if (zoneState.name === LIBRARY) {
                 confirmation({

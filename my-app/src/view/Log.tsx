@@ -70,7 +70,7 @@ const Log: React.FC = () => {
         ? Math.floor((state.date.getTime() - logLines[logLines.length - 1].when) / 1000)
         : 0
     const tooLong = elapsedS > 45
-    const flash = elapsedS % 5 === 0
+    const flash = elapsedS % 15 <= 5
 
     return (
         <div className="Log">

@@ -52,10 +52,11 @@ parser.add_argument("--port", type=int, default=5000, required=False)
 parser.add_argument("--static_port", type=int, default=3000, required=False)
 parser.add_argument("--public_ip", type=str, default='0.0.0.0', required=False)
 parser.add_argument("--redis", type=bool, default=False, required=False)
+parser.add_argument("--static_folder", type=str, default="../my-app/build", required=False)
 args = parser.parse_args()
 
 app = Flask(__name__,
-            static_folder=os.path.join('..', 'my-app', 'build'),
+            static_folder=args.static_folder,
             # static_url_path='/' # see  @app.route('/'  below
             )
 # no cors for flask http api unless using https://flask-cors.readthedocs.io/en/latest/ which I don't need

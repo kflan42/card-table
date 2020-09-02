@@ -1,10 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import LineTo from 'react-lineto';
+import { useDispatch, useSelector } from 'react-redux';
+import { useParams } from "react-router-dom";
 
 import './_style.css';
-import Hand from './Hand';
-import Table from './Table';
-import { useDispatch, useSelector } from 'react-redux';
 import { ClientState, HAND, LIBRARY, whichZone, GRAVEYARD, EXILE } from '../ClientState';
 import {
     clearLines,
@@ -12,15 +11,16 @@ import {
     setUserPrefs,
     setGame,
     TOGGLE_FACEDOWN_CARD,
-    TOGGLE_TRANSFORM_CARD, togglePlaymat, updateGame, UNTAP_ALL, SET_CARD_COUNTER, CREATE_TOKEN
+    TOGGLE_TRANSFORM_CARD, togglePlaymat, updateGame, UNTAP_ALL, SET_CARD_COUNTER, CREATE_TOKEN, MULLIGAN
 } from '../Actions';
 import CardPopup from './CardPopup';
 import CustomDragLayer from './CustomDragLayer';
 import { useConfirmation } from './ConfirmationService';
 import { ConfirmationResult } from './ConfirmationDialog';
 import { usePlayerActions } from '../PlayerDispatch';
-import { useParams } from "react-router-dom";
 import { Game, Card } from "../magic_models";
+import Hand from './Hand';
+import Table from './Table';
 import CardDB, { parseDeckCard } from "../CardDB";
 import MySocket from "../MySocket";
 import { OptionsDialog } from './OptionsDialog';
@@ -199,6 +199,26 @@ const GameView: React.FC = () => {
         playerDispatch({ ...baseAction(), card_moves: [cardMove] })
     }
 
+    const mulliganDialog = () => {
+        if (!userName) return
+        const choices = ["London"]
+        confirmation({
+            choices,
+            catchOnCancel: true,
+            title: "Mulligan",
+            description: "Other mulligan styles must be down manually."
+        }).then((s: ConfirmationResult) => {
+            switch(s.choice) {
+                case "London":
+                    playerDispatch({
+                        ...baseAction(),
+                        kind: MULLIGAN
+                    })
+                break;
+            }
+        }).catch(()=>null)
+    }
+
     const tokenPopup = () => {
         if (!userName) return
         const choices = cardUnderCursor && !cardUnderCursor.facedown ? ["Copy " + CardDB.getCard(cardUnderCursor.sf_id).name] : []
@@ -237,8 +257,7 @@ const GameView: React.FC = () => {
                     }
                     break;
             }
-        })
-            .catch(() => null);
+        }).catch(() => null);
     }
 
     const counterPopup = (cardId: number) => {
@@ -288,26 +307,28 @@ const GameView: React.FC = () => {
             });
     }
 
-    function togglePopup(event: React.SyntheticEvent) {
+    function togglePopup() {
         if (cardPopupShown === hoveredCard.cardId || (cardPopupShown != null && !isHoveredCard)) {
             setCardPopupShown(null) // view again to close or event anywhere to close
-            event.preventDefault()
+            return true;
         } else if (isHoveredCard) {
             setCardPopupShown(hoveredCard.cardId)
             setCardPopupTransformed(false)
-            event.preventDefault()
+            return true;
         }
+        return false;
     }
 
-    const keyPress = (event: React.KeyboardEvent<HTMLDivElement>) => {
-        if (event.target && (event.target as HTMLDivElement).className === "Game") {
-            // keyboard action
-        } else {
-            return // likely in an input box inside Game
+    const keypressListener = (event: KeyboardEvent) => {
+        if (event.target) {
+            if ( ["INPUT", "TEXTAREA"].includes((event.target as HTMLElement).nodeName)){
+                return; // key should go to that text input box
+            }
         }
+
         switch (event.key) {
             case 'v':
-                togglePopup(event);
+                if (togglePopup()) event.preventDefault();
                 break;
             case 'T':
                 if (isHoveredCard) {
@@ -365,6 +386,10 @@ const GameView: React.FC = () => {
                 moveCard(EXILE, 0)
                 event.preventDefault()
                 break;
+            case 'M':
+                mulliganDialog()
+                event.preventDefault()
+                break;
             case 'H':
                 hidePlayerPrompt()
                 event.preventDefault()
@@ -378,7 +403,7 @@ const GameView: React.FC = () => {
 
     const onContextMenu = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
         if (event.button === 2 && rightClickPopup) {
-            togglePopup(event);
+            if (togglePopup()) event.preventDefault();
         }
     }
 
@@ -388,10 +413,15 @@ const GameView: React.FC = () => {
             className={"Line"}
         />)
 
+    useEffect(() => {
+        window.addEventListener("keypress", keypressListener, true);
+        return () => window.removeEventListener("keypress", keypressListener, true);
+        });
+
     //tabIndex means it can receive focus which means it can receive keyboard events
     return userName
         ? (
-            <div className="Game" onKeyPress={keyPress} onContextMenu={onContextMenu} tabIndex={0} style={{
+            <div className="Game" onContextMenu={onContextMenu} tabIndex={0} style={{
                 cursor: isDrawing ? "crosshair" : undefined
             }}>
                 <Table />

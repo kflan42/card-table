@@ -69,6 +69,7 @@ export const SET_PLAYER_COUNTER = 'SET_PLAYER_COUNTER'
 export const SET_CARD_COUNTER = 'SET_CARD_COUNTER'
 export const CREATE_TOKEN = 'CREATE_TOKEN'
 export const MESSAGE = 'MESSAGE'
+export const MULLIGAN = 'MULLIGAN'
 
 export interface GameUpdate {
     type: string
