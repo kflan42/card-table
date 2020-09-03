@@ -44,8 +44,9 @@ def test_table(name:str) -> MagicTable:
             bfc = BattlefieldCard(card_id=c, counters=[],
                                   x=random.randint(1, 17) * 5, y=random.randint(1, 14) * 5)
             bfc.tapped = random.choice([True, False, False, False])
-            game.cards[c].facedown = random.choice([True, False, False, False])
-            game.cards[c].transformed = random.choice([True, False, False, False])
+            game_card = next((c_ for c_ in game.cards if c_.card_id == c))
+            game_card.facedown = random.choice([True, False, False, False])
+            game_card.transformed = random.choice([True, False, False, False])
             if random.randint(1, 2) == 2:
                 bfc.counters.append(Counter(name="+1/+1", value=1))
             game.battlefield_cards.append(bfc)

@@ -139,7 +139,8 @@ def join_table(table_name: str):
                 d = json.loads(request.data)
                 join_request = JoinRequest(**d)
                 if table.add_player(join_request):
-                    table.save()
+                    if not is_test(table_name):
+                        table.save()
                     return ("Created table", 201) if created else ("Joined table.", 202)
                 else:
                     return "Already at table.", 409
