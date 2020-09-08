@@ -1,15 +1,15 @@
 
-import React, {useEffect} from 'react'
+import React, {useEffect, useState} from 'react'
 
 
 import { DropTargetMonitor, useDrag, useDrop } from 'react-dnd';
 import Card from './Card';
 import { ItemTypes, DragCard } from './DnDUtils';
-import { MOVE_CARD } from '../Actions';
 import { HAND, ClientState } from '../ClientState';
 import { getEmptyImage } from 'react-dnd-html5-backend';
-import { usePlayerDispatch } from '../PlayerDispatch';
-import {useDispatch, useSelector} from "react-redux";
+import { usePlayerActions } from '../PlayerDispatch';
+import { useSelector} from "react-redux";
+import { PlayerAction } from '../magic_models';
 
 
 interface HandCardProps {
@@ -28,7 +28,7 @@ const HandCard: React.FC<HandCardProps> = ({
         return state.playerPrefs.handCardSize;
     })
 
-    const playerDispatch = usePlayerDispatch().action
+    const {action:playerDispatch, baseAction} = usePlayerActions()
 
     const dragCard: DragCard = {
         type: ItemTypes.CARD, cardId: cardId, srcZone: HAND, srcOwner: owner
@@ -46,23 +46,27 @@ const HandCard: React.FC<HandCardProps> = ({
         preview(getEmptyImage(), { captureDraggingState: true })
     }, [preview])
 
-    const dispatch = useDispatch()
+    const [moveSent, setMoveSent] = useState<PlayerAction | null>(null)
 
-    function moveCard(draggedCard: DragCard, dueToHover: boolean) {
-        if (draggedCard.cardId !== cardId || !dueToHover) {
+    function moveCard(item: DragCard) {
+        if (item.cardId !== cardId) {
             const cardMove = {
-                ...draggedCard,
-                type: MOVE_CARD,
-                tgtZone: HAND,
-                tgtOwner: owner,
-                toIdx: handIdx,
+                card_id: item.cardId,
+                src_zone: item.srcZone,
+                src_owner:item.srcOwner,
+                tgt_zone: HAND,
+                tgt_owner: owner,
+                to_idx: handIdx,
             }
-            if (dueToHover) {
-                // avoid spamming server as hover fires every render which is faster than server dispatching
-                dispatch({...cardMove, who: owner, when: Date.now()})
-            } else {
-                playerDispatch(cardMove)
+            // avoid spamming server as hover fires every render which is faster than server dispatching
+            if (moveSent && moveSent.when > Date.now() - 2000
+                && moveSent.card_moves[0].card_id === item.cardId 
+                && moveSent.card_moves[0].to_idx === handIdx) {
+                return
             }
+            const action = {...baseAction(), card_moves:[cardMove]}
+            setMoveSent(action)
+            playerDispatch(action)
         }
     }
 
@@ -70,11 +74,11 @@ const HandCard: React.FC<HandCardProps> = ({
         accept: [ItemTypes.CARD, ItemTypes.BFCARD],
         hover(item: DragCard, monitor: DropTargetMonitor) {
             if (item.srcOwner === owner && item.srcZone === HAND) {
-                moveCard(item, true) // re order hand on hover
+                moveCard(item) // re order hand on hover
             }
         },
         drop(item: DragCard, monitor: DropTargetMonitor) {
-            moveCard(item, false); // allow cross zone moves on drop
+            moveCard(item); // allow cross zone moves on drop
             return {} // empty object says we handled it
         },
     })

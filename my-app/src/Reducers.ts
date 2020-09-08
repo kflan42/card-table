@@ -32,13 +32,27 @@ const stateReducer = combineReducers({
                 return update(x, {first: {$set: y.first}});
             case DRAWLINE:
                 const nl = y.entityLine
-                if (x.lines.filter(el => el.color === nl.color && el.from === nl.from && el.to === nl.to).length === 0) {
+                if (x.lines.filter(el => {
+                        const same_path = (el.from === nl.from && el.to === nl.to)
+                        const rev_path = (el.from === nl.to && el.to === nl.from)
+                        const same_color = (el.color === nl.color)
+                        return same_path || (rev_path && same_color)
+                        }
+                    ).length === 0) {
                     return update(x, {lines: {$push: [y.entityLine]}})
                 } else {
-                    // already got this one
-                    return x
+                    // already got a line between these entities, remove it
+                    const newLines = x.lines.filter(el => {
+                        const same_path = (el.from === nl.from && el.to === nl.to)
+                        const rev_path = (el.from === nl.to && el.to === nl.from)
+                        const same_color = (el.color === nl.color)
+                        return !(same_color && same_path) && !(same_color && rev_path)
+                        }
+                        )
+                    return  update(x, {lines: {$set: newLines}})
                 }
             case CLEAR_LINES:
+                // clear all of ones own lines
                 const newLines = x.lines.filter(el => (el.color !== y.color))
                 return update(x, {lines: {$set: newLines}})
             default:

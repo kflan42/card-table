@@ -1,4 +1,4 @@
-import React, {useRef} from 'react'
+import React from 'react'
 
 import './_style.css';
 import Playmat from './Playmat';
@@ -26,7 +26,7 @@ const Table: React.FC = () => {
     }
 
     return (
-        <div className="Table" style={{flexDirection: mats.length > 2 ? "row": "column"}}>
+        <div className="Table" style={{flexDirection: "row"}}>
             {mats}
         </div>
     )

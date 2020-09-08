@@ -101,7 +101,7 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
                         break;
                     default:
                         elementParts.push(
-                            <span key={p}>{p}</span>
+                            <span key={p}>&nbsp;{p}</span>
                         )
                         break;
                 }

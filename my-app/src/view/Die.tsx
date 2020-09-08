@@ -1,14 +1,14 @@
 import React from "react";
 import { ConfirmationResult } from "./ConfirmationDialog";
-import { addLogLine } from "../Actions";
+import { MESSAGE } from "../Actions";
 import { useConfirmation } from "./ConfirmationService";
 import { randchoice, randint } from "../Utilities";
-import { usePlayerDispatch } from "../PlayerDispatch";
+import { usePlayerActions } from "../PlayerDispatch";
 
 
 const Die: React.FC = () => {
 
-  const playerDispatch = usePlayerDispatch().action
+  const {action:playerDispatch, baseAction} = usePlayerActions()
   const confirmation = useConfirmation()
 
   const rollPrompt = (event: React.MouseEvent<HTMLSpanElement, MouseEvent>) => {
@@ -32,7 +32,8 @@ const Die: React.FC = () => {
             line = `Rolled a ${randint(s.n) + 1} on a d${s.n}`
             break;
         }
-        playerDispatch(addLogLine(line))
+        playerDispatch({...baseAction(), kind:MESSAGE, message:line})
+        // TODO move random stuff to server to avoid client side hacking
       })
       .catch(() => null);
   }

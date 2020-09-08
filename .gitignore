@@ -135,10 +135,14 @@ scryfall/samples/
 /my-app/src/magic_models.ts
 /my-app/public/cards.json
 /my-app/public/tokens.json
-/my-server/data/
 /scryfall/*.json*
 /scryfall/symbology/
 /scryfall/tappedout/
 
 #
 .vscode/settings.json
+/my-server/build/
+/my-server/cards/
+/my-server/logs/
+/my-server/tables/
+/my-server/*_key.json

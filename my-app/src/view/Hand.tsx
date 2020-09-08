@@ -6,8 +6,7 @@ import {useSelector} from 'react-redux';
 import {useDrop, DropTargetMonitor} from 'react-dnd';
 import MemoizeHandCard from './HandCard';
 import {ItemTypes, DragCard} from './DnDUtils';
-import {MOVE_CARD} from '../Actions';
-import {usePlayerDispatch} from '../PlayerDispatch';
+import {usePlayerActions} from '../PlayerDispatch';
 import {analyzeColor} from "./Login";
 
 export interface HandProps {
@@ -23,7 +22,7 @@ const Hand: React.FC<HandProps> = () => {
         return state.game.players[state.playerPrefs.name].color;
     });
 
-    const playerDispatch = usePlayerDispatch().action
+    const {action:playerDispatch, baseAction} = usePlayerActions()
 
     const [, drop] = useDrop({
         accept: [ItemTypes.CARD, ItemTypes.BFCARD],
@@ -36,12 +35,14 @@ const Hand: React.FC<HandProps> = () => {
             }
             // allow cross zone moves on drop
             const cardMove = {
-                ...item,
-                type: MOVE_CARD,
-                tgtZone: HAND,
-                tgtOwner: zoneState?.owner,
+                card_id: item.cardId,
+                src_zone: item.srcZone,
+                src_owner:item.srcOwner,
+                tgt_zone: HAND,
+                tgt_owner: zoneState?.owner,
+                to_idx: null // last
             }
-            playerDispatch(cardMove)
+            playerDispatch({...baseAction(), card_moves:[cardMove]})
         },
     })
 

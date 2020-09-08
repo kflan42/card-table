@@ -3,14 +3,14 @@ import React, { useEffect } from 'react'
 import './_style.css';
 import { ClientState, BATTLEFIELD } from '../ClientState';
 import { useSelector, useDispatch } from 'react-redux';
-import { hoveredBFCard, TOGGLE_TAP_CARD, cardAction, setCardCounter } from '../Actions';
+import { hoveredBFCard, TOGGLE_TAP_CARD, SET_CARD_COUNTER } from '../Actions';
 import Card from './Card';
 import { useDrag, DragSourceMonitor } from 'react-dnd';
 import { ItemTypes, DragCard } from './DnDUtils';
 import { getEmptyImage } from 'react-dnd-html5-backend';
 import { useConfirmation } from './ConfirmationService';
 import { ConfirmationResult } from './ConfirmationDialog';
-import { usePlayerDispatch } from '../PlayerDispatch';
+import { usePlayerActions } from '../PlayerDispatch';
 
 interface BFCardProps {
     bfId: number,
@@ -26,7 +26,7 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
     })
 
     const dispatch = useDispatch()
-    const playerDispatch = usePlayerDispatch().action
+    const {action:playerDispatch, baseAction} = usePlayerActions()
 
     const cardProps = { cardId: bfState?.card_id }
 
@@ -57,27 +57,38 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
 
     const confirmation = useConfirmation();
 
-    function counterClick(e: React.MouseEvent<HTMLDivElement, MouseEvent>, kind: string, current: number) {
+    function counterClick(e: React.MouseEvent<HTMLDivElement, MouseEvent>, kind: string, value: number) {
         confirmation({
-            choices: ["▲", "Set Count _", "▼"],
+            choices: ["▲", "Set to _", "▼"],
             catchOnCancel: true,
-            title: `Adjust ${kind} x${current}`,
+            title: `Adjust ${kind} x${value}`,
             description: "",
             location: { x: e.clientX, y: e.clientY },
-            initialNumber: current
+            initialNumber: value
         })
             .then((s: ConfirmationResult) => {
+                var newValue = s.n;
                 switch (s.choice) {
                     case "▲":
-                        playerDispatch(setCardCounter(bfId, kind, current + 1));
+                        newValue = value + 1;
                         break;
-                    case "Set Count _":
-                        playerDispatch(setCardCounter(bfId, kind, s.n));
+                    case "Set to _":
+                        newValue = s.n;
                         break;
                     case "▼":
-                        playerDispatch(setCardCounter(bfId, kind, current - 1));
+                        newValue = value - 1;
                         break;
                 }
+                playerDispatch({
+                    ...baseAction(),
+                    kind: SET_CARD_COUNTER,
+                    counter_changes: [{
+                        player: null,
+                        card_id: cardProps.cardId,
+                        name: kind,
+                        value: newValue
+                    }]
+                })
             })
             .catch(() => null);
         e.preventDefault();
@@ -139,7 +150,11 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
             onMouseOver={() => dispatch(hoveredBFCard(bfId, cardProps.cardId))}
             onMouseOut={() => dispatch(hoveredBFCard(null))}
             onClick={(e) => {
-                if (!e.isDefaultPrevented()) playerDispatch(cardAction(TOGGLE_TAP_CARD, bfState.bf_id))
+                if (!e.isDefaultPrevented()) playerDispatch({
+                    ...baseAction(),
+                    kind: TOGGLE_TAP_CARD, 
+                    card_changes:[{card_id:cardProps.cardId, change:TOGGLE_TAP_CARD, to_x: null, to_y: null}]
+                })
             }}
         >
             <Card cardId={cardProps.cardId} borderStyle={borderWidth + " solid"} 

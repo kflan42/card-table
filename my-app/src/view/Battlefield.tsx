@@ -7,7 +7,7 @@ import BFCard from './BFCard';
 import {useDrop, XYCoord} from 'react-dnd';
 import {ItemTypes, DragCard} from "./DnDUtils";
 import {MOVE_CARD, hoveredBattlefield} from '../Actions';
-import {usePlayerDispatch} from '../PlayerDispatch';
+import {usePlayerActions} from '../PlayerDispatch';
 
 /** Takes px and returns %. */
 export function snapToGrid(c: HTMLDivElement, sourceClientOffset: XYCoord, clipToBounds: boolean) {
@@ -44,7 +44,7 @@ const Battlefield: React.FC<BFP> = ({player}) => {
         return state.game.battlefieldCards
     })
 
-    const playerDispatch = usePlayerDispatch().action
+    const {action:playerDispatch, baseAction} = usePlayerActions()
     const dispatch = useDispatch()
     
     const bf = useRef<HTMLDivElement>(null);
@@ -58,18 +58,22 @@ const Battlefield: React.FC<BFP> = ({player}) => {
             //     monitor.getSourceClientOffset(), monitor.getInitialSourceClientOffset())
             const c = bf.current
             if (c) {
-                const [left, top] = snapToGrid(c, monitor.getSourceClientOffset() as XYCoord, true) as Number[]
+                const [left, top] = snapToGrid(c, monitor.getSourceClientOffset() as XYCoord, true) as number[]
 
-                const cardMove = {
-                    ...item,
-                    type: MOVE_CARD,
-                    when: Date.now(),
-                    tgtZone: BATTLEFIELD,
-                    tgtOwner: player,
-                    toX: left,
-                    toY: top
-                }
-                playerDispatch(cardMove)
+                const cardMoves = item.srcOwner !== player || item.srcZone !== BATTLEFIELD ? [{
+                    card_id: item.cardId,
+                    src_zone: item.srcZone,
+                    src_owner: item.srcOwner,
+                    tgt_zone: BATTLEFIELD,
+                    tgt_owner: player,
+                    to_idx: null
+                }] : []
+                const bfChange = {card_id:item.cardId, change: MOVE_CARD, to_x: left, to_y: top}
+                playerDispatch({
+                    ...baseAction(),
+                    card_moves:cardMoves,
+                    card_changes:[bfChange]
+                })
             }
         },
         collect(monitor) {
@@ -85,10 +89,11 @@ const Battlefield: React.FC<BFP> = ({player}) => {
     try {
         if (zoneState) {
             for (const bfId of zoneState.cards) {
-                if (!(bfId in bfCardsState)) {
+                if (bfId in bfCardsState) {
+                    listItems.push(<BFCard key={bfId} bfId={bfId} fieldOwner={player}/>)
+                } else {
                     console.error(bfId, "in", zoneState.owner, zoneState.name, "but not bfCardState")
                 }
-                listItems.push(<BFCard key={bfId} bfId={bfId} fieldOwner={player}/>)
             }
         }
         // sort most recent changes to last so they end up on top
