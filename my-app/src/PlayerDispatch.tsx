@@ -1,4 +1,4 @@
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { ClientState } from "./ClientState";
 import { useParams } from "react-router-dom";
 import MySocket from "./MySocket";
@@ -7,8 +7,6 @@ import { PlayerAction } from "./magic_models";
 
 
 export function usePlayerActions() {
-    const dispatch = useDispatch()
-
     const { gameId } = useParams()
 
     const playerName = useSelector((state: ClientState) => state.playerPrefs.name)
@@ -44,14 +42,10 @@ export function usePlayerActions() {
 
     function draw(action: { type: string }) {
         const playerDraw = { ...action, who: playerName, when: Date.now() }
-        if (gameId === 'static_test') {
-            dispatch(playerDraw)
-        } else {
-            console.log(`sending to ${gameId}`, playerDraw, new Date(playerDraw.when).toLocaleTimeString())
-            MySocket.get_socket().emit('player_draw', { ...playerDraw, table: gameId }, (ack: boolean) => {
-                console.log('got ack for ', playerDraw, ack)
-            })
-        }
+        console.log(`sending to ${gameId}`, playerDraw, new Date(playerDraw.when).toLocaleTimeString())
+        MySocket.get_socket().emit('player_draw', { ...playerDraw, table: gameId }, (ack: boolean) => {
+            console.log('got ack for ', playerDraw, ack)
+        })
     }
 
     return { action: send, draw, baseAction }

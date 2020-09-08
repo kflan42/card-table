@@ -63,9 +63,8 @@ const GameView: React.FC = () => {
                 dispatch(setUserPrefs({ bfImageQuality, bfCardSize, handCardSize, rightClickPopup }))
             }
 
-            // enable testing off static assets
-            const gameUrl = gameId === 'static_test' ? '/testGame.json' : `/api/table/${gameId}`
-            const cardsUrl = gameId === 'static_test' ? '/testCards.json' : `/api/table/${gameId}/cards`
+            const gameUrl = `/api/table/${gameId}`
+            const cardsUrl = `/api/table/${gameId}/cards`
 
             async function onGameLoaded(r: Response) {
                 loadOptions()
@@ -117,7 +116,7 @@ const GameView: React.FC = () => {
         [userName, players, dispatch])
 
     useEffect(() => {
-        if (gameId !== 'static_test' && userName && Object.keys(players).length > 0 && !hasSockets) {
+        if (userName && Object.keys(players).length > 0 && !hasSockets) {
             // if we have already loaded a real game object, now it is socket time
             connectSockets();
             setHasSockets(true);

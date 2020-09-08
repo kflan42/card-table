@@ -1,3 +1,7 @@
+"""
+Main entry point to launch server and handle client requests.
+"""
+
 # import eventlet
 # eventlet.monkey_patch()
 # ^^ monkey patching standard library necessary for using redis as socketio message queue
@@ -7,6 +11,7 @@
 import argparse
 import json
 import logging
+import logging.handlers
 import os
 import sys
 import typing
@@ -16,52 +21,61 @@ from flask import Flask, send_from_directory, jsonify
 from flask import request
 from flask_socketio import SocketIO, join_room, emit
 
+import persistence
 from magic_models import JoinRequest, PlayerAction
 from magic_table import MagicTable
 from test_table import test_table
 from collections import defaultdict
 from threading import Lock
 
-"""
-To run from fresh checkout:
-cd my-server
-python3 -m venv "venv"
-source venv/bin/activate
-pip3 install -r requirements.txt
-cd my-app; npm install
-cd ..
-cd scryfall; python3 updateCards.py; extractCards.sh
-cd ..
-cd my-server; genTsInterfaces.sh
-cd ..
-cd my-app; npm install; npm build  # must close IDEs while this runs, else linux npm has issues 
-
-Run redis via:
-windows powershell, bash -l, redis-server /home/linuxbrew/.linuxbrew/etc/redis.conf
-monitor it via powershell, bash -l, redis-cli, monitor
-
-Then run this file with the python path = my-server
-Optionally run a dev ui from cd my-app;npm start
-"""
-
 tables: typing.Dict[str, MagicTable] = {}  # dict to track active tables
 table_locks: typing.Dict[str, Lock] = defaultdict(Lock)
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--port", type=int, default=5000, required=False)
-parser.add_argument("--static_port", type=int, default=3000, required=False)
-parser.add_argument("--public_ip", type=str, default='0.0.0.0', required=False)
-parser.add_argument("--redis", type=bool, default=False, required=False)
-parser.add_argument("--static_folder", type=str, default="../my-app/build", required=False)
-args = parser.parse_args()
+DEBUG = os.environ.get('FLASK_DEV', False)
+LOCAL_FILES = os.environ.get('LOCAL_FILES', False) or DEBUG
+
+# local vs cloud storage
+if LOCAL_FILES:
+    persistence.LOCAL = True
+
+if DEBUG:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--port", type=int, default=5000, required=False)
+    parser.add_argument("--static_port", type=int, default=3000, required=False)
+    parser.add_argument("--public_ip", type=str, default='0.0.0.0', required=False)
+    parser.add_argument("--redis", type=bool, default=False, required=False)
+    parser.add_argument("--static_folder", type=str, default="../my-app/build", required=False)
+    args = parser.parse_args()  # breaks gunicorn
+else:
+    class Args:
+        def __init__(self):
+            self.port = 8000  # gunicorn default
+            self.static_port = 3000  # npm react start default
+            self.public_ip = '0.0.0.0'
+            self.redis = False
+    args = Args()
+
+# logging setup
+logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s %(message)s', stream=sys.stdout, level=logging.INFO)
+# note that flask logs to stderr by default
+if LOCAL_FILES:  # only log to file locally
+    # socket.io doesn't handle rotating file appender, gets stuck on old one after the move (at least on windows)
+    os.makedirs(os.path.join('logs'), exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    h = logging.FileHandler(filename=os.path.join('logs', f'hello_{timestamp}.log'), mode='a')
+    f = logging.Formatter('%(asctime)s %(name)s %(levelname)-8s %(message)s')
+    h.setFormatter(f)
+    logging.getLogger().addHandler(h)
+logging.info("hello from logging")
 
 app = Flask(__name__,
-            static_folder=args.static_folder,
-            # static_url_path='/' # see  @app.route('/'  below
-            )
+            static_folder='build/static',
+            static_url_path='/static/')
+# static_url_path='/' # see  @app.route('/'  below
 # no cors for flask http api unless using https://flask-cors.readthedocs.io/en/latest/ which I don't need
 # for production, I can npm build the frontend and serve it from flask, avoiding CORS issues
 # not needed for local dev http requests if using create react app package.json's proxy setting
+
 
 socketio = SocketIO(app,
                     cors_allowed_origins=[
@@ -70,7 +84,7 @@ socketio = SocketIO(app,
                         f'http://{args.public_ip}:{args.port}',  # from remote machine
                         f'http://{args.public_ip}:{args.static_port}',
                         # '*'  # would allow clients served from anywhere, not a good idea
-                    ],
+                    ] if DEBUG else None,
                     # if using multiple server processes, need a queue, e.g. 
                     message_queue='redis://localhost:6379' if args.redis else None
                  )
@@ -84,26 +98,21 @@ def is_test(table_name: str) -> bool:
     return "test" in table_name and table_name[:4] == "test"
 
 
-def main():
-    DEBUG = os.environ.get('FLASK_DEV', False)
-    logging.info(f"starting up at http://{args.public_ip}:{args.port}")
-    socketio.run(app,
-                 debug=DEBUG,
-                 host='0.0.0.0',  # so that the server listens on the public network interface, else localhost
-                 port=args.port)
+@app.route('/')
+def hello_world():
+    return "Hello World!!!", 200
 
 
-# gross, but the static_url_path='/' ends up messing with react-router quite a bit and 404'ing all routes
-@app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path: str):
-    if path.startswith('static'):
-        return app.send_static_file(path)
-    build_dir = os.path.abspath(os.path.join('..', 'my-app', 'build'))  # path react build
-    if path != "" and os.path.exists(os.path.join(build_dir, path)):
-        return send_from_directory(os.path.join(build_dir), path)
+    """handle everything that's not static and not an api request"""
+    build_folder = 'build'
+    if path != "" and os.path.exists(os.path.join(build_folder, path)):
+        return send_from_directory(build_folder, path)
+    elif path == "login" or path.startswith("table/"):
+        return send_from_directory(build_folder, 'index.html')
     else:
-        return send_from_directory(os.path.join(build_dir), 'index.html')
+        return "File not found.", 404
 
 
 def get_table(table_name) -> typing.Tuple[str, MagicTable]:
@@ -244,19 +253,14 @@ def on_join(data):
         emit('error', {'error': 'Unable to join table. Table does not exist.'})
 
 
+def main():
+    logging.info(f"starting up at http://{args.public_ip}:{args.port}")
+    socketio.run(app,
+                 debug=DEBUG,
+                 host='0.0.0.0',  # so that the server listens on the public network interface, else localhost
+                 port=args.port)
+
+
 if __name__ == '__main__':
-    logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s %(message)s', stream=sys.stdout, level=logging.INFO)
-    import logging.handlers
-
-    # note that flask logs to stderr by default
-    # socket.io doesn't handle rotating file appender, gets stuck on old one after the move (at least on windows)
-    os.makedirs(os.path.join('data', 'logs'), exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    h = logging.FileHandler(filename=os.path.join('data', 'logs', f'hello_{timestamp}.log'), mode='a')
-    f = logging.Formatter('%(asctime)s %(name)s %(levelname)-8s %(message)s')
-    h.setFormatter(f)
-    logging.getLogger().addHandler(h)
-
-    logging.info("hello from logging")
     main()
     logging.warning("goodbye world")

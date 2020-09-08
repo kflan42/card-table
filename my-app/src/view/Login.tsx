@@ -134,10 +134,6 @@ class JoinTableForm extends React.Component<LoginP> {
         localStorage.setItem('deckList', this.state.deck_list)
 
         console.log("joining table...", this.state)
-        if (this.state.table === 'test') {
-            this.props.routeChange('/table/' + this.state.table)
-            return; // will use non dynamic server data
-        }
         this.sendChoices()
             .then(async response => {
                 console.log(response)

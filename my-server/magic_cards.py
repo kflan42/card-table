@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import random
@@ -7,40 +6,44 @@ import time
 from collections import defaultdict
 from typing import List, Tuple, Optional
 
+import persistence
 from magic_models import SFCard, Face
 import unicodedata
 
 
 def load_cards(what="cards") -> List[SFCard]:
-    with open(os.path.join('data', 'cards', f'{what}.json'), encoding='UTF-8') as f:
-        t0 = time.time()
-        # too slow card_list = [CardSchema().load(c) for c in json.load(f)]
-        # this is about 50x faster, bypassing Schema logic
-        pattern = re.compile(r'(?<!^)(?=[A-Z])')
+    file_path = os.path.join('cards', f'{what}.json')
+    t0 = time.time()
+    data = persistence.load(file_path, encoding='UTF-8')
+    # too slow card_list = [CardSchema().load(c) for c in json.load(f)]
+    # this is about 50x faster, bypassing Schema logic
+    pattern = re.compile(r'(?<!^)(?=[A-Z])')
 
-        def load_card(d: dict):
-            # camelCase to snake case the dict
-            for k in d:
-                nk = pattern.sub('_', k).lower()
-                if nk != k:
-                    v = d[k]
-                    del d[k]
-                    d[nk] = v
-                elif k == "face" and d[k]:
-                    d[k] = Face(**d[k])
-                elif k == "faces" and d[k]:
-                    d[k] = [Face(**fa) for fa in d[k]]
-            return SFCard(**d)
+    def load_card(d: dict):
+        # camelCase to snake case the dict
+        for k in d:
+            nk = pattern.sub('_', k).lower()
+            if nk != k:
+                v = d[k]
+                del d[k]
+                d[nk] = v
+            elif k == "face" and d[k]:
+                d[k] = Face(**d[k])
+            elif k == "faces" and d[k]:
+                d[k] = [Face(**fa) for fa in d[k]]
+        return SFCard(**d)
 
-        card_list = [load_card(c) for c in json.load(f)]
-        # cards = {c.id: c for c in card_list}
-        t1 = time.time()
-        logging.info(f"{len(card_list)} {what} loaded in {t1 - t0:.3f}s, eg {card_list[0]}")
-        return card_list
+    card_list = [load_card(c) for c in data]
+    # cards = {c.id: c for c in card_list}
+    t1 = time.time()
+    logging.info(f"{len(card_list)} {what} loaded in {t1 - t0:.3f}s, eg {card_list[0]}")
+    return card_list
 
-def _uni2ascii(word:str) -> str:
+
+def _uni2ascii(word: str) -> str:
     """Lim-Dûl's Vault --> Lim-Dul's Vault"""
     return unicodedata.normalize('NFD', word).encode('ascii', 'ignore').decode() 
+
 
 class CardResolver:
 

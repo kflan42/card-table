@@ -1,0 +1,30 @@
+# To run from fresh checkout:
+## close IDEs while running installs else files get stuck
+
+cd my-server
+python3 -m venv "venv"
+source venv/bin/activate
+pip3 install -r requirements.txt
+./genTsInterfaces.sh
+cd ..
+cd my-app; npm install; ./rebuildForServer.sh; cd ..
+cd scryfall; python3 updateCards.py; extractCards.sh; cd ..
+cd my-server
+
+# for cloud
+gsutil cp -r cards $CLOUD_STORAGE_BUCKET
+gsutil ls $CLOUD_STORAGE_BUCKET
+
+# for local debug
+set FLASK_DEV True; set LOCAL_FILES True
+python3 hello.py
+Optionally run a dev ui from cd my-app;npm start
+
+# for local run that resembles cloud
+export GOOGLE_APPLICATION_CREDENTIALS=$$$_key.json
+export CLOUD_STORAGE_BUCKET=
+gunicorn --worker-class eventlet -w 1 hello:app
+
+# Can run redis via:
+windows powershell, bash -l, redis-server /home/linuxbrew/.linuxbrew/etc/redis.conf
+monitor it via powershell, bash -l, redis-cli, monitor

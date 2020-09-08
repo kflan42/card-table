@@ -1,6 +1,8 @@
 import React from 'react'
 
 import './_style.css';
+import cardBack from '../images/Magic_card_back.jpg'
+import logoSkewed from '../images/react_logo_skewed.png'
 import CardDB from '../CardDB';
 import { ClientState } from '../ClientState';
 import { useSelector, useDispatch } from 'react-redux';
@@ -39,7 +41,7 @@ const Card: React.FC<CardProps> = ({ cardId, imageSize, cardHeight, showCollecto
     // altText, url
     const getFront = () => {
         if (card.facedown) {
-            return ["Card Back", "/Magic_card_back.jpg"]
+            return ["Card Back", cardBack]
         }
         if (sfCard) {
             let face = sfCard.face
@@ -56,9 +58,9 @@ const Card: React.FC<CardProps> = ({ cardId, imageSize, cardHeight, showCollecto
             // small is 10.8k (memory cache after 1st). fuzzy text, hard to read. 146 x 204
             // normal is 75.7k (memory cache after 1st). readable. 488 x 680
             const img = imageSize === "normal" ? face?.normal : face?.small
-            return img ? [text, img] : ["Card Image Not Found", "/react_logo_skewed.png"]
+            return img ? [text, img] : ["Card Image Not Found", logoSkewed]
         } else
-            return ["Card Not Found", "/react_logo_skewed.png"]
+            return ["Card Not Found", logoSkewed]
     }
 
     const front = getFront()

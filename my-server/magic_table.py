@@ -1,28 +1,21 @@
-import json
 import logging
 import os
 from random import shuffle, seed
 
+import persistence
 from magic_cards import load_cards, CardResolver, parse_deck
-from magic_models import *
 from magic_constants import *
 from magic_game import IndexedGame
-from typing import Dict, List
-import itertools
+from magic_models import *
 
 
 class MagicTable:
-    _tables_path: str = None
+    _tables_path: str = os.path.join('tables')
     _cards: List[SFCard] = None
     _tokens: List[SFCard] = None
 
     @staticmethod
     def get_tables_path():
-        # lazy class init
-        if not MagicTable._tables_path:
-            MagicTable._tables_path = os.path.join('data', 'tables')
-            os.makedirs(MagicTable._tables_path, exist_ok=True)
-            logging.info("Tables initialized. Tables on disk: " + ",".join(os.listdir(MagicTable._tables_path)))
         return MagicTable._tables_path
 
     @staticmethod
@@ -40,10 +33,9 @@ class MagicTable:
     @staticmethod
     def load(table_name):
         file_path = os.path.join(MagicTable.get_tables_path(), table_name + ".json")
-        if os.path.isfile(file_path):
-            with open(file_path, mode='r') as f:
-                data = json.load(f)
-                return MagicTable(table_name, data)
+        data = persistence.load(file_path)
+        if data:
+            return MagicTable(table_name, data)
         else:
             return None
 
@@ -121,8 +113,7 @@ class MagicTable:
 
     def save(self):
         file_path = os.path.join(MagicTable.get_tables_path(), self.table.name + ".json")
-        with open(file_path, mode='w') as f:
-            f.write(self.table.to_json())
+        persistence.save(file_path, self.table.to_json())
 
     def get_actions(self):
         return self.table.actions

@@ -29,7 +29,7 @@ CARD='
 C_FILTER='select( (.set|test("^...$")) and (.lang|test("en")) )'
 T_FILTER='select( (.set|test("^t...$")) and (.lang|test("en")) )'
 
-OUT_DIR="../my-server/data/cards"
+OUT_DIR="../my-server/cards"
 mkdir -p "${OUT_DIR}"
 echo "extracting fields via jq ..."
 
