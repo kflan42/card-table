@@ -1,14 +1,17 @@
-import React, { ChangeEvent, FormEvent } from 'react'
+import React, { ChangeEvent, FormEvent, useEffect } from 'react'
 import { useHistory } from 'react-router-dom';
 import { JoinRequest } from "../magic_models";
-import { setUserPrefs } from "../Actions";
+import { setUserPrefs, setGame } from "../Actions";
 import { useDispatch } from "react-redux";
+import { blankGame } from '../ClientState';
 
 
 export const LoginForm: React.FC = (props) => {
     const history = useHistory()
 
     const dispatch = useDispatch()
+
+    useEffect(() => { dispatch(setGame(blankGame())) })
 
     return (
         <JoinTableForm
@@ -70,11 +73,18 @@ class JoinTableForm extends React.Component<LoginP> {
     }
 
     handleNameChange(event: ChangeEvent<HTMLInputElement>) {
-        this.setState({ name: event.target.value.replace(/[^A-Za-z0-9 .,]/, '') });
+        this.setState({ name: event.target.value.replace(/[^A-Za-z0-9 .,_]/, '') }); 
+        // '-' used for indexed zone names
     }
 
     handleTableChange(event: ChangeEvent<HTMLInputElement>) {
-        this.setState({ table: event.target.value });
+        const newTableName = event.target.value.replace(/[^A-Za-z0-9-_]/, '');
+        this.setState({ table: newTableName });
+        if (newTableName.startsWith("test")) {
+            this.setErrorMsg("Warning! Tables starting with 'test' have random games and are not saved!")
+        } else {
+            this.setErrorMsg("");
+        }
     }
 
     handleFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -125,6 +135,14 @@ class JoinTableForm extends React.Component<LoginP> {
         event.preventDefault();
         if (this.state.color === '') {
             this.setErrorMsg("Please pick a sleeve color before joining.");
+            return;
+        }
+        if (this.state.table.length > 32) {
+            this.setErrorMsg("Table name is too long.");
+            return;
+        }
+        if (this.state.name.length > 32) {
+            this.setErrorMsg("Player name too long.");
             return;
         }
         this.setErrorMsg('...');

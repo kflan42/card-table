@@ -51,6 +51,16 @@ export interface Game {
     actionLog: LogLine[]
 }
 
+export function blankGame(): GameT {
+    return {
+        players: [],
+        cards: [],
+        zones: [],
+        battlefield_cards: [],
+        action_log: []
+    }
+}
+
 export function indexGame(game: GameT): Game {
     return {
         players: game.players.reduce((d, x, idx) => ({...d, [x.name]: x}), {}),
