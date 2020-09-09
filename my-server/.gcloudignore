@@ -17,3 +17,4 @@ tables/
 *~
 *_key.json
 NOTES.txt
+__pycache__/
