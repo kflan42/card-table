@@ -15,7 +15,8 @@ export function usePlayerActions() {
 
     function sendOverSocket(playerAction: PlayerAction, eventName: string) {
 
-        if (outstanding > 7) {
+        // browsers limit http calls per domain to 6, and we've got 1 socket open for updates
+        if (outstanding >= 5) {
             console.warn("too many actions outstanding, dropping this one")
             window.alert("Your last actions haven't resolved yet, please wait and retry.")
             return

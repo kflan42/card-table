@@ -9,6 +9,11 @@ from magic_game import IndexedGame
 from magic_models import *
 
 
+def is_test(table_name: str) -> bool:
+    table_name = table_name.lower()
+    return "test" in table_name and table_name[:4] == "test"
+
+
 class MagicTable:
     _tables_path: str = os.path.join('tables')
     _cards: List[SFCard] = None
@@ -109,6 +114,9 @@ class MagicTable:
         player = Player(name=join_request.name, color=join_request.color, counters=[], zones=z_ids)
         player.counters.append(Counter(name="Life", value=40 if commander_sf_card else 20))
         table.game.players.append(player)
+
+        if not is_test(self.table.name):
+            self.save()
         return True
 
     def save(self):
@@ -129,6 +137,11 @@ class MagicTable:
         self.table.actions.append(action)
         # apply to self
         self.table.game = IndexedGame(self.table.game).merge(game_updates_i).to_game()
+
+        if not is_test(self.table.name):  # don't save test tables
+            # only save if it was an action worth logging (e.g. not hand re-ordering or bf re-arranging)
+            if game_updates_i.action_log:
+                self.save()
         return game_updates_i.to_game()
 
     ################################# Game state logic below ########################

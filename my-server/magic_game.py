@@ -1,6 +1,7 @@
 from typing import Dict, List
 from magic_models import BattlefieldCard, Card, Game, LogLine, Player, Zone
 
+
 class IndexedGame:
     players: Dict[str, Player]
     zones: Dict[str, Zone]
@@ -15,7 +16,7 @@ class IndexedGame:
         self.battlefield_cards = {x.card_id: x for x in game.battlefield_cards}
         self.action_log = game.action_log
 
-    def merge(self, other:'__class__') -> '__class__':
+    def merge(self, other: '__class__') -> '__class__':
         """Take newer sections and add action log lines."""
         self.players.update(other.players)
         self.cards.update(other.cards)
@@ -35,4 +36,4 @@ class IndexedGame:
         return g
 
     def __str__(self):
-            return self.__dict__.__str__()
+        return self.__dict__.__str__()

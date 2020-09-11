@@ -23,7 +23,7 @@ from flask_socketio import SocketIO, join_room, emit
 
 import persistence
 from magic_models import JoinRequest, PlayerAction
-from magic_table import MagicTable
+from magic_table import MagicTable, is_test
 from test_table import test_table
 from collections import defaultdict
 from threading import Lock
@@ -86,16 +86,14 @@ socketio = SocketIO(app,
                         # '*'  # would allow clients served from anywhere, not a good idea
                     ] if DEBUG else None,
                     # if using multiple server processes, need a queue, e.g. 
-                    message_queue='redis://localhost:6379' if args.redis else None
+                    message_queue='redis://localhost:6379' if args.redis else None,
+                    # disable websockets since google cloud app engine standard env doesn't support them
+                    # and timing out on attempting them adds a second or two to each request
+                    allow_upgrades=False
                  )
 # can specify all these port args for websocket (but not http api) development
 # create react app proxy doesn't work with websocket https://github.com/facebook/create-react-app/issues/5280
 # so i manually set the socketio port in MySocket.ts
-
-
-def is_test(table_name: str) -> bool:
-    table_name = table_name.lower()
-    return "test" in table_name and table_name[:4] == "test"
 
 
 @app.route('/')
@@ -148,8 +146,6 @@ def join_table(table_name: str):
                 d = json.loads(request.data)
                 join_request = JoinRequest(**d)
                 if table.add_player(join_request):
-                    if not is_test(table_name):
-                        table.save()
                     return ("Created table", 201) if created else ("Joined table.", 202)
                 else:
                     return "Already at table.", 409
@@ -204,8 +200,6 @@ def on_player_action(data):
             if game_update:
                 # send it out
                 emit('game_update', game_update.to_json(), room=table_name, broadcast=True)   # on('game_update'
-                if not is_test(table_name):  # don't save test tables
-                    table.save()
             else:
                 emit('error', {'error': 'Action failed.'})
     else:
@@ -220,7 +214,7 @@ def on_player_draw(data):
     table_name = data['table']
     table_name, table = get_table(table_name=table_name)
     if table:
-        # todo - this will work for single process dev server but not multi process prod
+        # todo - this will work for single process server but not multi process
         with table_locks[table_name]:
             # send it out
             emit('player_draw', data, room=table_name, broadcast=True)  # on('player_draw'

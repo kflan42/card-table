@@ -30,7 +30,7 @@ const GameView: React.FC = () => {
         [state.playerPrefs.name as string | undefined, state.playerPrefs.rightClickPopup])
     const hoveredCard = useSelector((state: ClientState) => state.hoveredCard)
     const cardUnderCursor = useSelector((state: ClientState) =>
-        state.hoveredCard.cardId ? state.game.cards[state.hoveredCard.cardId] : null)
+        state.hoveredCard.cardId != null ? state.game.cards[state.hoveredCard.cardId] : null)
     const isDrawing = useSelector((state: ClientState) => state.drawing.first !== null)
     const drawLines = useSelector((state: ClientState) => state.drawing.lines)
     const players = useSelector((state: ClientState) => state.game.players)
