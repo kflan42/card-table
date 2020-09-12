@@ -26,13 +26,11 @@ export function gameReducer(
             break
         case UPDATE_GAME:
             let indexedUpdates = indexGame(gameUpdate.game);
-            console.log('updating...', indexedUpdates)
             newState.players = {...newState.players, ...indexedUpdates.players}
             newState.cards = {...newState.cards, ...indexedUpdates.cards}
             newState.battlefieldCards = {...newState.battlefieldCards, ...indexedUpdates.battlefieldCards}
             newState.zones = {...newState.zones, ...indexedUpdates.zones}
             newState.actionLog = [...newState.actionLog, ...indexedUpdates.actionLog]
-            console.log('updated')
             break
     }
 

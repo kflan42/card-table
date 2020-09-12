@@ -129,8 +129,9 @@ class MagicTable:
     def get_cards(self):
         return SFCard.schema().dumps(self.table.sf_cards + MagicTable.get_all_tokens(), many=True)
 
-    def resolve_action(self, action: PlayerAction) -> Game:
-        if action.when in [a.when for a in self.table.actions]:
+    def resolve_action(self, action: PlayerAction) -> Optional[Game]:
+        look_back = min(5, len(self.table.actions))
+        if action in [a for a in self.table.actions[-look_back:]]:
             return None  # skip repeats
         game_updates_i = self.apply(action)
         # keep record
@@ -353,12 +354,20 @@ class MagicTable:
             # TODO optimization: remove battlefield cards when cards no longer on battlefield
             # add to tgt
 
-            # magic feature: tokens can't be anywhere except battlefield
-            if card_move.src_zone == BATTLEFIELD and not same_zone and card_move.tgt_zone != EXILE:
-                card_state = game.cards[card_id]
-                sf_token = next((sf for sf in MagicTable.get_all_tokens() if sf.sf_id == card_state.sf_id), None)
-                if sf_token:
-                    card_move.tgt_zone = EXILE  # enforce rule by overriding the action
+            if card_move.src_zone == BATTLEFIELD and not same_zone:
+                # leaving battlefield logic
+                bf_card = game.battlefield_cards[card_id]
+                if bf_card.tapped or bf_card.counters:
+                    bf_card.tapped = False
+                    bf_card.counters = []
+                    game_updates.battlefield_cards[bf_card.card_id] = bf_card
+
+                if card_move.tgt_zone != EXILE:
+                    # magic feature: tokens can't be anywhere except battlefield
+                    card_state = game.cards[card_id]
+                    sf_token = next((sf for sf in MagicTable.get_all_tokens() if sf.sf_id == card_state.sf_id), None)
+                    if sf_token:
+                        card_move.tgt_zone = EXILE  # enforce rule by overriding the action
 
             tgt_zone = game.zones[card_move.tgt_owner + "-" + card_move.tgt_zone]
             if card_move.to_idx is None:

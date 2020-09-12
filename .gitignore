@@ -146,4 +146,3 @@ scryfall/samples/
 /my-server/logs/
 /my-server/tables/
 /my-server/*_key.json
-/my-server/app.yaml

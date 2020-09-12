@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 import './_style.css';
 import {ClientState, HAND} from '../ClientState';
@@ -22,7 +22,9 @@ const Hand: React.FC<HandProps> = () => {
         return state.game.players[state.playerPrefs.name].color;
     });
 
-    const {action:playerDispatch, baseAction} = usePlayerActions()
+    const {action:playerAction, queue:queueAction, baseAction} = usePlayerActions()
+
+    const [cardOrder, setCardOrder] = useState<number[]>([])
 
     const [, drop] = useDrop({
         accept: [ItemTypes.CARD, ItemTypes.BFCARD],
@@ -42,17 +44,55 @@ const Hand: React.FC<HandProps> = () => {
                 tgt_owner: zoneState?.owner,
                 to_idx: null // last
             }
-            playerDispatch({...baseAction(), card_moves:[cardMove]})
+            playerAction({...baseAction(), card_moves:[cardMove]})
         },
     })
+
+    let displayOrder = zoneState.cards
+    if (cardOrder.length === zoneState.cards.length) {
+        displayOrder = cardOrder
+    } else {
+        setCardOrder(zoneState.cards) // reset since gained or lost a card
+    }
+
+    const reorderCard = (cardId:number, toIdx:number) => {
+        const srcIndex = displayOrder.findIndex(v=> v===cardId)
+        if (srcIndex === toIdx) {
+            return
+        }
+        const newOrder = []
+        for (let index = 0; index < displayOrder.length; index++) {
+            const cid = displayOrder[index];
+            if (index === toIdx && toIdx < srcIndex) {
+                newOrder.push(cardId) // moved card forward to new spot
+            }
+            if (cid !== cardId) {
+                newOrder.push(cid); // all but the moved card
+            }
+            if (index === toIdx && toIdx > srcIndex) {
+                newOrder.push(cardId) // moved card back to new spot
+            }
+        }
+        setCardOrder(newOrder)
+        const cardMove = {
+            card_id: cardId,
+            src_zone: HAND,
+            src_owner:zoneState.owner,
+            tgt_zone: HAND,
+            tgt_owner: zoneState.owner,
+            to_idx: toIdx
+        }
+        queueAction({...baseAction(), card_moves:[cardMove]})
+    }
 
 
     const listItems = []
     if (zoneState) {
         let i = 0;
-        for (const cardId of zoneState.cards) {
+        for (const cardId of displayOrder) {
             listItems.push(
-                <MemoizeHandCard key={cardId} cardId={cardId} handIdx={i++} owner={zoneState.owner}/>
+                <MemoizeHandCard key={cardId} cardId={cardId} handIdx={i++} 
+                    owner={zoneState.owner} reorderCard={reorderCard}/>
             )
         }
     }

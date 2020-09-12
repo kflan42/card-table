@@ -5,6 +5,31 @@ import MySocket from "./MySocket";
 import { useState } from "react";
 import { PlayerAction } from "./magic_models";
 
+class QueuedActions {
+    private static queuedMoves:PlayerAction[] = []
+
+    static queueMove(moveAction: PlayerAction) {
+        this.queuedMoves.push(moveAction)
+    }
+
+    static takeMoves(): PlayerAction|null {
+        if(this.queuedMoves.length === 0) {
+            return null
+        }
+        // coalesce and send any queued moves
+        const queuedAction = this.queuedMoves.reduce( (p,c) => {
+            if(p) {
+                p.card_moves = p.card_moves.concat(c.card_moves)
+                return p
+            } else {
+                return c; // base case
+            }
+        })
+        this.queuedMoves = []
+        return queuedAction
+    }
+}
+
 
 export function usePlayerActions() {
     const { gameId } = useParams()
@@ -22,9 +47,9 @@ export function usePlayerActions() {
             return
         }
         setOutstanding(outstanding + 1)
-        console.log(`sending to ${gameId}`, playerAction, new Date(playerAction.when).toLocaleTimeString())
+        console.log(`sending`, playerAction)
         MySocket.get_socket().emit(eventName, { ...playerAction, table: gameId }, (ack: boolean) => {
-            console.log('got ack for ', playerAction, ack)
+            console.log('got ack for action at', playerAction.when, ack)
             setOutstanding(outstanding - 1)
         })
 
@@ -38,7 +63,16 @@ export function usePlayerActions() {
     }
 
     function send(action: PlayerAction) {
+        const queuedAction = QueuedActions.takeMoves()
+        if (queuedAction) {
+            sendOverSocket({ ...queuedAction, table: gameId as string, who: playerName, when: Date.now() }, 'player_action');
+        }
+        // then send this action
         sendOverSocket({ ...action, table: gameId as string, who: playerName, when: Date.now() }, 'player_action');
+    }
+
+    function queue(moveAction: PlayerAction) {
+        QueuedActions.queueMove(moveAction)
     }
 
     function draw(action: { type: string }) {
@@ -49,5 +83,5 @@ export function usePlayerActions() {
         })
     }
 
-    return { action: send, draw, baseAction }
+    return { action: send, queue: queue, draw, baseAction }
 }

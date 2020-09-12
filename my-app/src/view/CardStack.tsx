@@ -183,8 +183,8 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
         }
 
         return (<div className="StackPopUpBox">
-                <div style={{display: "flex", justifyContent: "space-between", alignItems: "center", margin: "0.1em"}}>
-                    <span>{name}</span>
+                <div style={{display: "flex", justifyContent: "left", alignItems: "baseline", margin: "0.1em"}}>
+                    <span>{name}</span>&nbsp;
                     {cardsShown > 7
                         ?
                         <span>Search:<input value={query} type="text" id="query" name="query" onChange={queryChanged}/></span>

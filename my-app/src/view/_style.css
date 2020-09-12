@@ -219,7 +219,7 @@
 
 .cardtooltip:hover .cardtooltiptext {
   visibility: visible;
-  transition-delay: 1s;
+  transition-delay: 0.5s;
   /* transition: visibility 2s; does not work */
 }
 

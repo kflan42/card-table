@@ -247,6 +247,12 @@ def on_join(data):
         emit('error', {'error': 'Unable to join table. Table does not exist.'})
 
 
+@app.route('/_ah/warmup')
+def warmup():
+    # google cloud will call this. could load card data here, but better to be lazy for now.
+    return '', 200, {}
+
+
 def main():
     logging.info(f"starting up at http://{args.public_ip}:{args.port}")
     socketio.run(app,

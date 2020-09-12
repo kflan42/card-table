@@ -15,14 +15,16 @@ import { PlayerAction } from '../magic_models';
 interface HandCardProps {
     cardId: number,
     handIdx: number,
-    owner: string
+    owner: string,
+    reorderCard: (cardId:number, idx:number)=>void
 }
 
 
 const HandCard: React.FC<HandCardProps> = ({
     cardId,
     handIdx,
-    owner
+    owner,
+    reorderCard
 }) => {
     const cardHeight = useSelector((state: ClientState) => {
         return state.playerPrefs.handCardSize;
@@ -74,7 +76,7 @@ const HandCard: React.FC<HandCardProps> = ({
         accept: [ItemTypes.CARD, ItemTypes.BFCARD],
         hover(item: DragCard, monitor: DropTargetMonitor) {
             if (item.srcOwner === owner && item.srcZone === HAND) {
-                moveCard(item) // re order hand on hover
+                reorderCard(item.cardId, handIdx) // reorder hand on hover
             }
         },
         drop(item: DragCard, monitor: DropTargetMonitor) {

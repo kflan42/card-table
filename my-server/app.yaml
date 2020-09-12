@@ -1,0 +1,28 @@
+runtime: python38
+
+env_variables:
+  CLOUD_STORAGE_BUCKET: cloud-card-table-bucket
+
+entrypoint: gunicorn -b :$PORT --worker-class eventlet --workers 1 hello:app
+
+# could use a B1 for 9h/day free
+#instance_class: B1
+#basic_scaling:
+#  idle_timeout: 5m
+#  max_instances: 1
+
+# https://cloud.google.com/appengine/docs/standard#instance_classes
+# https://cloud.google.com/appengine/docs/standard/python3/config/appref#scaling_elements
+# or an F1 for 28h/day free - so could use an F2 14h/day or even F4 7h/day if needed
+instance_class: F1
+automatic_scaling:
+  min_instances: 0  # save money when unused
+  max_instances: 1  # concurrency risk if more than 1
+  max_idle_instances: 0  # $
+  min_idle_instances: 0  # $
+  max_concurrent_requests: 30  # card game players can tolerate occasional load spikes
+  max_pending_latency:  10s
+
+# necessary for min_instances to work
+inbound_services:
+  - warmup
