@@ -12,6 +12,9 @@ cards/
 logs/
 tables/
 
+# don't need build since serving it from bucket
+build/
+
 .vscode/
 .gitignore
 *~

@@ -19,6 +19,7 @@ from datetime import datetime
 
 from flask import Flask, send_from_directory, jsonify
 from flask import request
+from flask_cors import CORS
 from flask_socketio import SocketIO, join_room, emit
 
 import persistence
@@ -75,16 +76,15 @@ app = Flask(__name__,
 # no cors for flask http api unless using https://flask-cors.readthedocs.io/en/latest/ which I don't need
 # for production, I can npm build the frontend and serve it from flask, avoiding CORS issues
 # not needed for local dev http requests if using create react app package.json's proxy setting
+CORS(app)  # necessary for api in app engine and frontend in storage bucket
 
 
 socketio = SocketIO(app,
-                    cors_allowed_origins=[
-                        f'http://localhost:{args.port}',  # local flask served static js
-                        f'http://localhost:{args.static_port}',  # local static file server js
-                        f'http://{args.public_ip}:{args.port}',  # from remote machine
-                        f'http://{args.public_ip}:{args.static_port}',
-                        # '*'  # would allow clients served from anywhere, not a good idea
-                    ] if DEBUG else None,
+                    cors_allowed_origins='*',  # allow clients served from anywhere, fine for a casual came for now
+                        # f'http://localhost:{args.port}',  # local flask served static js
+                        # f'http://localhost:{args.static_port}',  # local static file server js
+                        # f'http://{args.public_ip}:{args.port}',  # from remote machine
+                        # f'http://{args.public_ip}:{args.static_port}',
                     # if using multiple server processes, need a queue, e.g. 
                     message_queue='redis://localhost:6379' if args.redis else None,
                     # disable websockets since google cloud app engine standard env doesn't support them
@@ -96,21 +96,21 @@ socketio = SocketIO(app,
 # so i manually set the socketio port in MySocket.ts
 
 
-@app.route('/')
-def hello_world():
-    return "Hello World!!!", 200
-
-
-@app.route('/<path:path>')
-def serve(path: str):
-    """handle everything that's not static and not an api request"""
-    build_folder = 'build'
-    if path != "" and os.path.exists(os.path.join(build_folder, path)):
-        return send_from_directory(build_folder, path)
-    elif path == "login" or path.startswith("table/"):
-        return send_from_directory(build_folder, 'index.html')
-    else:
-        return "File not found.", 404
+# @app.route('/')
+# def hello_world():
+#     return "Hello World!!!", 200
+#
+#
+# @app.route('/<path:path>')
+# def serve(path: str):
+#     """handle everything that's not static and not an api request"""
+#     build_folder = 'build'
+#     if path != "" and os.path.exists(os.path.join(build_folder, path)):
+#         return send_from_directory(build_folder, path)
+#     elif path == "login" or path.startswith("table/"):
+#         return send_from_directory(build_folder, 'index.html')
+#     else:
+#         return "File not found.", 404
 
 
 def get_table(table_name) -> typing.Tuple[str, MagicTable]:
@@ -174,6 +174,12 @@ def get_actions(table_name):
         return jsonify(table.get_actions())
     else:
         return "Table not found.", 404
+
+
+@app.after_request
+def add_header(response):
+    response.cache_control.no_cache = True  # ensure if multiple players join quickly that GET cards isn't stale
+    return response
 
 
 @socketio.on('connect')

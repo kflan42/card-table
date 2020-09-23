@@ -85,3 +85,8 @@ export const UPDATE_GAME = 'UPDATE_GAME';
 export function updateGame(game: GameT): GameUpdate {
     return { type: UPDATE_GAME, when: Date.now(), game: game }
 }
+
+export const SET_GAME_ID = 'SET_GAME_ID'
+export function setGameId(gameId: string) {
+    return { type: SET_GAME_ID, gameId }
+}

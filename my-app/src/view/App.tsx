@@ -3,9 +3,8 @@ import React from 'react'
 import {DndProvider} from 'react-dnd'
 
 import {
-    BrowserRouter as Router,
     Switch,
-    Route,
+    Route, useLocation
 } from "react-router-dom";
 
 import Backend from 'react-dnd-html5-backend'
@@ -15,35 +14,35 @@ import LoginForm from './Login'
 import {createStore} from 'redux'
 import {Provider} from 'react-redux';
 import Game from './Game';
-import Log from './Log';
 import stateReducer from '../Reducers';
 import {ConfirmationServiceProvider} from './ConfirmationService';
 import ErrorBoundary from "./ErrorBoundary";
+import Sidebar from './Sidebar';
 
 const App: React.FC = () => {
 
     // https://redux.js.org/basics/usage-with-react#passing-the-store
     const store = createStore(stateReducer)
 
+    const query = new URLSearchParams(useLocation().search)
+
     return (
         <ErrorBoundary>
             <div className="App">
                 <Provider store={store}>
-                    <Router>
                         <Switch>
-                            <Route path="/table/:gameId">
+                            <Route path="/table">
                                 <ConfirmationServiceProvider>
                                     <DndProvider backend={Backend}>
-                                        <Game/>
+                                        <Game gameId={query.get("name")}/>
                                     </DndProvider>
-                                    <Log/>
+                                    <Sidebar/>
                                 </ConfirmationServiceProvider>
                             </Route>
                             <Route path="/login">
                                 <LoginForm/>
                             </Route>
                         </Switch>
-                    </Router>
                 </Provider>
             </div>
         </ErrorBoundary>

@@ -12,9 +12,11 @@ export default class MySocket {
                 hostPort = hostPort.replace(RegExp(':\\d+$'), "")
                     + ":" + (process.env.REACT_APP_DYNAMIC_PORT || 5000);
             }
-            const socketIOUrl = window.location.protocol
+            let socketIOUrl = window.location.protocol
                 + "//" + hostPort
-
+            if (process.env.REACT_APP_API_URL) {
+                socketIOUrl = process.env.REACT_APP_API_URL as string
+            }
             console.log(`creating socket for ${socketIOUrl}`)
             this.socket = socketIOClient(socketIOUrl)
         }

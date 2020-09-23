@@ -15,8 +15,13 @@ cd my-server
 gsutil cp -r cards $CLOUD_STORAGE_BUCKET
 gsutil ls $CLOUD_STORAGE_BUCKET
 
+# for hosting frontend in google storage bucket with dns name
+gsutil cp -r build/*  gs://$FRONTEND_BUCKET
+gsutil iam ch allUsers:legacyObjectReader gs://$FRONTEND_BUCKET
+gsutil web set -m index.html -e index.html gs://$FRONTEND_BUCKET
+
 # for local debug
-set FLASK_DEV True; set LOCAL_FILES True
+export FLASK_DEV True; export LOCAL_FILES True
 python3 hello.py
 Optionally run a dev ui from cd my-app;npm start
 

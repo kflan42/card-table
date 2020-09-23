@@ -1,6 +1,5 @@
 import { useSelector } from "react-redux";
 import { ClientState } from "./ClientState";
-import { useParams } from "react-router-dom";
 import MySocket from "./MySocket";
 import { useState } from "react";
 import { PlayerAction } from "./magic_models";
@@ -32,9 +31,9 @@ class QueuedActions {
 
 
 export function usePlayerActions() {
-    const { gameId } = useParams()
 
     const playerName = useSelector((state: ClientState) => state.playerPrefs.name)
+    const gameId = useSelector((state: ClientState) => state.gameId)
 
     const [outstanding, setOutstanding] = useState(0)
 

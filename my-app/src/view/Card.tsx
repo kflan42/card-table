@@ -109,4 +109,5 @@ const Card: React.FC<CardProps> = ({ cardId, imageSize, cardHeight, showCollecto
     )
 }
 
-export default Card
+const MemoizeCard = React.memo(Card)
+export default MemoizeCard

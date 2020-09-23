@@ -54,7 +54,11 @@ def load(file_path: str, encoding=None, is_json=True):
         if blob:
             # download the blob as a string
             logging.info(f"Downloading {blob.public_url}")
-            data = blob.download_as_bytes().decode(encoding=encoding)
+            as_bytes = blob.download_as_bytes()
+            if encoding:
+                data = as_bytes.decode(encoding=encoding)
+            else:
+                data = as_bytes.decode()
             return json.loads(data)
         else:
             logging.info(f"No blob at {file_path}")

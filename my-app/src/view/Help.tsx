@@ -46,4 +46,5 @@ const Help: React.FC = () => {
     );
 }
 
-export default Help
+const MemoizeHelp = React.memo(Help)
+export default MemoizeHelp

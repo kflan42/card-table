@@ -1,7 +1,6 @@
-import React, { useRef, useEffect, useState } from 'react'
+import React, { useRef, useEffect } from 'react'
 
 import './_style.css';
-import Clock from './Clock';
 import { useSelector } from 'react-redux';
 import { ClientState } from '../ClientState';
 import { LogLine } from "../magic_models";
@@ -10,26 +9,6 @@ import { analyzeColor } from "./Login";
 
 
 const Log: React.FC = () => {
-
-    const timerID = setInterval(
-        () => tick(),
-        1 * 1000
-    );
-    const [state, setState] = useState({ date: new Date() })
-
-
-    useEffect(() => {
-        return function cleanup() {
-            if (timerID)
-                clearInterval(timerID);
-        }
-    })
-
-    const tick = () => {
-        setState({
-            date: new Date()
-        });
-    }
 
     const logLines = useSelector((state: ClientState) => state.game.actionLog)
 
@@ -66,15 +45,8 @@ const Log: React.FC = () => {
         </div>
     }
 
-    const elapsedS = logLines.length > 0 
-        ? Math.floor((state.date.getTime() - logLines[logLines.length - 1].when) / 1000)
-        : 0
-    const tooLong = elapsedS > 45
-    const flash = elapsedS % 15 <= 5
 
     return (
-        <div className="Log">
-            <Clock></Clock>
             <div style={{
                 flexGrow: 1,
                 overflowY: "scroll",
@@ -83,16 +55,12 @@ const Log: React.FC = () => {
 
             }}>
                 {logLines.map(renderLogLine)}
-                <div style={{
-                    margin: "0.1em",
-                    fontWeight: tooLong ? "bold" : undefined,
-                    color: tooLong && flash ? "red" : undefined
-                }} ref={linesEndRef}>
-                {tooLong && flash ? " + "+ elapsedS + " seconds" : "----"}
+                <div ref={linesEndRef}>
+                    ----
                 </div>
             </div>
-        </div>
     )
 }
 
-export default Log
+const MemoizeLog = React.memo(Log)
+export default MemoizeLog

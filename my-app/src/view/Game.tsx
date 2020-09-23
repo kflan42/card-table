@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import LineTo from 'react-lineto';
 import { useDispatch, useSelector } from 'react-redux';
-import { useParams } from "react-router-dom";
 
 import './_style.css';
 import { ClientState, HAND, LIBRARY, whichZone, GRAVEYARD, EXILE } from '../ClientState';
@@ -11,7 +10,7 @@ import {
     setUserPrefs,
     setGame,
     TOGGLE_FACEDOWN_CARD,
-    TOGGLE_TRANSFORM_CARD, togglePlaymat, updateGame, UNTAP_ALL, SET_CARD_COUNTER, CREATE_TOKEN, MULLIGAN
+    TOGGLE_TRANSFORM_CARD, togglePlaymat, updateGame, UNTAP_ALL, SET_CARD_COUNTER, CREATE_TOKEN, MULLIGAN, setGameId
 } from '../Actions';
 import CardPopup from './CardPopup';
 import CustomDragLayer from './CustomDragLayer';
@@ -25,8 +24,12 @@ import CardDB, { parseDeckCard } from "../CardDB";
 import MySocket from "../MySocket";
 import { OptionsDialog } from './OptionsDialog';
 
-const GameView: React.FC = () => {
-    const [userName, rightClickPopup] = useSelector((state: ClientState) =>
+interface GameViewProps {
+    gameId: string|null
+}
+
+const GameView: React.FC<GameViewProps> = ({gameId}) => {
+    const [userName, rightClickPopup]: [string|undefined, boolean] = useSelector((state: ClientState) =>
         [state.playerPrefs.name as string | undefined, state.playerPrefs.rightClickPopup])
     const hoveredCard = useSelector((state: ClientState) => state.hoveredCard)
     const cardUnderCursor = useSelector((state: ClientState) =>
@@ -43,7 +46,6 @@ const GameView: React.FC = () => {
 
     const dispatch = useDispatch()
     const { action: playerDispatch, baseAction, draw: drawDispatch } = usePlayerActions()
-    const { gameId } = useParams()
     const [loadedId, setLoadedId] = useState('')
     const [optionsOpen, setOptionsOpen] = useState(false)
 
@@ -63,8 +65,8 @@ const GameView: React.FC = () => {
                 dispatch(setUserPrefs({ bfImageQuality, bfCardSize, handCardSize, rightClickPopup }))
             }
 
-            const gameUrl = `/api/table/${gameId}`
-            const cardsUrl = `/api/table/${gameId}/cards`
+            const gameUrl = `${process.env.REACT_APP_API_URL}/api/table/${gameId}`
+            const cardsUrl = `${process.env.REACT_APP_API_URL}/api/table/${gameId}/cards`
 
             async function onGameLoaded(r: Response) {
                 loadOptions()
@@ -73,6 +75,7 @@ const GameView: React.FC = () => {
                 const data = r.json()
                 const game: Game = await data
                 dispatch(setGame(game))
+                dispatch(setGameId(gameId as string))
             }
 
             console.log(`loading game from ${gameUrl}`)

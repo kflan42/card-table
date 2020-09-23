@@ -49,7 +49,13 @@ const Hand: React.FC<HandProps> = () => {
     })
 
     let displayOrder = zoneState.cards
-    if (cardOrder.length === zoneState.cards.length) {
+    let sameCards = cardOrder.length === zoneState.cards.length
+    const cardOrderSet = new Set(cardOrder)
+    for (let i = 0; i < zoneState.cards.length && sameCards; i++) {
+        sameCards = sameCards && cardOrderSet.has(zoneState.cards[i])
+    }
+
+    if (sameCards) {
         displayOrder = cardOrder
     } else {
         setCardOrder(zoneState.cards) // reset since gained or lost a card

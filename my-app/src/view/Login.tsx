@@ -113,7 +113,7 @@ class JoinTableForm extends React.Component<LoginP> {
             return;
         }
         console.log("watching table...", this.state.table)
-        fetch(`/api/table/${this.state.table}`)
+        fetch(`${process.env.REACT_APP_API_URL}/api/table/${this.state.table}`)
             .then(async response => {
                 console.log(response)
                 // check for error response
@@ -123,7 +123,7 @@ class JoinTableForm extends React.Component<LoginP> {
                     const error = data || response.status;
                     return Promise.reject(error);
                 }
-                this.props.routeChange('/table/' + this.state.table)
+                this.props.routeChange('/table?name=' + this.state.table)
             })
             .catch(error => {
                 console.error('There was an error!', error);
@@ -167,7 +167,7 @@ class JoinTableForm extends React.Component<LoginP> {
                 // set user name in app memory
                 this.props.setUserPrefs(setUserPrefs({ name: this.state.name }))
                 // route over to table
-                this.props.routeChange('/table/' + this.state.table)
+                this.props.routeChange('/table?name=' + this.state.table)
             })
             .catch(error => {
                 console.error('There was an error!', error);
@@ -182,7 +182,7 @@ class JoinTableForm extends React.Component<LoginP> {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(this.state)
         };
-        return fetch(`/api/table/${this.state.table}`, requestOptions)
+        return fetch(`${process.env.REACT_APP_API_URL}/api/table/${this.state.table}`, requestOptions)
 
     }
 
