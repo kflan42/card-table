@@ -10,14 +10,19 @@ CLOUD_STORAGE_BUCKET = os.environ.get('CLOUD_STORAGE_BUCKET', None)
 LOCAL = False
 
 _storage_client = None
+_bucket = None
 
 
-def get_client():
+def get_bucket():
     global _storage_client
     if not _storage_client:
         # Create a Cloud Storage client once and re-use it.
         _storage_client = storage.Client()
-    return _storage_client
+    global _bucket
+    if not _bucket:
+        # Re-use the bucket object too.
+        _bucket = _storage_client.get_bucket(CLOUD_STORAGE_BUCKET)
+    return _bucket
 
 
 def save(file_path: str, what: str, is_json=True):
@@ -26,9 +31,8 @@ def save(file_path: str, what: str, is_json=True):
         with open(file_path, mode='w') as f:
             f.write(what)
     else:
-        gcs = get_client()
         # Get the bucket that the file will be uploaded to.
-        bucket = gcs.get_bucket(CLOUD_STORAGE_BUCKET)
+        bucket = get_bucket()
         # Create a new blob and upload the file's content.
         blob = bucket.blob(file_path)
         logging.info(f"Uploading {blob.public_url}")
@@ -47,9 +51,8 @@ def load(file_path: str, encoding=None, is_json=True):
                     return json.load(f)
         return None
     else:
-        gcs = get_client()
         # Get the bucket that the file will be uploaded to.
-        bucket = gcs.get_bucket(CLOUD_STORAGE_BUCKET)
+        bucket = get_bucket()
         blob = bucket.get_blob(file_path)
         if blob:
             # download the blob as a string

@@ -22,7 +22,7 @@ automatic_scaling:
   max_idle_instances: 0  # $
   min_idle_instances: 0  # $
   max_concurrent_requests: 30  # card game players can tolerate occasional load spikes
-  max_pending_latency:  10s
+  max_pending_latency:  15s  # tiny server has slow startup
 
 # necessary for min_instances to work
 inbound_services:

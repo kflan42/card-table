@@ -33,7 +33,7 @@ tables: typing.Dict[str, MagicTable] = {}  # dict to track active tables
 table_locks: typing.Dict[str, Lock] = defaultdict(Lock)
 
 DEBUG = os.environ.get('FLASK_DEV', False)
-LOCAL_FILES = os.environ.get('LOCAL_FILES', False) or DEBUG
+LOCAL_FILES = os.environ.get('LOCAL_FILES', False)
 
 # local vs cloud storage
 if LOCAL_FILES:
