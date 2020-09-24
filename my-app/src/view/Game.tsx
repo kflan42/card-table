@@ -55,13 +55,13 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
         () => {
             const loadOptions = () => {
                 let bfImageQuality = localStorage.getItem('bfImageQuality')
-                bfImageQuality = bfImageQuality ? bfImageQuality : "low"
+                bfImageQuality = bfImageQuality ? bfImageQuality : "normal" // todo remove low everywhere
                 let bfCardSize = localStorage.getItem('bfCardSize')
                 bfCardSize = bfCardSize ? bfCardSize : "7"
                 let handCardSize = localStorage.getItem('handCardSize')
                 handCardSize = handCardSize ? handCardSize : "14"
                 let rightClickPopup = localStorage.getItem('rightClickPopup') === 'true'
-                rightClickPopup = rightClickPopup ? rightClickPopup : false;
+                rightClickPopup = rightClickPopup ? rightClickPopup : true;
                 dispatch(setUserPrefs({ bfImageQuality, bfCardSize, handCardSize, rightClickPopup }))
             }
 
