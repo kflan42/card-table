@@ -11,8 +11,11 @@ from magic_models import SFCard, Face
 import unicodedata
 
 
-def load_cards(what="cards") -> List[SFCard]:
-    file_path = os.path.join('cards', f'{what}.json')
+def load_cards(what="cards", file_path=None) -> List[SFCard]:
+    if what and not file_path:
+        file_path = os.path.join('cards', f'{what}.json')
+    elif not file_path:
+        raise Exception("Must specify what or path to load!")
     t0 = time.time()
     data = persistence.load(file_path, encoding='UTF-8')
     # too slow card_list = [CardSchema().load(c) for c in json.load(f)]
@@ -83,9 +86,10 @@ class CardResolver:
 
 
 def parse_deck(deck_text: str) -> List[Tuple[str, Optional[str], Optional[str]]]:
+    """Returns name,set,number tuples with the commander first if there is one."""
     cards = []
     lines = deck_text.strip().splitlines()
-    lines = [l for l in lines if "*CMDR*" not in l] + [l for l in lines if "*CMDR*" in l]
+    lines = [l for l in lines if "*CMDR*" in l] + [l for l in lines if "*CMDR*" not in l]
     for line in lines:
         try:
             count, card = parse_line(line)
@@ -124,8 +128,8 @@ def parse_line(line: str) -> Tuple[int, Optional[Tuple[str, Optional[str], Optio
     ignoring = False
     for _, word in enumerate(card_parts[1:]):
         m_p = re.match(r'\((\w+)\)', word)
-        m_b = re.match(r'\[(\w+)\]', word)
-        m_x = re.match(r'\[(\w+):(\w+)\]', word)
+        m_b = re.match(r'\[(\w+)]', word)
+        m_x = re.match(r'\[(\w+):(\w+)]', word)
         if m_p:
             if set_name_or_number is None:
                 set_name_or_number = m_p[1].lower()  # TappedOut (set) or TCGPlayer (num)

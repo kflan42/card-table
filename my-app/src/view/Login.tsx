@@ -243,7 +243,7 @@ class JoinTableForm extends React.Component<LoginP> {
                         <span className="FormSpan">Upload Your Deck File: &nbsp; </span>
                         <input className="DivButton" accept=".txt,.dek,.dec,*" type="file" required={false} onChange={this.handleFileChange} />
                         <br />
-                        <span className="FormSpan">Or Paste and edit it here. Please put your commander last or append *CMDR* to its line.</span>
+                        <span className="FormSpan">Or Paste and edit it here. Please put your commander first or append *CMDR* to its line.</span>
                         <br />
                         <textarea value={this.state.deck_list} required={true} onChange={this.handleDeckChange} cols={60} rows={30} />
                     </div>

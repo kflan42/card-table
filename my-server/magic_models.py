@@ -10,8 +10,8 @@ from py_ts_interfaces import Interface
 
 @dataclass()
 class Face(Interface, DataClassJsonMixin):
-    small: str
-    normal: str
+    normal: Optional[str] = None
+    small: Optional[str] = None
     name: Optional[str] = None
 
 
@@ -51,10 +51,16 @@ class Player(Interface, DataClassJsonMixin):
 class Card(Interface, DataClassJsonMixin):
     """Represents a card (or token) in the game."""
     card_id: int
-    sf_id: str
-    owner: str
     facedown: bool = False
     transformed: bool = False
+
+
+@dataclass()
+class TableCard(Interface, DataClassJsonMixin):
+    """Represents a card at the table."""
+    card_id: int
+    sf_id: str
+    owner: str
     token: bool = False
 
 
@@ -74,6 +80,7 @@ class BattlefieldCard(Interface, DataClassJsonMixin):
     x: int
     y: int
     tapped: bool = False
+    flipped: bool = False
     counters: List[Counter] = field(default_factory=list)
     last_touched: int = 0
 
@@ -92,7 +99,6 @@ class Game(Interface, DataClassJsonMixin):
     zones: List[Zone]
     cards: List[Card]
     battlefield_cards: List[BattlefieldCard]
-    action_log: List[LogLine]
 
 
 @dataclass
@@ -151,4 +157,6 @@ class Table(Interface, DataClassJsonMixin):
     name: str
     game: Game
     sf_cards: List[SFCard]
+    table_cards: List[TableCard]
     actions: List[PlayerAction]
+    action_log: List[LogLine]

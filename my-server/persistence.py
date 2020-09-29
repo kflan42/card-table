@@ -7,7 +7,7 @@ from google.cloud import storage
 # Configure this environment variable via app.yaml
 CLOUD_STORAGE_BUCKET = os.environ.get('CLOUD_STORAGE_BUCKET', None)
 
-LOCAL = False
+LOCAL = not CLOUD_STORAGE_BUCKET
 
 _storage_client = None
 _bucket = None
@@ -28,6 +28,7 @@ def get_bucket():
 def save(file_path: str, what: str, is_json=True):
     if LOCAL:
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        logging.info(f"Writing {file_path}")
         with open(file_path, mode='w') as f:
             f.write(what)
     else:
@@ -43,12 +44,12 @@ def save(file_path: str, what: str, is_json=True):
         )
 
 
-def load(file_path: str, encoding=None, is_json=True):
+def load(file_path: str, encoding=None, decoder=json.loads):
     if LOCAL:
         if os.path.isfile(file_path):
+            logging.info(f"Reading {file_path}")
             with open(file_path, mode='r', encoding=encoding) as f:
-                if is_json:
-                    return json.load(f)
+                return decoder(f.read())
         return None
     else:
         # Get the bucket that the file will be uploaded to.
@@ -62,7 +63,7 @@ def load(file_path: str, encoding=None, is_json=True):
                 data = as_bytes.decode(encoding=encoding)
             else:
                 data = as_bytes.decode()
-            return json.loads(data)
+            return decoder(data)
         else:
             logging.info(f"No blob at {file_path}")
             return None

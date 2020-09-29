@@ -1,8 +1,7 @@
-import json
 import logging
 import sys
+import time
 import unittest
-from typing import List
 
 from magic_models import JoinRequest
 from magic_table import MagicTable
@@ -50,14 +49,26 @@ class MyTestCase(unittest.TestCase):
         print(lim_duls_vault)
 
     def test_add_player(self):
-        player = JoinRequest(name='kerran', table='1', deck_list=arena_deck, color='OliveDrab')
+        player = JoinRequest(name='kerran', table='test1', deck_list=arena_deck, color='OliveDrab')
         table = MagicTable(player.table)
         table.add_player(player)
         print(table.table.to_json())
 
     def test_test_table(self):
-        table = test_table("test")
+        table = test_table("test2")
         print(table.table.to_json())
+
+    def test_save_load(self):
+        table = test_table("test3")
+        t0 = time.time()
+        table.save()
+        t1 = time.time()
+        logging.info(f"table saved in {t1 - t0:.3f}s")
+        t0 = time.time()
+        table3 = MagicTable.load("test3")
+        t1 = time.time()
+        logging.info(f"table loaded in {t1 - t0:.3f}s")
+        print(table3.indexed_game.players.keys())
 
 
 if __name__ == '__main__':

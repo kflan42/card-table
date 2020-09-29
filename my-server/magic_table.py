@@ -1,6 +1,8 @@
+import json
 import logging
 import os
 from random import shuffle, seed
+from typing import Tuple
 
 import persistence
 from magic_cards import load_cards, CardResolver, parse_deck
@@ -37,84 +39,94 @@ class MagicTable:
 
     @staticmethod
     def load(table_name):
-        file_path = os.path.join(MagicTable.get_tables_path(), table_name + ".json")
-        data = persistence.load(file_path)
-        if data:
-            return MagicTable(table_name, data)
-        else:
+        file_path = os.path.join(MagicTable.get_tables_path(), table_name)
+        game = persistence.load(file_path + ".game.json",
+                                decoder=lambda d: Game.schema().loads(d))
+        if not game:
             return None
+        # load the rest, stored in pieces
+        sf_cards = load_cards(file_path=file_path + ".sf_cards.json")  # optimized for speed
+        table_cards = persistence.load(file_path + ".table_cards.json",
+                                       decoder=lambda d: TableCard.schema().loads(d, many=True))
+        actions = persistence.load(file_path + ".actions.json",
+                                   decoder=lambda d: PlayerAction.schema().loads(d, many=True))
+        action_log = persistence.load(file_path + ".action_log.json",
+                                      decoder=lambda d: LogLine.schema().loads(d, many=True))
 
-    def __init__(self, name, data: dict = None):
-        if data:
-            self.table = Table.from_dict(data)
+        table = Table(name=table_name, game=game, sf_cards=sf_cards, table_cards=table_cards,
+                      actions=actions, action_log=action_log)
+        return MagicTable(table_name, table)
+
+    def __init__(self, name, table: Table = None):
+        if table:
+            self.table = table
         else:
-            self.table = Table(name=name, sf_cards=[], actions=[],
-                               game=Game(cards=[], players=[], zones=[], battlefield_cards=[], action_log=[]))
+            self.table = Table(name=name, sf_cards=[], table_cards=[],
+                               game=Game(cards=[], players=[], zones=[], battlefield_cards=[]),
+                               actions=[], action_log=[])
         self.indexed_game = IndexedGame(self.table.game)
 
     def add_player(self, join_request: JoinRequest):
         if [p for p in self.table.game.players if p.name == join_request.name]:
             return False  # already present
 
-        table = self.table
         # load cards into table
         deck = parse_deck(join_request.deck_list)
         cr = CardResolver(MagicTable.get_all_cards())
         sf_cards = [cr.find_card(*c) for c in deck]
-        table.sf_cards.extend(sf_cards)
+        self.table.sf_cards.extend(sf_cards)
 
         # shuffle the card ids we'll use, so that cid do not match deck list order
-        cid = len(table.game.cards)
-        c_ids = [i for i in range(cid, cid + len(sf_cards))]
+        first_cid = max([c.card_id for c in self.table.game.cards]) if self.table.game.cards else 1  # skip cid 0
+        c_ids = [i for i in range(first_cid, first_cid + len(sf_cards))]
         seed(self.table.name, version=2)  # seed with table name for consistency in testing/debugging
         shuffle(c_ids)
+        table_cards = [TableCard(c_ids.pop(), sf_card.sf_id, owner=join_request.name) for sf_card in sf_cards]
+        self.table.table_cards.extend(table_cards)
 
-        zid = len(table.game.zones)
+        zid = len(self.table.game.zones)
         zones = [Zone(name=z, z_id=zid + i, owner=join_request.name, cards=[]) for i, z in enumerate(ZONES)]
-        table.game.zones.extend(zones)
+        self.table.game.zones.extend(zones)
 
         # setup player fields
-        commander_sf_card = None
-        if len(sf_cards) >= 100:
-            commander_sf_card = sf_cards[-1]  # the deck parser puts commander last
-            sf_cards.remove(commander_sf_card)
-            library_size = 99
-        elif len(sf_cards) >= 60:
+        commander_card_id = None
+        if len(table_cards) >= 100:
+            commander_card_id = table_cards[0].card_id  # we'll pull this card into cmd zone later
+            library_size = 100
+        elif len(table_cards) >= 60:
             # standard
             library_size = 60
-        elif len(sf_cards) >= 40:
+        elif len(table_cards) >= 40:
             # limited
             library_size = 40
-        elif len(sf_cards) >= 30:
+        elif len(table_cards) >= 30:
             # sealed league round 1
             library_size = 30
         else:
-            library_size = len(sf_cards)  # something else
+            library_size = len(table_cards)  # something else
 
-        library_sf_cards, extra_sf_cards = sf_cards[:library_size], sf_cards[library_size:]
+        library_table_cards, extra_table_cards = table_cards[:library_size], table_cards[library_size:]
 
         # start with cards in library
-        lib_cards = [Card(card_id=c_ids.pop(), sf_id=s.sf_id, owner=join_request.name) for s in library_sf_cards]
-        library = next((z for z in zones if z.name == LIBRARY))
-        library.cards.extend([c.card_id for c in lib_cards])
-        shuffle(library.cards)  # shuffle the library
-        # extras into exile
-        ex_cards = [Card(card_id=c_ids.pop(), sf_id=s.sf_id, owner=join_request.name) for s in extra_sf_cards]
-        next((z for z in zones if z.name == EXILE)).cards.extend([c.card_id for c in ex_cards])
-
-        table.game.cards.extend(lib_cards + ex_cards)
-
-        if commander_sf_card:
-            commander_card = Card(card_id=c_ids.pop(), sf_id=commander_sf_card.sf_id, owner=join_request.name)
+        library_cards = [Card(card_id=c.card_id) for c in library_table_cards]
+        if commander_card_id:
+            commander_card = library_cards.pop(0)
             # commander format - put commander into command zone
             next((z for z in zones if z.name == COMMAND_ZONE)).cards.append(commander_card.card_id)
-            table.game.cards.append(commander_card)
+            self.table.game.cards.append(commander_card)
+        library = next((z for z in zones if z.name == LIBRARY))
+        library.cards.extend([c.card_id for c in library_cards])
+        shuffle(library.cards)  # shuffle the library
+        # extras into exile
+        ex_cards = [Card(card_id=c.card_id) for c in extra_table_cards]
+        next((z for z in zones if z.name == EXILE)).cards.extend([c.card_id for c in ex_cards])
+        self.table.game.cards.extend(library_cards + ex_cards)
 
         # setup player
         z_ids = [z.z_id for z in zones]
         player = Player(name=join_request.name, color=join_request.color, counters=[], zones=z_ids)
-        player.counters.append(Counter(name="Life", value=40 if commander_sf_card else 20))
-        table.game.players.append(player)
+        player.counters.append(Counter(name="Life", value=40 if commander_card_id is not None else 20))
+        self.table.game.players.append(player)
 
         # save the result
         self.indexed_game = IndexedGame(self.table.game)
@@ -123,9 +135,14 @@ class MagicTable:
         return True
 
     def save(self):
-        file_path = os.path.join(MagicTable.get_tables_path(), self.table.name + ".json")
+        # todo partial saves
+        file_path = os.path.join(MagicTable.get_tables_path(), self.table.name)
         logging.info(f"Saving table to {file_path}")
-        persistence.save(file_path, self.table.to_json())
+        persistence.save(file_path + ".sf_cards.json", SFCard.schema().dumps(self.table.sf_cards, many=True))
+        persistence.save(file_path + ".table_cards.json", TableCard.schema().dumps(self.table.table_cards, many=True))
+        persistence.save(file_path + ".actions.json", PlayerAction.schema().dumps(self.table.actions, many=True))
+        persistence.save(file_path + ".action_log.json", LogLine.schema().dumps(self.table.action_log, many=True))
+        persistence.save(file_path + ".game.json", Game.schema().dumps(self.table.game))
 
     def get_actions(self):
         return self.table.actions
@@ -133,21 +150,24 @@ class MagicTable:
     def get_cards(self):
         return SFCard.schema().dumps(self.table.sf_cards + MagicTable.get_all_tokens(), many=True)
 
-    def resolve_action(self, action: PlayerAction) -> Optional[Game]:
+    def resolve_action(self, action: PlayerAction) -> Tuple[Optional[Game], List[LogLine], List[TableCard]]:
         look_back = min(5, len(self.table.actions))
         if action in [a for a in self.table.actions[-look_back:]]:
-            return None  # skip repeats
+            return None, [], []  # skip repeats
         game_updates_i = self.apply(action)
         # keep record
         self.table.actions.append(action)
         # apply to self
         self.table.game = self.indexed_game.merge(game_updates_i).to_game()
+        if game_updates_i.log_updates:
+            self.table.action_log.extend(game_updates_i.log_updates)
 
         if not is_test(self.table.name):  # don't save test tables
             # only save if it was an action worth logging (e.g. not hand re-ordering or bf re-arranging)
-            if game_updates_i.action_log:
+            if game_updates_i.log_updates:
                 self.save()
-        return game_updates_i.to_game()
+        game_updates = game_updates_i.to_game()
+        return game_updates, game_updates_i.log_updates, game_updates_i.card_updates
 
     ################################# Game state logic below ########################
 
@@ -159,8 +179,7 @@ class MagicTable:
         action.counter_changes = [CounterChange(**c) for c in action.counter_changes]
         logging.info(f"applying {action}")
 
-        game_updates_i: IndexedGame = IndexedGame(
-            Game(cards=[], players=[], zones=[], battlefield_cards=[], action_log=[]))
+        game_updates_i: IndexedGame = IndexedGame()
 
         if action.card_moves:
             game_updates_i.merge(self.handle_move_cards(action))
@@ -173,17 +192,20 @@ class MagicTable:
             game_updates_i.merge(self.handle_create_token(action))
 
         if action.kind == MESSAGE:
-            game_updates_i.action_log.append(LogLine(who=action.who, when=action.when, line=action.message))
+            game_updates_i.log_updates.append(LogLine(who=action.who, when=action.when, line=action.message))
 
         logging.info(f"resulted in {game_updates_i}")
         return game_updates_i
 
     def handle_create_token(self, action: PlayerAction) -> IndexedGame:
-        game_updates = IndexedGame(Game(cards=[], players=[], zones=[], battlefield_cards=[], action_log=[]))
+        game_updates = IndexedGame()
 
         for create_token in action.create_tokens:
-            card = Card(card_id=len(self.indexed_game.cards),
-                        sf_id=create_token.sf_id, owner=create_token.owner, token=True)
+            table_card = TableCard(card_id=max([tc.card_id for tc in self.table.table_cards]) + 1,
+                                   sf_id=create_token.sf_id, owner=create_token.owner, token=True)
+            card = Card(table_card.card_id)
+            game_updates.card_updates.append(table_card)
+            self.table.table_cards.append(table_card)  # todo fix get_card_name_ to read updates to avoid modifying here
             game_updates.cards[card.card_id] = card
             bf = self.indexed_game.zones[action.who + "-" + BATTLEFIELD]
             bf.cards.append(card.card_id)
@@ -192,12 +214,12 @@ class MagicTable:
             game_updates.battlefield_cards[bf_card.card_id] = bf_card
             self.indexed_game.merge(game_updates)
             line = f"{action.who} created {self.get_card_name_for_log(card.card_id)}"
-            game_updates.action_log.append(LogLine(who=action.who, when=action.when, line=line))
+            game_updates.log_updates.append(LogLine(who=action.who, when=action.when, line=line))
 
         return game_updates
 
     def handle_counter_changes(self, action: PlayerAction) -> IndexedGame:
-        game_updates = IndexedGame(Game(cards=[], players=[], zones=[], battlefield_cards=[], action_log=[]))
+        game_updates = IndexedGame()
 
         for counter_change in action.counter_changes:
             new_counter = Counter(name=counter_change.name, value=counter_change.value) if counter_change.value \
@@ -233,7 +255,7 @@ class MagicTable:
             else:
                 line = f"removed {what} {old_counter.value if old_counter.value > 1 else ''}" \
                        f" {counter_change.name} counter{'s' if old_counter.value > 1 else ''}"
-            game_updates.action_log.append(LogLine(who=action.who, when=action.when, line=line))
+            game_updates.log_updates.append(LogLine(who=action.who, when=action.when, line=line))
 
         return game_updates
 
@@ -246,9 +268,10 @@ class MagicTable:
                                           or card_move.tgt_zone in [BATTLEFIELD, GRAVEYARD])
         if to_or_from_field or self.where_is_card(card_id) in [BATTLEFIELD, GRAVEYARD]:
             card_state = self.indexed_game.cards[card_id]
-            sf_card = next((sf for sf in self.table.sf_cards if sf.sf_id == card_state.sf_id), None)
+            table_card = next(tc for tc in self.table.table_cards if tc.card_id == card_id)
+            sf_card = next((sf for sf in self.table.sf_cards if sf.sf_id == table_card.sf_id), None)
             if not sf_card:  # if not in table cards check tokens
-                sf_card = next((sf for sf in MagicTable.get_all_tokens() if sf.sf_id == card_state.sf_id))
+                sf_card = next((sf for sf in MagicTable.get_all_tokens() if sf.sf_id == table_card.sf_id))
             card_name = "a facedown card" if card_state.facedown else sf_card.name
         return card_name
 
@@ -261,7 +284,7 @@ class MagicTable:
         game_updates.zones[owner + "-" + LIBRARY].cards = library_card_ids
 
     def handle_card_changes(self, action: PlayerAction) -> IndexedGame:
-        game_updates = IndexedGame(Game(cards=[], players=[], zones=[], battlefield_cards=[], action_log=[]))
+        game_updates = IndexedGame()
 
         # per card
         for card_change in action.card_changes:
@@ -283,7 +306,7 @@ class MagicTable:
                 game_updates.battlefield_cards[bf_card.card_id] = bf_card
                 self.indexed_game.merge(game_updates)
                 line = f"{'' if bf_card.tapped else 'un'}tapped {self.get_card_name_for_log(card_change.card_id)}"
-                game_updates.action_log.append(LogLine(who=action.who, when=action.when, line=line))
+                game_updates.log_updates.append(LogLine(who=action.who, when=action.when, line=line))
             elif card_change.change == TOGGLE_FACEDOWN_CARD:
                 card_state = self.indexed_game.cards[card_change.card_id]
                 card_state.facedown = not card_state.facedown
@@ -292,7 +315,7 @@ class MagicTable:
                 if self.where_is_card(card_change.card_id) in [BATTLEFIELD]:
                     line = "turned a card facedown" if card_state.facedown \
                         else f"turned {self.get_card_name_for_log(card_change.card_id)} face up"
-                    game_updates.action_log.append(LogLine(who=action.who, when=action.when, line=line))
+                    game_updates.log_updates.append(LogLine(who=action.who, when=action.when, line=line))
             elif card_change.change == TOGGLE_TRANSFORM_CARD:
                 card_state = self.indexed_game.cards[card_change.card_id]
                 card_state.transformed = not card_state.transformed
@@ -301,7 +324,7 @@ class MagicTable:
                 if self.where_is_card(card_change.card_id) in [BATTLEFIELD]:
                     line = f"{'transformed' if card_state.transformed else 'un-transformed'} " \
                            f"{self.get_card_name_for_log(card_change.card_id)}"
-                    game_updates.action_log.append(LogLine(who=action.who, when=action.when, line=line))
+                    game_updates.log_updates.append(LogLine(who=action.who, when=action.when, line=line))
 
         # not per card
         if action.kind == UNTAP_ALL:
@@ -314,12 +337,12 @@ class MagicTable:
                     game_updates.battlefield_cards[bf_card.card_id] = bf_card
                     count += 1
             line = f"untapped {count} cards"
-            game_updates.action_log.append(LogLine(who=action.who, when=action.when, line=line))
+            game_updates.log_updates.append(LogLine(who=action.who, when=action.when, line=line))
         elif action.kind.startswith(SHUFFLE_LIBRARY):
             tgt_owner = action.kind.replace(SHUFFLE_LIBRARY + "_", "")
             MagicTable.shuffle_library(tgt_owner, action.when, self.indexed_game, game_updates)
             line = "shuffled " + ("their" if action.who == tgt_owner else f"{tgt_owner}'s") + " library"
-            game_updates.action_log.append(LogLine(who=action.who, when=action.when, line=line))
+            game_updates.log_updates.append(LogLine(who=action.who, when=action.when, line=line))
         elif action.kind == MULLIGAN:
             # move hand cards to library
             hand = self.indexed_game.zones[action.who + "-" + HAND]
@@ -333,12 +356,12 @@ class MagicTable:
             # draw 7
             hand.cards, library.cards = library.cards[:7], library.cards[7:]
             line = "took a mulligan"
-            game_updates.action_log.append(LogLine(who=action.who, when=action.when, line=line))
+            game_updates.log_updates.append(LogLine(who=action.who, when=action.when, line=line))
 
         return game_updates
 
     def handle_move_cards(self, action: PlayerAction) -> IndexedGame:
-        game_updates = IndexedGame(Game(cards=[], players=[], zones=[], battlefield_cards=[], action_log=[]))
+        game_updates = IndexedGame()
         log_lines = []
 
         for card_move in action.card_moves:
@@ -363,9 +386,8 @@ class MagicTable:
 
                 if card_move.tgt_zone != EXILE:
                     # magic feature: tokens can't be anywhere except battlefield
-                    card_state = self.indexed_game.cards[card_id]
-                    sf_token = next((sf for sf in MagicTable.get_all_tokens() if sf.sf_id == card_state.sf_id), None)
-                    if sf_token:
+                    table_card = next(tc for tc in self.table.table_cards if tc.card_id == card_id)
+                    if table_card.token:
                         card_move.tgt_zone = EXILE  # enforce rule by overriding the action
 
             tgt_zone = self.indexed_game.zones[card_move.tgt_owner + "-" + card_move.tgt_zone]
@@ -403,6 +425,6 @@ class MagicTable:
 
         if len(log_lines) > 1 and all(["drew a card" == ll.line for ll in log_lines]):
             log_lines = [LogLine(who=action.who, when=action.when, line=f"drew {len(log_lines)} cards")]
-        game_updates.action_log += log_lines
+        game_updates.log_updates += log_lines
 
         return game_updates
