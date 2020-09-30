@@ -1,5 +1,5 @@
 /** state of this client, e.g. popups and options */
-import {BattlefieldCard, Card, Game as GameT, LogLine, Player, Zone} from "./magic_models";
+import {BattlefieldCard, Card, Game as GameT, LogLine, Player, TableCard, Zone} from "./magic_models";
 
 export interface ClientState {
     playerPrefs: PlayerPrefs,
@@ -43,6 +43,7 @@ export const EXILE: string = "Exile"
 export const BATTLEFIELD: string = "Battlefield"
 
 export interface Game {
+    tableCards: {[index: number]: TableCard}
     cards: { [index: number]: Card }
     players: { [index: string]: Player }
     /** indexed by owner-name */
@@ -52,23 +53,14 @@ export interface Game {
     actionLog: LogLine[]
 }
 
-export function blankGame(): GameT {
+export function indexGame(game: GameT, tableCards: TableCard[], actionLog: LogLine[]): Game {
     return {
-        players: [],
-        cards: [],
-        zones: [],
-        battlefield_cards: [],
-        action_log: []
-    }
-}
-
-export function indexGame(game: GameT): Game {
-    return {
-        players: game.players.reduce((d, x, idx) => ({...d, [x.name]: x}), {}),
-        cards: game.cards.reduce((d, x, idx) => ({...d, [x.card_id]: x}), {}),
-        zones: game.zones.reduce((d, x, idx) => ({...d, [`${x.owner}-${x.name}`]: x}), {}),
-        battlefieldCards: game.battlefield_cards.reduce((d, x, idx) => ({...d, [x.card_id]: x}), {}),
-        actionLog: game.action_log,
+        players: game.players.reduce((d, x, _) => ({...d, [x.name]: x}), {}),
+        cards: game.cards.reduce((d, x, _) => ({...d, [x.card_id]: x}), {}),
+        zones: game.zones.reduce((d, x, _) => ({...d, [`${x.owner}-${x.name}`]: x}), {}),
+        battlefieldCards: game.battlefield_cards.reduce((d, x, _) => ({...d, [x.card_id]: x}), {}),
+        tableCards: tableCards.reduce((d, x, _) => ({...d, [x.card_id]: x}), {}),
+        actionLog: actionLog,
     };
 }
 

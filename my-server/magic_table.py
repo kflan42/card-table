@@ -1,6 +1,5 @@
-import json
-import logging
 import os
+import time
 from random import shuffle, seed
 from typing import Tuple
 
@@ -9,6 +8,7 @@ from magic_cards import load_cards, CardResolver, parse_deck
 from magic_constants import *
 from magic_game import IndexedGame
 from magic_models import *
+from utils import logger
 
 
 def is_test(table_name: str) -> bool:
@@ -40,21 +40,17 @@ class MagicTable:
     @staticmethod
     def load(table_name):
         file_path = os.path.join(MagicTable.get_tables_path(), table_name)
-        game = persistence.load(file_path + ".game.json",
-                                decoder=lambda d: Game.schema().loads(d))
-        if not game:
+        sg = persistence.load(file_path + ".save_game.json",
+                              decoder=lambda d: SaveGame.schema().loads(d))
+        if not sg:
             return None
         # load the rest, stored in pieces
         sf_cards = load_cards(file_path=file_path + ".sf_cards.json")  # optimized for speed
         table_cards = persistence.load(file_path + ".table_cards.json",
                                        decoder=lambda d: TableCard.schema().loads(d, many=True))
-        actions = persistence.load(file_path + ".actions.json",
-                                   decoder=lambda d: PlayerAction.schema().loads(d, many=True))
-        action_log = persistence.load(file_path + ".action_log.json",
-                                      decoder=lambda d: LogLine.schema().loads(d, many=True))
 
-        table = Table(name=table_name, game=game, sf_cards=sf_cards, table_cards=table_cards,
-                      actions=actions, action_log=action_log)
+        table = Table(name=table_name, sf_cards=sf_cards, table_cards=table_cards, game=sg.game,
+                      actions=sg.actions, log_lines=sg.log_lines)
         return MagicTable(table_name, table)
 
     def __init__(self, name, table: Table = None):
@@ -63,7 +59,7 @@ class MagicTable:
         else:
             self.table = Table(name=name, sf_cards=[], table_cards=[],
                                game=Game(cards=[], players=[], zones=[], battlefield_cards=[]),
-                               actions=[], action_log=[])
+                               actions=[], log_lines=[])
         self.indexed_game = IndexedGame(self.table.game)
 
     def add_player(self, join_request: JoinRequest):
@@ -114,6 +110,10 @@ class MagicTable:
             # commander format - put commander into command zone
             next((z for z in zones if z.name == COMMAND_ZONE)).cards.append(commander_card.card_id)
             self.table.game.cards.append(commander_card)
+            commander_sfid = next((tc.sf_id for tc in table_cards if tc.card_id == commander_card_id))
+            commander_name = next((sfc.name for sfc in sf_cards if sfc.sf_id == commander_sfid))
+        else:
+            commander_name = None
         library = next((z for z in zones if z.name == LIBRARY))
         library.cards.extend([c.card_id for c in library_cards])
         shuffle(library.cards)  # shuffle the library
@@ -127,22 +127,30 @@ class MagicTable:
         player = Player(name=join_request.name, color=join_request.color, counters=[], zones=z_ids)
         player.counters.append(Counter(name="Life", value=40 if commander_card_id is not None else 20))
         self.table.game.players.append(player)
-
-        # save the result
+        self.table.log_lines.append(LogLine(who=player.name, when=round(time.time()*1000),
+                                            line=f"joined the table with {len(table_cards)} cards" +
+                                                 f" led by {commander_name}." if commander_name else "."))
         self.indexed_game = IndexedGame(self.table.game)
         if not is_test(self.table.name):
             self.save()
         return True
 
-    def save(self):
-        # todo partial saves
+    def save(self, sf_cards=True, table_cards=True):
         file_path = os.path.join(MagicTable.get_tables_path(), self.table.name)
-        logging.info(f"Saving table to {file_path}")
-        persistence.save(file_path + ".sf_cards.json", SFCard.schema().dumps(self.table.sf_cards, many=True))
-        persistence.save(file_path + ".table_cards.json", TableCard.schema().dumps(self.table.table_cards, many=True))
-        persistence.save(file_path + ".actions.json", PlayerAction.schema().dumps(self.table.actions, many=True))
-        persistence.save(file_path + ".action_log.json", LogLine.schema().dumps(self.table.action_log, many=True))
-        persistence.save(file_path + ".game.json", Game.schema().dumps(self.table.game))
+        logger.info(f"Saving table to {file_path}")
+        t0 = time.time()
+        if sf_cards:
+            persistence.save(file_path + ".sf_cards.json",
+                             SFCard.schema().dumps(self.table.sf_cards, many=True))
+        if table_cards:
+            persistence.save(file_path + ".table_cards.json",
+                             TableCard.schema().dumps(self.table.table_cards, many=True))
+        # todo either find better append only data store for actions and log lines or split by 100s
+        # since saving them gets linearly slower over the course of the game
+        sg = SaveGame(self.table.game, self.table.actions, self.table.log_lines)
+        persistence.save(file_path + ".save_game.json", SaveGame.schema().dumps(sg))
+        t1 = time.time()
+        logger.info(f"Saved in {t1 - t0:.3f}s")
 
     def get_actions(self):
         return self.table.actions
@@ -160,12 +168,13 @@ class MagicTable:
         # apply to self
         self.table.game = self.indexed_game.merge(game_updates_i).to_game()
         if game_updates_i.log_updates:
-            self.table.action_log.extend(game_updates_i.log_updates)
+            self.table.log_lines.extend(game_updates_i.log_updates)
 
         if not is_test(self.table.name):  # don't save test tables
-            # only save if it was an action worth logging (e.g. not hand re-ordering or bf re-arranging)
+            # only save if it was an action worth adding to the log (e.g. not hand re-ordering or bf re-arranging)
             if game_updates_i.log_updates:
-                self.save()
+                # only need to save sf cards on join. only need to save table cards if new ones created.
+                self.save(sf_cards=False, table_cards=len(game_updates_i.card_updates) > 0)
         game_updates = game_updates_i.to_game()
         return game_updates, game_updates_i.log_updates, game_updates_i.card_updates
 
@@ -173,11 +182,7 @@ class MagicTable:
 
     def apply(self, action: PlayerAction) -> IndexedGame:
         """returns updated portions of a game or None"""
-        action.card_moves = [CardMove(**c) for c in action.card_moves]
-        action.card_changes = [CardChange(**c) for c in action.card_changes]
-        action.create_tokens = [CreateToken(**c) for c in action.create_tokens]
-        action.counter_changes = [CounterChange(**c) for c in action.counter_changes]
-        logging.info(f"applying {action}")
+        logger.info(f"applying {action}")
 
         game_updates_i: IndexedGame = IndexedGame()
 
@@ -186,15 +191,15 @@ class MagicTable:
         if action.card_changes or action.kind == UNTAP_ALL \
                 or action.kind.startswith(SHUFFLE_LIBRARY) or action.kind == MULLIGAN:
             game_updates_i.merge(self.handle_card_changes(action))
-        if action.kind in [SET_CARD_COUNTER, SET_PLAYER_COUNTER]:
+        if action.counter_changes:
             game_updates_i.merge(self.handle_counter_changes(action))
-        if action.kind == CREATE_TOKEN:
+        if action.create_tokens:
             game_updates_i.merge(self.handle_create_token(action))
 
-        if action.kind == MESSAGE:
+        if action.message:
             game_updates_i.log_updates.append(LogLine(who=action.who, when=action.when, line=action.message))
 
-        logging.info(f"resulted in {game_updates_i}")
+        logger.info(f"resulted in {game_updates_i}")
         return game_updates_i
 
     def handle_create_token(self, action: PlayerAction) -> IndexedGame:

@@ -10,107 +10,51 @@ Main entry point to launch server and handle client requests.
 
 import argparse
 import json
-import logging
-import logging.handlers
 import os
-import sys
 import typing
+from collections import defaultdict
 from datetime import datetime
+from threading import Lock
 
-from flask import Flask, send_from_directory, jsonify
+from flask import Flask, jsonify
 from flask import request
 from flask_cors import CORS
 from flask_socketio import SocketIO, join_room, emit
 
 import persistence
-from magic_models import JoinRequest, PlayerAction
+from magic_models import JoinRequest, PlayerAction, Table
 from magic_table import MagicTable, is_test
 from test_table import test_table
-from collections import defaultdict
-from threading import Lock
+from utils import logger
 
 tables: typing.Dict[str, MagicTable] = {}  # dict to track active tables
 table_locks: typing.Dict[str, Lock] = defaultdict(Lock)
 
-DEBUG = os.environ.get('FLASK_DEV', False)
-LOCAL_FILES = os.environ.get('LOCAL_FILES', False)
-
-# local vs cloud storage
-if LOCAL_FILES:
-    persistence.LOCAL = True
-
-if DEBUG:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=5000, required=False)
-    parser.add_argument("--static_port", type=int, default=3000, required=False)
-    parser.add_argument("--public_ip", type=str, default='0.0.0.0', required=False)
-    parser.add_argument("--redis", type=bool, default=False, required=False)
-    parser.add_argument("--static_folder", type=str, default="../my-app/build", required=False)
-    args = parser.parse_args()  # breaks gunicorn
-else:
-    class Args:
-        def __init__(self):
-            self.port = 8000  # gunicorn default
-            self.static_port = 3000  # npm react start default
-            self.public_ip = '0.0.0.0'
-            self.redis = False
-    args = Args()
-
-# logging setup
-logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s %(message)s', stream=sys.stdout, level=logging.INFO)
 # note that flask logs to stderr by default
-if LOCAL_FILES:  # only log to file locally
+if persistence.LOCAL:  # only log to file locally
+    import logging
     # socket.io doesn't handle rotating file appender, gets stuck on old one after the move (at least on windows)
     os.makedirs(os.path.join('logs'), exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     h = logging.FileHandler(filename=os.path.join('logs', f'hello_{timestamp}.log'), mode='a')
     f = logging.Formatter('%(asctime)s %(name)s %(levelname)-8s %(message)s')
     h.setFormatter(f)
-    logging.getLogger().addHandler(h)
-logging.info("hello from logging")
+    logger.addHandler(h)
+logger.info("hello from logger")
 
-app = Flask(__name__,
-            static_folder='build/static',
-            static_url_path='/static/')
-# static_url_path='/' # see  @app.route('/'  below
-# no cors for flask http api unless using https://flask-cors.readthedocs.io/en/latest/ which I don't need
-# for production, I can npm build the frontend and serve it from flask, avoiding CORS issues
-# not needed for local dev http requests if using create react app package.json's proxy setting
+app = Flask(__name__)
+
 CORS(app)  # necessary for api in app engine and frontend in storage bucket
-
 
 socketio = SocketIO(app,
                     cors_allowed_origins='*',  # allow clients served from anywhere, fine for a casual came for now
-                        # f'http://localhost:{args.port}',  # local flask served static js
-                        # f'http://localhost:{args.static_port}',  # local static file server js
-                        # f'http://{args.public_ip}:{args.port}',  # from remote machine
-                        # f'http://{args.public_ip}:{args.static_port}',
-                    # if using multiple server processes, need a queue, e.g. 
-                    message_queue='redis://localhost:6379' if args.redis else None,
                     # disable websockets since google cloud app engine standard env doesn't support them
                     # and timing out on attempting them adds a second or two to each request
                     allow_upgrades=False
-                 )
+                    )
 # can specify all these port args for websocket (but not http api) development
 # create react app proxy doesn't work with websocket https://github.com/facebook/create-react-app/issues/5280
 # so i manually set the socketio port in MySocket.ts
-
-
-# @app.route('/')
-# def hello_world():
-#     return "Hello World!!!", 200
-#
-#
-# @app.route('/<path:path>')
-# def serve(path: str):
-#     """handle everything that's not static and not an api request"""
-#     build_folder = 'build'
-#     if path != "" and os.path.exists(os.path.join(build_folder, path)):
-#         return send_from_directory(build_folder, path)
-#     elif path == "login" or path.startswith("table/"):
-#         return send_from_directory(build_folder, 'index.html')
-#     else:
-#         return "File not found.", 404
 
 
 def get_table(table_name) -> typing.Tuple[str, MagicTable]:
@@ -123,7 +67,7 @@ def get_table(table_name) -> typing.Tuple[str, MagicTable]:
         return table_name, table
     else:
         table = MagicTable.load(table_name)  # check disk
-        logging.info("loaded table " + table_name)
+        logger.info("loaded table " + table_name)
         if table:
             tables[table_name] = table  # keep in memory
         return table_name, table
@@ -131,30 +75,32 @@ def get_table(table_name) -> typing.Tuple[str, MagicTable]:
 
 @app.route('/api/table/<path:table_name>', methods=['GET', 'POST'])
 def join_table(table_name: str):
-    table_name, table = get_table(table_name=table_name)
+    table_name, magic_table = get_table(table_name=table_name)
     if request.method == 'POST':
         try:
-            logging.info(request.data.decode('utf-8'))
+            logger.info(request.data.decode('utf-8'))
             created = False
             # todo - this will work for single process dev server but not multi process prod
             with table_locks[table_name]:
-                if not table:
-                    table = MagicTable(table_name)  # create if joining
-                    logging.info("created table " + table_name)
-                    tables[table_name] = table
+                if not magic_table:
+                    magic_table = MagicTable(table_name)  # create if joining
+                    logger.info("created table " + table_name)
+                    tables[table_name] = magic_table
                     created = True
                 d = json.loads(request.data)
                 join_request = JoinRequest(**d)
-                if table.add_player(join_request):
+                if magic_table.add_player(join_request):
                     return ("Created table", 201) if created else ("Joined table.", 202)
                 else:
                     return "Already at table.", 409
         except Exception as e:
-            logging.exception(e)
+            logger.exception(e)
             return "Error joining table: " + str(e), 500
     else:
-        if table:
-            return table.table.game.to_json()
+        if magic_table:
+            table = magic_table.table
+            return Table(name=table.name, game=table.game, sf_cards=[], table_cards=table.table_cards,
+                         actions=[], log_lines=table.log_lines).to_dict()
         return {"message": "Table not found."}, 404
 
 
@@ -184,28 +130,30 @@ def add_header(response):
 
 @socketio.on('connect')
 def test_connect():
-    logging.info(f'Client connected via {request.referrer} from {request.remote_addr}')
+    logger.info(f'Client connected via {request.referrer} from {request.remote_addr}')
 
 
 @socketio.on('disconnect')
 def test_disconnect():
-    logging.info(f'Client disconnected via {request.referrer} from {request.remote_addr}')
+    logger.info(f'Client disconnected via {request.referrer} from {request.remote_addr}')
 
 
 @socketio.on('player_action')
 def on_player_action(data):
-    logging.info('player_action %s', data)
+    logger.info('player_action %s', data)
     table_name = data['table']
     table_name, table = get_table(table_name=table_name)
     if table:
         # warning this will work for single process dev server but not multi process production setup
         with table_locks[table_name]:
-            player_action = PlayerAction(**data)
+            player_action = PlayerAction.schema().load(data)
             # resolve action
-            game_update = table.resolve_action(player_action)
+            game_update, log_lines, table_cards = table.resolve_action(player_action)
             if game_update:
                 # send it out
-                emit('game_update', game_update.to_json(), room=table_name, broadcast=True)   # on('game_update'
+                table_update = Table(name=table_name, game=game_update, sf_cards=[], table_cards=table_cards,
+                                     actions=[], log_lines=log_lines).to_dict()
+                emit('game_update', table_update, room=table_name, broadcast=True)  # on('game_update'
             else:
                 emit('error', {'error': 'Action failed.'})
     else:
@@ -216,7 +164,7 @@ def on_player_action(data):
 
 @socketio.on('player_draw')
 def on_player_draw(data):
-    logging.info('player_draw %s', data)
+    logger.info('player_draw %s', data)
     table_name = data['table']
     table_name, table = get_table(table_name=table_name)
     if table:
@@ -233,13 +181,13 @@ def on_player_draw(data):
 
 @socketio.on('error_report')
 def on_error_report(data):
-    logging.error(f'error_report via {request.referrer} from {request.remote_addr} %s', data)
+    logger.error(f'error_report via {request.referrer} from {request.remote_addr} %s', data)
 
 
 @socketio.on('join')
 def on_join(data):
     """Join a table, which has its own socket.io room."""
-    logging.info("join %s", data)
+    logger.info("join %s", data)
     table_name = data['table']
     table_name, table = get_table(table_name)
     if table:
@@ -260,13 +208,17 @@ def warmup():
 
 
 def main():
-    logging.info(f"starting up at http://{args.public_ip}:{args.port}")
+    base_ip = os.environ.get('BASE_IP', 'localhost')  # 0.0.0.0 to listen on external network interface instead
+    base_port = os.environ.get('BASE_PORT', 5000)
+    debug = os.environ.get('FLASK_DEV', False)
+
+    logger.info(f"starting up at http://{base_ip}:{base_port}")
     socketio.run(app,
-                 debug=DEBUG,
-                 host='0.0.0.0',  # so that the server listens on the public network interface, else localhost
-                 port=args.port)
+                 debug=debug,
+                 host=base_ip,
+                 port=base_port)
 
 
 if __name__ == '__main__':
     main()
-    logging.warning("goodbye world")
+    logger.warning("goodbye world")

@@ -17,7 +17,7 @@ import CustomDragLayer from './CustomDragLayer';
 import { useConfirmation } from './ConfirmationService';
 import { ConfirmationResult } from './ConfirmationDialog';
 import { usePlayerActions } from '../PlayerDispatch';
-import { Game, Card } from "../magic_models";
+import { TableCard, Table as TableU } from "../magic_models";
 import Hand from './Hand';
 import Table from './Table';
 import CardDB, { parseDeckCard } from "../CardDB";
@@ -34,6 +34,8 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
     const hoveredCard = useSelector((state: ClientState) => state.hoveredCard)
     const cardUnderCursor = useSelector((state: ClientState) =>
         state.hoveredCard.cardId != null ? state.game.cards[state.hoveredCard.cardId] : null)
+    const tableCardUnderCursor = useSelector((state: ClientState)=> 
+        state.hoveredCard.cardId != null ? state.game.tableCards[state.hoveredCard.cardId] : null)
     const isDrawing = useSelector((state: ClientState) => state.drawing.first !== null)
     const drawLines = useSelector((state: ClientState) => state.drawing.lines)
     const players = useSelector((state: ClientState) => state.game.players)
@@ -55,13 +57,13 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
         () => {
             const loadOptions = () => {
                 let bfImageQuality = localStorage.getItem('bfImageQuality')
-                bfImageQuality = bfImageQuality ? bfImageQuality : "normal" // todo remove low everywhere
+                bfImageQuality = "normal" // removed links for low images since all players using normal
                 let bfCardSize = localStorage.getItem('bfCardSize')
                 bfCardSize = bfCardSize ? bfCardSize : "7"
                 let handCardSize = localStorage.getItem('handCardSize')
                 handCardSize = handCardSize ? handCardSize : "14"
-                let rightClickPopup = localStorage.getItem('rightClickPopup') === 'true'
-                rightClickPopup = rightClickPopup ? rightClickPopup : true;
+                let rightClickPopupStr = localStorage.getItem('rightClickPopup')
+                const rightClickPopup = rightClickPopupStr === 'false' ? false : true;
                 dispatch(setUserPrefs({ bfImageQuality, bfCardSize, handCardSize, rightClickPopup }))
             }
 
@@ -73,8 +75,8 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
                 await CardDB.loadCards(cardsUrl)
                 // now that cards are loaded, initialize the game
                 const data = r.json()
-                const game: Game = await data
-                dispatch(setGame(game))
+                const table_update = await data as TableU
+                dispatch(setGame(table_update))
                 dispatch(setGameId(gameId as string))
             }
 
@@ -130,8 +132,8 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
                 console.log('Connecting sockets...')
                 // now that game is loaded, register for updates to it
                 MySocket.get_socket().emit('join', { table: gameId, username: userName })
-                MySocket.get_socket().on('game_update', function (msg: string) {
-                    const game_update = JSON.parse(msg)
+                MySocket.get_socket().on('game_update', function (msg: object) {
+                    const game_update = msg as TableU
                     console.log('received game_update', game_update)
                     dispatch(updateGame(game_update));
                 })
@@ -189,13 +191,14 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
 
     function moveCard(tgt_zone: string, to_idx: number | null) {
         if (!cardUnderCursor) return
+        if (!tableCardUnderCursor) return
         if (!srcZone) return
         const cardMove = {
             card_id: cardUnderCursor.card_id,
             src_zone: srcZone.zone.name,
             src_owner: srcZone.zone.owner,
             tgt_zone,
-            tgt_owner: cardUnderCursor.owner,
+            tgt_owner: tableCardUnderCursor.owner,
             to_idx
         }
         playerDispatch({ ...baseAction(), card_moves: [cardMove] })
@@ -223,7 +226,8 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
 
     const tokenPopup = () => {
         if (!userName) return
-        const choices = cardUnderCursor && !cardUnderCursor.facedown ? ["Copy " + CardDB.getCard(cardUnderCursor.sf_id).name] : []
+        const choices = cardUnderCursor && tableCardUnderCursor && 
+            !cardUnderCursor.facedown ? ["Copy " + CardDB.getCard(tableCardUnderCursor.sf_id).name] : []
         choices.push("New Token $")
         confirmation({
             choices: choices,
@@ -238,7 +242,7 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
                         kind: CREATE_TOKEN,
                         create_tokens: [{
                             owner: userName,
-                            sf_id: (cardUnderCursor as Card).sf_id
+                            sf_id: (tableCardUnderCursor as TableCard).sf_id
                         }]
                     })
                     break;

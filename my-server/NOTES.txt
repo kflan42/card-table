@@ -15,13 +15,15 @@ cd my-server
 gsutil cp -r cards $CLOUD_STORAGE_BUCKET
 gsutil ls $CLOUD_STORAGE_BUCKET
 
-# for hosting frontend in google storage bucket with dns name
+# for hosting frontend in google storage bucket with dns name - change url if not running locally
+export MY_API_SERVER_URL=http://localhost:5000
+cd my-app; ./rebuildForServer.sh;
 gsutil cp -r build/*  gs://$FRONTEND_BUCKET
 gsutil iam ch allUsers:legacyObjectReader gs://$FRONTEND_BUCKET
 gsutil web set -m index.html -e index.html gs://$FRONTEND_BUCKET
 
 # for local debug
-export FLASK_DEV True; export LOCAL_FILES True
+export FLASK_DEV True; export BASE_IP localhost; export BASE_PORT 5000
 python3 hello.py
 Optionally run a dev ui from cd my-app;npm start
 

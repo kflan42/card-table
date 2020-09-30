@@ -1,4 +1,3 @@
-import logging
 import os
 import random
 import re
@@ -10,6 +9,8 @@ import persistence
 from magic_models import SFCard, Face
 import unicodedata
 
+from utils import logger
+
 
 def load_cards(what="cards", file_path=None) -> List[SFCard]:
     if what and not file_path:
@@ -17,9 +18,9 @@ def load_cards(what="cards", file_path=None) -> List[SFCard]:
     elif not file_path:
         raise Exception("Must specify what or path to load!")
     t0 = time.time()
-    data = persistence.load(file_path, encoding='UTF-8')
-    # too slow card_list = [CardSchema().load(c) for c in json.load(f)]
-    # this is about 50x faster, bypassing Schema logic
+    # card_list = persistence.load(file_path, encoding='UTF-8', decoder=lambda d: SFCard.schema().loads(d, many=True))
+    # too slow ^
+    # this is about 20x faster, bypassing Schema logic
     pattern = re.compile(r'(?<!^)(?=[A-Z])')
 
     def load_card(d: dict):
@@ -36,10 +37,10 @@ def load_cards(what="cards", file_path=None) -> List[SFCard]:
                 d[k] = [Face(**fa) for fa in d[k]]
         return SFCard(**d)
 
+    data = persistence.load(file_path, encoding='UTF-8')
     card_list = [load_card(c) for c in data]
-    # cards = {c.id: c for c in card_list}
     t1 = time.time()
-    logging.info(f"{len(card_list)} {what} loaded in {t1 - t0:.3f}s, eg {card_list[0]}")
+    logger.info(f"{len(card_list)} {what} loaded in {t1 - t0:.3f}s, eg {card_list[0]}")
     return card_list
 
 
@@ -62,7 +63,7 @@ class CardResolver:
                 compound = " // ".join([_uni2ascii(f.name) for f in card.faces])
                 self.card_map[compound][card.set_name].append(card)
             if not card.face and not card.faces:
-                logging.error('Failed to map %s', card)
+                logger.error('Failed to map %s', card)
 
     def find_card(self, name, set_name=None, number=None) -> SFCard:
         try:
@@ -80,7 +81,7 @@ class CardResolver:
             return random.choice(random_set)
         except Exception as e:
             msg = f"Card not found for {{name: {name}, set:{set_name}, number:{number}}}"
-            logging.exception(msg)
+            logger.exception(msg)
             ex = Exception(msg, e)
             raise ex
 

@@ -1,6 +1,6 @@
 import { EntityLine } from "./ClientState";
 import { XYCoord } from "react-dnd";
-import { Game as GameT } from "./magic_models"
+import { Game as GameT, LogLine, Table, TableCard } from "./magic_models"
 
 export const SET_USER_PREFS = 'SET_USER_PREFS'
 export function setUserPrefs(prefs: Object) {
@@ -74,16 +74,18 @@ export const MULLIGAN = 'MULLIGAN'
 export interface GameUpdate {
     type: string
     when: number
-    game: GameT
+    game: GameT,
+    tableCards: TableCard[],
+    logLines: LogLine[]
 }
 export const SET_GAME = 'SET_GAME';
-export function setGame(game: GameT): GameUpdate {
-    return { type: SET_GAME, when: Date.now(), game: game }
+export function setGame(tableUpdate: Table): GameUpdate {
+    return { type: SET_GAME, when: Date.now(), game: tableUpdate.game, tableCards: tableUpdate.table_cards, logLines: tableUpdate.log_lines }
 }
 
 export const UPDATE_GAME = 'UPDATE_GAME';
-export function updateGame(game: GameT): GameUpdate {
-    return { type: UPDATE_GAME, when: Date.now(), game: game }
+export function updateGame(tableUpdate: Table): GameUpdate {
+    return { type: UPDATE_GAME, when: Date.now(), game: tableUpdate.game, tableCards: tableUpdate.table_cards, logLines: tableUpdate.log_lines }
 }
 
 export const SET_GAME_ID = 'SET_GAME_ID'

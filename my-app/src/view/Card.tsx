@@ -21,7 +21,8 @@ export interface CardProps {
 const Card: React.FC<CardProps> = ({ cardId, imageSize, cardHeight, showCollectorInfo }) => {
 
     const card = useSelector((state: ClientState) => state.game.cards[cardId])
-    const ownerColor = useSelector((state: ClientState) => state.game.players[card?.owner]?.color)
+    const tableCard = useSelector((state: ClientState) => state.game.tableCards[cardId])
+    const ownerColor = useSelector((state: ClientState) => state.game.players[tableCard?.owner]?.color)
 
     const drawingFirst = useSelector((state: ClientState) => state.drawing.first)
     const drawerColor = useSelector((state: ClientState) => state.game.players.hasOwnProperty(state.playerPrefs.name)
@@ -33,9 +34,9 @@ const Card: React.FC<CardProps> = ({ cardId, imageSize, cardHeight, showCollecto
     if (!card) {
         return <div className={`Card cardtooltip c-${cardId}`}>{`Card ${cardId}`}</div>
     }
-    const sfCard = CardDB.getCard(card?.sf_id);
+    const sfCard = CardDB.getCard(tableCard?.sf_id);
 
-    const ratio = imageSize === "normal" ? 488 / 680.0 : 146 / 204.0;
+    const ratio = imageSize === "small" ? 146 / 204.0 : 488 / 680.0;
     const cardWidth = cardHeight ? cardHeight * ratio : undefined;
 
     // altText, url
@@ -57,7 +58,7 @@ const Card: React.FC<CardProps> = ({ cardId, imageSize, cardHeight, showCollecto
                 : `${face?.name || sfCard.name}`
             // small is 10.8k (memory cache after 1st). fuzzy text, hard to read. 146 x 204
             // normal is 75.7k (memory cache after 1st). readable. 488 x 680
-            const img = imageSize === "normal" ? face?.normal : face?.small
+            const img = imageSize === "small" ? face?.small : face?.normal
             return img ? [text, img] : ["Card Image Not Found", logoSkewed]
         } else
             return ["Card Not Found", logoSkewed]

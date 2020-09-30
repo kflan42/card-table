@@ -71,6 +71,13 @@ const CustomDragLayer: React.FC = () => {
 
     const hoveredBf = useSelector((state: ClientState) => { return state.hoveredCard.bf })
 
+    const handCardHeight = useSelector((state: ClientState) => {
+        return state.playerPrefs.handCardSize;
+    })
+    const bfCardHeight = useSelector((state: ClientState) => {
+        return state.playerPrefs.bfCardSize;
+    })
+
     function renderItem() {
         switch (itemType) {
             case ItemTypes.BFCARD:
@@ -84,11 +91,11 @@ const CustomDragLayer: React.FC = () => {
                 if (c.srcZone === HAND && pointerOffset && initialOffset && pointerOffset.y > initialOffset.y) {
                     // render for hand
                     return <div className="DragHandCard">
-                        <Card cardId={c.cardId} />
+                        <Card cardId={c.cardId} cardHeight={handCardHeight} />
                     </div>
                 } else {
                     // render for table
-                    return <Card cardId={c.cardId} />
+                    return <Card cardId={c.cardId} cardHeight={bfCardHeight} />
                 }
             default:
                 return null

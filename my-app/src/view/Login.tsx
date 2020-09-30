@@ -3,15 +3,31 @@ import { useHistory } from 'react-router-dom';
 import { JoinRequest } from "../magic_models";
 import { setUserPrefs, setGame } from "../Actions";
 import { useDispatch } from "react-redux";
-import { blankGame } from '../ClientState';
+import MySocket from '../MySocket';
 
 
-export const LoginForm: React.FC = (props) => {
+export const LoginForm: React.FC = () => {
     const history = useHistory()
 
     const dispatch = useDispatch()
 
-    useEffect(() => { dispatch(setGame(blankGame())) })
+    useEffect(() => {
+        dispatch(setGame(
+            {
+                name: "",
+                game: {
+                    players: [],
+                    cards: [],
+                    zones: [],
+                    battlefield_cards: [],
+                },
+                log_lines: [],
+                actions: [],
+                sf_cards: [],
+                table_cards: []
+            }
+        ))
+    })
 
     return (
         <JoinTableForm
@@ -65,6 +81,8 @@ class JoinTableForm extends React.Component<LoginP> {
         if (deckList !== null) {
             this.setState({ deck_list: deckList })
         }
+
+        MySocket.close_socket()  // in case it's open from an earlier game, remove event handlers
     }
 
     setErrorMsg(msg: string) {
@@ -73,7 +91,7 @@ class JoinTableForm extends React.Component<LoginP> {
     }
 
     handleNameChange(event: ChangeEvent<HTMLInputElement>) {
-        this.setState({ name: event.target.value.replace(/[^A-Za-z0-9 .,_]/, '') }); 
+        this.setState({ name: event.target.value.replace(/[^A-Za-z0-9 .,_]/, '') });
         // '-' used for indexed zone names
     }
 
@@ -212,7 +230,7 @@ class JoinTableForm extends React.Component<LoginP> {
                 paddingTop: "2em",
                 paddingLeft: "2em",
             }}>
-                <h2 style={{textAlign:"center"}}>Welcome to my "Card Table"</h2>
+                <h2 style={{ textAlign: "center" }}>Welcome to my "Card Table"</h2>
                 <form onSubmit={this.handleSubmit} className="Login">
                     <div>
                         Your Name: &nbsp;
@@ -220,15 +238,15 @@ class JoinTableForm extends React.Component<LoginP> {
                         Table Name: &nbsp;
                         <input type="text" value={this.state.table} required={true} onChange={this.handleTableChange} />
                         <br /><span className="FormSpan" style={{ color: "red" }}> {this.response ? this.response : null} </span>
-                        <div style={{display:"flex", justifyContent:"space-evenly"}}>
-                        <button className="DivButton" onClick={this.handleWatchTable}>Watch Table</button>
-                        <input className="DivButton" type="submit" value="Join Table" />
+                        <div style={{ display: "flex", justifyContent: "space-evenly" }}>
+                            <button className="DivButton" onClick={this.handleWatchTable}>Watch Table</button>
+                            <input className="DivButton" type="submit" value="Join Table" />
                         </div>
-                        <br /><span className="InfoSpan"><b>Join</b> adds you as a player with your deck to the table, creating the table if necessary. 
+                        <br /><span className="InfoSpan"><b>Join</b> adds you as a player with your deck to the table, creating the table if necessary.
                         <br /><b>Watch</b> can be used for spectating or resuming a game as an existing player.</span>
                         <br /><span className="FormSpan">Your Card Sleeve Color: &nbsp; </span>
                         <div className="dropdown">
-                            <button
+                            <button type="button"
                                 style={{
                                     //backgroundColor: this.state.color,
                                     borderStyle: "solid",

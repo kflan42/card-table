@@ -11,7 +11,8 @@ export function gameReducer(
         cards: {},
         zones: {},
         battlefieldCards: {},
-        actionLog: []
+        tableCards: {},
+        actionLog: [],
     },
     gameUpdate: GameUpdate
 ) {
@@ -20,16 +21,17 @@ export function gameReducer(
 
     switch (gameUpdate.type) {
         case SET_GAME:
-            let indexedGame = indexGame(gameUpdate.game);
+            let indexedGame = indexGame(gameUpdate.game, gameUpdate.tableCards, gameUpdate.logLines);
             newState = indexedGame
             console.log('applied', gameUpdate)
             break
         case UPDATE_GAME:
-            let indexedUpdates = indexGame(gameUpdate.game);
+            let indexedUpdates = indexGame(gameUpdate.game, gameUpdate.tableCards, gameUpdate.logLines);
             newState.players = {...newState.players, ...indexedUpdates.players}
             newState.cards = {...newState.cards, ...indexedUpdates.cards}
             newState.battlefieldCards = {...newState.battlefieldCards, ...indexedUpdates.battlefieldCards}
             newState.zones = {...newState.zones, ...indexedUpdates.zones}
+            newState.tableCards = {...newState.tableCards, ...indexedUpdates.tableCards}
             newState.actionLog = [...newState.actionLog, ...indexedUpdates.actionLog]
             break
     }

@@ -49,19 +49,6 @@ export const OptionsDialog: React.FC<OptionsDialogProps> = ({
 
             <div style={{
                 display: "flex", alignItems: "center"
-            }} key="bfImageQuality">
-                Use Low Quality Battlefield Card Images
-                <input className="DivButton"
-                    style={{ marginLeft: "0.5em", marginRight: "0.5em", marginTop: "1em", marginBottom: "1em" }}
-                    type="checkbox" id="x" name="x"
-                    checked={prefs.bfImageQuality === "low"} onChange={e => {
-                        const bfImageQuality = e.currentTarget.checked ? "low" : "normal"
-                        setPrefs({ ...prefs, bfImageQuality })
-                    }} />
-            </div>
-
-            <div style={{
-                display: "flex", alignItems: "center"
             }} key="bfCardSize">
                 Battlefield Card Height
                 <input className="DivButton"

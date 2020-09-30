@@ -1,9 +1,10 @@
-import random
-
+import time
 
 from magic_table import MagicTable, Game, Zone
-from magic_models import BattlefieldCard, Counter, JoinRequest
-from magic_constants import ZONES, LIBRARY, HAND, BATTLEFIELD
+from magic_models import JoinRequest, CardMove, PlayerAction, CounterChange, CardChange, \
+    CreateToken
+from magic_constants import ZONES, LIBRARY, HAND, BATTLEFIELD, TOGGLE_TAP_CARD, TOGGLE_TRANSFORM_CARD, \
+    TOGGLE_FACEDOWN_CARD
 
 arena_deck = "1 Abzan Charm (C16) 177\r\n1 Acidic Slime (MYS1) 165\r\n1 Acolyte of Affliction (THB) 206\r\n1 Altar of Dementia (MH1) 218\r\n1 Blossoming Sands (IKO) 244\r\n1 Boneyard Lurker (IKO) 178\r\n1 Carrion Feeder (MYS1) 81\r\n1 Caustic Caterpillar (MYS1) 170\r\n1 Chittering Harvester (IKO) 80\r\n1 Corpse Knight (M20) 206\r\n1 Cruel Celebrant (WAR) 188\r\n1 Dawntreader Elk (DKA)\r\n1 Devoted Druid (SHM) 162\r\n1 Dirge Bat (IKO) 84\r\n1 Divine Reckoning (C19) 62\r\n1 Drown in Filth (GK1) 60\r\n1 Duneblast (C16) 194\r\n1 Elvish Rejuvenator (M19) 180\r\n1 Evolving Wilds (IKO) 247\r\n1 Explosive Vegetation (MYS1) 144\r\n1 Farhaven Elf (C18) 146\r\n1 Fertilid (IKO) 152\r\n1 Final Parting (DAR) 93\r\n1 Fleshbag Marauder (CN2) 136\r\n9 Forest (IKO) 272\r\n1 Forsaken Sanctuary (C18) 247\r\n1 Foul Orchard (C19) 244\r\n1 Funeral Rites (THB) 97\r\n1 Gaze of Granite (GK1) 61\r\n1 Gemrazer (IKO) 155\r\n1 Glowspore Shaman (GRN) 173\r\n1 Golgari Grave-Troll (DDJ) 60\r\n1 Golgari Rot Farm (C19) 248\r\n1 Grapple with the Past (MYS1) 148\r\n1 Graypelt Refuge (MYS1) 249\r\n1 Grisly Salvage (GK1) 64\r\n1 Guardian Project (RNA) 130\r\n1 Harrow (MYS1) 174\r\n1 Insatiable Hemophage (IKO) 93\r\n1 Jade Mage (C13) 151\r\n1 Jarad's Orders (RTR)\r\n1 Jungle Hollow (IKO) 249\r\n1 Mentor of the Meek (M19) 27\r\n1 Merciless Executioner (FRF) 76\r\n1 Migration Path (IKO) 164\r\n1 Migratory Greathorn (IKO) 165\r\n1 Moldervine Reclamation (M20) 214\r\n1 Necropanther (IKO) 196\r\n1 Nethroi, Apex of Death (IKO) 197 *CMDR*\r\n1 Nyx Weaver (JOU) 155\r\n1 Orzhov Basilica (MYS1) 297\r\n1 Path of Discovery (RIX) 142\r\n1 Perpetual Timepiece (KLD) 227\r\n1 Plaguecrafter (C19) 126\r\n3 Plains (IKO) 260\r\n1 Rampant Growth (MYS1) 48\r\n1 Ravenous Chupacabra (MYS1) 104\r\n1 Read the Bones (MYS1) 122\r\n1 Reclamation Sage (C18) 159\r\n1 Sakura-Tribe Elder (MYS1) 187\r\n1 Sandsteppe Citadel (MYS1) 305\r\n1 Satyr Wayfinder (CM1) 143\r\n1 Sawtusk Demolisher (C20) 64\r\n1 Scoured Barrens (IKO) 254\r\n1 Selesnya Sanctuary (C19) 272\r\n1 Shriekmaw (MYS1) 136\r\n1 Soul of the Harvest (EO2) 36\r\n1 Springbloom Druid (MH1) 181\r\n1 Stinkweed Imp (MYS1) 53\r\n1 Stitcher's Supplier (M19) 121\r\n10 Swamp (IKO) 266\r\n1 Syphon Mind (C17) 127\r\n1 Syr Konrad, the Grim (ELD) 107\r\n1 Temple of Malady (M20) 254\r\n1 Terramorphic Expanse (C19) 281\r\n1 Tranquil Expanse (C18) 289\r\n1 Vindictive Vampire (RNA) 90\r\n1 Vizier of Remedies (AKH) 38\r\n1 Winding Way (MH1) 193\r\n1 Yavimaya Granger (ULG)\r\n1 Zulaport Cutthroat (BFZ) 126\r\n\r\n"
 txt_deck = "1 Akroma's Memorial\r\n1 Asceticism\r\n1 Avenger of Zendikar\r\n1 Beast Whisperer\r\n1 Beast Within\r\n1 Boseiju, Who Shelters All\r\n1 Castle Garenbrig\r\n1 Collector Ouphe\r\n1 Concordant Crossroads\r\n1 Craterhoof Behemoth\r\n1 Creeping Renaissance\r\n1 Cultivate\r\n1 Defense Grid\r\n1 Defense of the Heart\r\n1 Deserted Temple\r\n1 Dryad Arbor\r\n1 Elvish Mystic\r\n1 Eternal Witness\r\n1 Fabled Passage\r\n1 Finale of Devastation\r\n22 Forest\r\n1 Gaea's Cradle\r\n1 Genesis Wave\r\n1 Green Sun's Zenith\r\n1 Hall of Gemstone\r\n1 Heroic Intervention\r\n1 Kamahl, Fist of Krosa *CMDR*\r\n1 Karametra's Acolyte\r\n1 Karn Liberated\r\n1 Kenrith's Transformation\r\n1 Kogla, the Titan Ape\r\n1 Krosan Grip\r\n1 Llanowar Elves\r\n1 Llanowar Tribe\r\n1 Lotus Cobra\r\n1 Lurking Predators\r\n1 Mana Reflection\r\n1 Miren, the Moaning Well\r\n1 Misty Rainforest\r\n1 Nacatl War-Pride\r\n1 Natural Order\r\n1 Nature's Will\r\n1 Nevinyrral's Disk\r\n1 Nissa's Pilgrimage\r\n1 Nissa, Vastwood Seer\r\n1 Nykthos, Shrine to Nyx\r\n1 Nylea's Intervention\r\n1 Nyxbloom Ancient\r\n1 Ohran Frostfang\r\n1 Oracle of Mul Daya\r\n1 Praetor's Counsel\r\n1 Priest of Titania\r\n1 Questing Beast\r\n1 Regal Force\r\n1 Regrowth\r\n1 Reliquary Tower\r\n1 Return of the Wildspeaker\r\n1 Rings of Brighthearth\r\n1 Rishkar's Expertise\r\n1 Scavenging Ooze\r\n1 Seedborn Muse\r\n1 Selvala's Stampede\r\n1 Selvala, Heart of the Wilds\r\n1 Shamanic Revelation\r\n1 Skyshroud Claim\r\n1 Song of the Dryads\r\n1 Soul of the Harvest\r\n1 Spike Weaver\r\n1 Spore Frog\r\n1 Sylvan Library\r\n1 The Great Henge\r\n1 Verdant Catacombs\r\n1 Vigor\r\n1 Vivien, Monsters' Advocate\r\n1 Vorinclex, Voice of Hunger\r\n1 Windswept Heath\r\n1 Wood Elves\r\n1 Wooded Foothills\r\n1 Woodfall Primus\r\n"
@@ -14,42 +15,63 @@ xmage_deck = "1 [LEB:287] Volcanic Island\r\n1 [LEB:278] Badlands\r\n1 [LEB:286]
 tcgplayer_deck = "1 Sensei's Divining Top [CHK]\r\n1 Finale of Devastation [WAR]\r\n1 Boseiju, Who Shelters All [CHK]\r\n1 Heroic Intervention [AER]\r\n1 Primordial Hydra [M13]\r\n1 Freyalise, Llanowar's Fury [C14]\r\n1 Kamahl, Fist of Krosa [ONS]\r\n1 Miren, the Moaning Well [SOK]\r\n1 Fauna Shaman [M11]\r\n1 Nissa, Who Shakes the World [WAR]\r\n1 Lightning Greaves [MRD]\r\n1 Lurking Predators [M10]\r\n1 Emerald Medallion [C14]\r\n1 Primeval Bounty [M14]\r\n1 Rishkar's Expertise [AER]\r\n1 Eternal Witness [C15]\r\n1 Selvala's Stampede [CN2]\r\n1 Ezuri's Predation [C15]\r\n1 Sol Ring [C16]\r\n1 Goreclaw, Terror of Qal Sisma [M19] *CMDR*\r\n1 Elvish Piper [A25]\r\n1 Krosan Grip [C13]\r\n1 Reliquary Tower [M19]\r\n1 Prowling Serpopard [AKH]\r\n1 Spearbreaker Behemoth [ALA]\r\n1 Soul's Majesty [C17]\r\n1 Thunderfoot Baloth [C14]\r\n1 Multani, Maro-Sorcerer [ULG]\r\n1 Swiftfoot Boots [C13]\r\n1 Kodama's Reach [CHK]\r\n1 Beast Whisperer [GRN]\r\n1 Sakura-Tribe Scout [SOK]\r\n1 Garruk, Primal Hunter [C19]\r\n1 Beast Within [CN2]\r\n1 Wirewood Channeler [LGN]\r\n1 Cultivate [C17]\r\n1 Yeva, Nature's Herald [M13]\r\n1 Elemental Bond [C17]\r\n1 Oran-Rief, the Vastwood [C14]\r\n1 Explosive Vegetation [ONS]\r\n1 Elvish Archdruid [M11]\r\n1 Siege Behemoth [CMA]\r\n1 Overwhelming Stampede [MM2]\r\n1 Skyshroud Claim [NMS]\r\n1 Sandwurm Convergence [AKH]\r\n1 Shamanic Revelation [C19]\r\n1 Llanowar Tribe [MH1]\r\n1 Drumhunter [ALA]\r\n1 Harmonize (Garruk vs Liliana) [DD3]\r\n1 Mosswort Bridge [C15]\r\n1 Engulfing Slagwurm [SOM]\r\n1 Drove of Elves [SHM]\r\n3 Forest (304) [CHK]\r\n1 Temple of the False God [C16]\r\n1 Dungrove Elder [MB1]\r\n1 Rhonas's Monument [AKH]\r\n1 Paleoloth [CON]\r\n1 End-Raze Forerunners [RNA]\r\n1 Arbor Elf [WWK]\r\n1 Colossal Majesty [C19]\r\n1 Grave Sifter [C14]\r\n1 Bellowing Tanglewurm [SOM]\r\n1 Brawn [EMA]\r\n1 Forest (254) - Full Art [AKH]\r\n1 Garruk's Horde [M12]\r\n1 Forest (273) [BFZ]\r\n1 Forest (382) [10E]\r\n1 Terra Stomper [ORI]\r\n2 Forest (305) [CHK]\r\n1 Mana Geode [WAR]\r\n1 Tranquil Thicket [ONS]\r\n3 Forest (306) [CHK]\r\n2 Forest (303) [CHK]\r\n1 Caller of the Pack [C15]\r\n1 Sentinel Totem [XLN]\r\n1 Spawning Grounds [C18]\r\n1 Forest (247) [THS]\r\n1 Forest (269) [KTK]\r\n1 Forest (263) [DTK]\r\n1 Forest (266) [KTK]\r\n2 Forest (268) [KTK]\r\n1 Forest (271) [ORI]\r\n1 Indrik Stomphowler [C15]\r\n2 Forest (264) [KLD]\r\n1 Forest (248) [M13]\r\n1 Gale Force [CHK]\r\n1 Plated Crusher [BBD]\r\n1 Forest (199) [HOU]\r\n1 Forest (262) [KLD]\r\n1 Forest (198) [HOU]\r\n1 Band Together [WAR]\r\n1 Slice in Twain [C19]"
 pioneer_60_deck = "4 Blood Crypt (RNA) 245\n3 Bonecrusher Giant (ELD) 115\n3 Canyon Slough (AKH) 239\n2 Castle Locthwain (ELD) 241\n2 Chandra, Torch of Defiance (KLD) 110\n2 Collective Brutality (MYS1) 85\n4 Dragonskull Summit (XLN) 252\n2 Dreadbore (E01) 83\n2 Fatal Push (AER) 57\n2 Foreboding Ruins (SOI) 272\n3 Goblin Rabblemaster (DDT) 46\n2 Hazoret the Fervent (AKH) 136\n3 Kolaghan's Command (MYS1) 224\n3 Kroxa, Titan of Death's Hunger (THB) 221\n4 Mountain (IKO) 269\n3 Murderous Rider (ELD) 97\n4 Soul-Scar Mage (AKH) 148\n3 Swamp (IKO) 266\n4 Thoughtseize (IMA) 45\n1 Urborg, Tomb of Yawgmoth (M15) 148\n4 Wild Slash (FRF) 118\n\n2 Angrath's Rampage (WAR) 185\n1 Ashiok, Dream Render (WAR) 228\n1 Chandra, Acolyte of Flame (M20) 126\n2 Damping Sphere (DAR) 213\n2 Duress (MYS1) 96\n2 Goblin Chainwhirler (DAR) 129\n2 Noxious Grasp (M20) 110\n2 Rakdos Charm (C17) 190\n"
 
+
 def get_zone(game: Game, player: str, zone: str) -> Zone:
     return [z for z in game.zones if z.owner == player and z.name == zone][0]
+
 
 def test_table(name:str) -> MagicTable:
     table = MagicTable(name)
     # add players
-    table.add_player(JoinRequest(name='alice', table='test', deck_list=arena_deck, color='Green'))
-    table.add_player(JoinRequest(name='bob', table='test', deck_list=txt_deck, color='Red'))
-    table.add_player(JoinRequest(name='Cool Person', table='test', deck_list=arena_deck_w_side, color='Blue'))
-    table.add_player(JoinRequest(name='Definitely Dude', table='test', deck_list=tapped_out_deck, color='White'))
-    table.add_player(JoinRequest(name='Edwin', table='test', deck_list=pioneer_60_deck, color='Black'))
+    table.add_player(JoinRequest(name='Arena 1', table='test', deck_list=arena_deck, color='Green'))
+    table.add_player(JoinRequest(name='Text 2', table='test', deck_list=txt_deck, color='Red'))
+    table.add_player(JoinRequest(name='Arena Side 3', table='test', deck_list=arena_deck_w_side, color='Blue'))
+    table.add_player(JoinRequest(name='Tapped Out 4', table='test', deck_list=tapped_out_deck, color='White'))
+    table.add_player(JoinRequest(name='Standard 5', table='test', deck_list=pioneer_60_deck, color='Black'))
 
     # make it busy
     game = table.table.game
     for player in game.players:
-        player.counters.append(Counter(name="Poison", value=random.randint(1, 10)))
-
         zs = {z: get_zone(game, player.name, z) for z in ZONES}
 
-        random.shuffle(zs[LIBRARY].cards)
+        pa = PlayerAction(table=name, kind='Draw', who=player.name, when=round(time.time()*1000),
+                          card_moves=[],
+                          card_changes=[],
+                          counter_changes=[],
+                          create_tokens=[]
+                          )
+        d = PlayerAction.from_dict(pa.to_dict())
+        d.kind = 'Draw'
+        d.when = round(time.time()*1000)
+        d.card_moves = [CardMove(card_id=c, src_zone=LIBRARY, src_owner=player.name,
+                                               tgt_zone=HAND, tgt_owner=player.name) for c in zs[LIBRARY].cards[:7]]
+        table.resolve_action(d)
 
-        for _ in range(7):
-            c = zs[LIBRARY].cards.pop()
-            zs[HAND].cards.append(c)
+        cc = PlayerAction.from_dict(pa.to_dict())
+        cc.when = round(time.time()*1000)
+        cc.counter_changes = [CounterChange(name="C. Casts", value=2, player=player.name)]
+        table.resolve_action(cc)
 
-        for _ in range(7):
-            c = zs[LIBRARY].cards.pop()
-            bfc = BattlefieldCard(card_id=c, counters=[],
-                                  x=random.randint(1, 17) * 5, y=random.randint(1, 14) * 5)
-            bfc.tapped = random.choice([True, False, False, False])
-            game_card = next((c_ for c_ in game.cards if c_.card_id == c))
-            game_card.facedown = random.choice([True, False, False, False])
-            game_card.transformed = random.choice([True, False, False, False])
-            if random.randint(1, 2) == 2:
-                bfc.counters.append(Counter(name="+1/+1", value=1))
-            game.battlefield_cards.append(bfc)
-            zs[BATTLEFIELD].cards.append(c)
+        cm = PlayerAction.from_dict(pa.to_dict())
+        cm.when = round(time.time()*1000)
+        cm.card_moves = [CardMove(card_id=c, src_zone=LIBRARY, src_owner=player.name,
+                                  tgt_zone=BATTLEFIELD, tgt_owner=player.name) for c in zs[LIBRARY].cards[:7]]
+        cm.card_changes = [CardChange(card_id=c, change="", to_x=c%75, to_y=c%60) for c in zs[LIBRARY].cards[:7]]
+        table.resolve_action(cm)
+
+        ce = PlayerAction.from_dict(pa.to_dict())
+        ce.when = round(time.time()*1000)
+        ce.card_changes = [
+            CardChange(card_id=zs[BATTLEFIELD].cards[0], change=TOGGLE_TAP_CARD),
+            CardChange(card_id=zs[BATTLEFIELD].cards[1], change=TOGGLE_TRANSFORM_CARD),
+            CardChange(card_id=zs[BATTLEFIELD].cards[2], change=TOGGLE_FACEDOWN_CARD),
+        ]
+        ce.counter_changes = [
+            CounterChange(name="+1/+1", value=1, card_id=zs[BATTLEFIELD].cards[3])
+        ]
+        ce.create_tokens = [
+            CreateToken(owner=player.name, sf_id=[t for t in table.get_all_tokens() if t.name == 'Cat'][0].sf_id)
+        ]
+        table.resolve_action(ce)
 
     return table

@@ -159,4 +159,12 @@ class Table(Interface, DataClassJsonMixin):
     sf_cards: List[SFCard]
     table_cards: List[TableCard]
     actions: List[PlayerAction]
-    action_log: List[LogLine]
+    log_lines: List[LogLine]
+
+
+@dataclass
+class SaveGame(Interface, DataClassJsonMixin):
+    """Just what we have to save a lot."""
+    game: Game
+    actions: List[PlayerAction]
+    log_lines: List[LogLine]

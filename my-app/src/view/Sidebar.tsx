@@ -5,6 +5,7 @@ import Clock from './Clock';
 import Log from './Log';
 import { useSelector } from 'react-redux';
 import { ClientState } from '../ClientState';
+import { useHistory } from 'react-router-dom';
 
 
 
@@ -24,17 +25,22 @@ const Sidebar: React.FC = () => {
         }
     })
 
+    const history = useHistory()
+    const logLines = useSelector((state: ClientState) => state.game.actionLog)
+    const elapsedS = logLines.length > 0 
+        ? Math.floor((state.date.getTime() - logLines[logLines.length - 1].when) / 1000)
+        : 0
+
     const tick = () => {
         setState({
             date: new Date()
         });
+        if(elapsedS > 900) {
+            history.push('/login')  // leave game and close socket so api server will spin down
+        }
     }
 
-    const logLines = useSelector((state: ClientState) => state.game.actionLog)
 
-    const elapsedS = logLines.length > 0 
-        ? Math.floor((state.date.getTime() - logLines[logLines.length - 1].when) / 1000)
-        : 0
     const tooLong = elapsedS > 45
     const flash = elapsedS % 15 <= 5
 

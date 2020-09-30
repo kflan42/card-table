@@ -29,6 +29,7 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
     })
 
     const cards = useSelector((state: ClientState) => state.game.cards)
+    const tableCards = useSelector((state: ClientState) => state.game.tableCards)
     const playerName = useSelector((state: ClientState) => state.playerPrefs.name)
 
     const {action:playerDispatch, baseAction} = usePlayerActions()
@@ -173,7 +174,7 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
                 } // skip cards removed since opened topN
                 if (!query
                     || cards[cardId].facedown
-                    || CardDB.getCard(cards[cardId].sf_id).name.toLowerCase().indexOf(query.toLowerCase()) > -1) {
+                    || CardDB.getCard(tableCards[cardId].sf_id).name.toLowerCase().indexOf(query.toLowerCase()) > -1) {
                     listItems.push(
                         <StackCard key={cardId} cardId={cardId} height={shownHeight} width={cardWidth}
                                    zone={name} owner={owner}/>

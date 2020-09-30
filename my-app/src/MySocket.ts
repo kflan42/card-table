@@ -23,4 +23,11 @@ export default class MySocket {
         return this.socket
     }
 
+    static close_socket() {
+        if (this.socket !== null) {
+            this.socket.close()
+            this.socket = null
+        }
+    }
+
 }

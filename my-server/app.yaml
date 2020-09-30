@@ -1,7 +1,7 @@
 runtime: python38
 
 env_variables:
-  # this bucket is locked down to my project only. replace with your bucket if you're not me.
+  # todo replace with https://cloud.google.com/appengine/docs/standard/python3/using-cloud-storage#default_bucket
   CLOUD_STORAGE_BUCKET: cloud-card-table-bucket
 
 entrypoint: gunicorn -b :$PORT --worker-class eventlet --workers 1 hello:app

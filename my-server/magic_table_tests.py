@@ -27,10 +27,10 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(len(deck0), len(deck3))
 
     def test_load_tokens(self):
-        print(MagicTable.get_all_cards()[-1])
+        print(MagicTable.get_all_tokens()[-1])
 
     def test_load_cards(self):
-        print(MagicTable.get_all_cards()[0])
+        print(MagicTable.get_all_cards()[-1])
 
     def test_card_map(self):
         resolver = CardResolver(MagicTable.get_all_cards())
