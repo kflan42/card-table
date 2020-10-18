@@ -19,3 +19,7 @@ SET_CARD_COUNTER = 'SET_CARD_COUNTER'
 CREATE_TOKEN = 'CREATE_TOKEN'
 MESSAGE = 'MESSAGE'
 MULLIGAN = 'MULLIGAN'
+
+
+class GameException(Exception):
+    pass

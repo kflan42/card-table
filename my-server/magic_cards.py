@@ -2,10 +2,10 @@ import os
 import random
 import re
 import time
-from collections import defaultdict
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Dict, Set
 
 import persistence
+from magic_constants import GameException
 from magic_models import SFCard, Face
 import unicodedata
 
@@ -44,60 +44,79 @@ def load_cards(what="cards", file_path=None) -> List[SFCard]:
     return card_list
 
 
-def _uni2ascii(word: str) -> str:
-    """Lim-Dûl's Vault --> Lim-Dul's Vault"""
-    return unicodedata.normalize('NFD', word).encode('ascii', 'ignore').decode() 
+def _sanitize(word: str) -> str:
+    """Lim-Dûl's Vault --> Lim-Dul's Vault --> lim-dul's vault"""
+    return unicodedata.normalize('NFD', word).encode('ascii', 'ignore').decode().lower()
 
 
 class CardResolver:
 
     def __init__(self, cards: List[SFCard]):
-        # build map
-        self.card_map = defaultdict(lambda: defaultdict(list))
+        # build map:
+        set_cards: Dict[str, Dict[str, List[SFCard]]] = {}  # set -> card name -> list of card
+        card_sets: Dict[str, Set[str]] = {}  # card name -> list of sets it is in
         for card in cards:
+            set_map = set_cards.setdefault(card.set_name, {})
+            names = []
             if card.face:
-                self.card_map[_uni2ascii(card.name)][card.set_name].append(card)
+                names.append(_sanitize(card.name))
             if card.faces:
                 for face in card.faces:
-                    self.card_map[_uni2ascii(face.name)][card.set_name].append(card)
-                compound = " // ".join([_uni2ascii(f.name) for f in card.faces])
-                self.card_map[compound][card.set_name].append(card)
+                    names.append(_sanitize(face.name))
+                compound = " // ".join([_sanitize(f.name) for f in card.faces])
+                names.append(compound)
+            for name in names:
+                card_list = set_map.setdefault(name, [])
+                card_list.append(card)
+                card_sets.setdefault(name, set()).add(card.set_name)
             if not card.face and not card.faces:
                 logger.error('Failed to map %s', card)
+        self.set_cards = set_cards
+        self.card_sets = {card: list(sets) for (card, sets) in card_sets.items()}  # convert to list for random picking
 
     def find_card(self, name, set_name=None, number=None) -> SFCard:
-        try:
-            name = _uni2ascii(name)
-            name_map = self.card_map[name]
-            official_set = set_name and len(set_name) == 3
-            if official_set and number and set_name in name_map:
-                matches = [cd for cd in name_map[set_name] if cd.number == number]
-                if matches:
-                    return matches[0]
-            if official_set and set_name and set_name in name_map:
-                return random.choice(name_map[set_name])
-            # fall through if number or set not found
-            random_set = random.choice(list(name_map.values()))
-            return random.choice(random_set)
-        except Exception as e:
-            msg = f"Card not found for {{name: {name}, set:{set_name}, number:{number}}}"
-            logger.exception(msg)
-            ex = Exception(msg, e)
-            raise ex
+        card_name = _sanitize(name)
+        if card_name not in self.card_sets:
+            raise GameException(f"Card '{name}' not found.")
+        if not set_name:
+            _set_name = random.choice(self.card_sets[card_name])
+        else:
+            _set_name = _sanitize(set_name)
+
+        if _set_name not in self.set_cards:
+            raise GameException(f"Set '{set_name}' not found for Card '{name}'.")
+
+        cards_by_name = self.set_cards[_set_name]
+        if card_name not in cards_by_name:
+            raise GameException(f"Card '{name}' not found in set '{set_name}'.")
+        card_list = cards_by_name[card_name]
+
+        if number:
+            card = next((cd for cd in card_list if cd.number == number), None)
+            if not card:
+                raise GameException(f"Card '{name}' number {number} not found in set '{set_name}'")
+            return card
+        else:
+            return random.choice(card_list)
 
 
 def parse_deck(deck_text: str) -> List[Tuple[str, Optional[str], Optional[str]]]:
     """Returns name,set,number tuples with the commander first if there is one."""
     cards = []
     lines = deck_text.strip().splitlines()
-    lines = [l for l in lines if "*CMDR*" in l] + [l for l in lines if "*CMDR*" not in l]
+    lines = lines[:250]  # limit to 250 different cards in the deck
+    # put CMDR first if present
+    lines = [_ for _ in lines if "*CMDR*" in _] + [_ for _ in lines if "*CMDR*" not in _]
+    errors = []
     for line in lines:
         try:
             count, card = parse_line(line)
             for _ in range(count):
                 cards.append(card)
         except Exception as e:
-            raise Exception(f"Error parsing card {line}", e)
+            errors.append((line, e))
+    if errors:
+        raise GameException(f"Error(s) parsing cards: "+", ".join(f"{line} > {e}" for (line, e) in errors))
     return cards
 
 
@@ -133,14 +152,14 @@ def parse_line(line: str) -> Tuple[int, Optional[Tuple[str, Optional[str], Optio
         m_x = re.match(r'\[(\w+):(\w+)]', word)
         if m_p:
             if set_name_or_number is None:
-                set_name_or_number = m_p[1].lower()  # TappedOut (set) or TCGPlayer (num)
+                set_name_or_number = m_p[1]  # TappedOut (set) or TCGPlayer (num)
         elif m_b:
-            set_name = m_b[1].lower()  # TCGPlayer [set]
+            set_name = m_b[1]  # TCGPlayer [set]
             if set_name_or_number:
                 set_number = set_name_or_number
         elif m_x:
-            set_name = m_x[1].lower()  # XMage [set:
-            set_number = m_x[2].lower()  # Xmage :num]
+            set_name = m_x[1]  # XMage [set:
+            set_number = m_x[2]  # Xmage :num]
         elif word == "-":
             ignoring = True  # TCGPlayer can have " - Full Art" before [set] for special prints
         elif word[0] == "(":

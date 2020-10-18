@@ -25,7 +25,8 @@ gsutil web set -m index.html -e index.html gs://$FRONTEND_BUCKET
 # for local debug
 export FLASK_DEV True; export BASE_IP localhost; export BASE_PORT 5000
 python3 hello.py
-Optionally run a dev ui from cd my-app;npm start
+# Optionally run a dev ui from
+cd my-app; npm start
 
 # for local run that resembles cloud
 export GOOGLE_APPLICATION_CREDENTIALS=$$$_key.json

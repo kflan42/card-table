@@ -131,7 +131,7 @@ class JoinTableForm extends React.Component<LoginP> {
             return;
         }
         console.log("watching table...", this.state.table)
-        fetch(`${process.env.REACT_APP_API_URL}/api/table/${this.state.table}`)
+        fetch(`${process.env.REACT_APP_API_URL || ""}/api/table/${this.state.table}`)
             .then(async response => {
                 console.log(response)
                 // check for error response
@@ -200,7 +200,7 @@ class JoinTableForm extends React.Component<LoginP> {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(this.state)
         };
-        return fetch(`${process.env.REACT_APP_API_URL}/api/table/${this.state.table}`, requestOptions)
+        return fetch(`${process.env.REACT_APP_API_URL || ""}/api/table/${this.state.table}`, requestOptions)
 
     }
 

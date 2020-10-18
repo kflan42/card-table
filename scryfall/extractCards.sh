@@ -26,8 +26,11 @@ CARD='
     end),
 }'
 
-C_FILTER='select( (.set|test("^...$")) and (.lang|test("en")) )'
-T_FILTER='select( (.set|test("^t...$")) and (.lang|test("en")) )'
+# All official sets are 3 characters and token sets prepend T, so filter down to those.
+# Stick to English since it's unfortunately the only language I'm fluent in.
+# Avoid digital only cards since they often have bad print pictures.
+C_FILTER='select( (.set|test("^...$")) and (.lang|test("en")) and (.digital != true) )'
+T_FILTER='select( (.set|test("^t...$")) and (.lang|test("en")) and (.digital != true) )'
 
 OUT_DIR="../my-server/cards"
 mkdir -p "${OUT_DIR}"

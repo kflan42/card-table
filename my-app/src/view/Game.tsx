@@ -67,8 +67,8 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
                 dispatch(setUserPrefs({ bfImageQuality, bfCardSize, handCardSize, rightClickPopup }))
             }
 
-            const gameUrl = `${process.env.REACT_APP_API_URL}/api/table/${gameId}`
-            const cardsUrl = `${process.env.REACT_APP_API_URL}/api/table/${gameId}/cards`
+            const gameUrl = `${process.env.REACT_APP_API_URL || ""}/api/table/${gameId}`
+            const cardsUrl = `${process.env.REACT_APP_API_URL || ""}/api/table/${gameId}/cards`
 
             async function onGameLoaded(r: Response) {
                 loadOptions()

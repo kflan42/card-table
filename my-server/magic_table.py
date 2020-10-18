@@ -69,15 +69,21 @@ class MagicTable:
         # load cards into table
         deck = parse_deck(join_request.deck_list)
         cr = CardResolver(MagicTable.get_all_cards())
-        sf_cards = [cr.find_card(*c) for c in deck]
+        sf_cards = []
+        errors = []
+        for c in deck[:1000]:  # limit deck to 1000 cards
+            try:
+                sf_cards.append(cr.find_card(*c))
+            except Exception as e:
+                errors.append(e)
+        if errors:
+            raise GameException("Deck Error(s): " + ", ".join(str(e) for e in errors))
         self.table.sf_cards.extend(sf_cards)
 
-        # shuffle the card ids we'll use, so that cid do not match deck list order
-        first_cid = max([c.card_id for c in self.table.game.cards]) if self.table.game.cards else 1  # skip cid 0
-        c_ids = [i for i in range(first_cid, first_cid + len(sf_cards))]
+        # skip 0, use block of 1000 per player
+        cid = 1000 * (1 + len(self.table.game.players))
         seed(self.table.name, version=2)  # seed with table name for consistency in testing/debugging
-        shuffle(c_ids)
-        table_cards = [TableCard(c_ids.pop(), sf_card.sf_id, owner=join_request.name) for sf_card in sf_cards]
+        table_cards = [TableCard(cid + i, sf_card.sf_id, owner=join_request.name) for i, sf_card in enumerate(sf_cards)]
         self.table.table_cards.extend(table_cards)
 
         zid = len(self.table.game.zones)

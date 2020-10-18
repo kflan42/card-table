@@ -22,6 +22,7 @@ from flask_cors import CORS
 from flask_socketio import SocketIO, join_room, emit
 
 import persistence
+from magic_constants import GameException
 from magic_models import JoinRequest, PlayerAction, Table
 from magic_table import MagicTable, is_test
 from test_table import test_table
@@ -93,6 +94,9 @@ def join_table(table_name: str):
                     return ("Created table", 201) if created else ("Joined table.", 202)
                 else:
                     return "Already at table.", 409
+        except GameException as e:
+            logger.warning(e)
+            return "Error joining table: " + str(e), 400
         except Exception as e:
             logger.exception(e)
             return "Error joining table: " + str(e), 500
