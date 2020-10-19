@@ -237,32 +237,38 @@
 }
 
 .myform input[type=text] {
-  width: 100%;
-  padding: 0.5em 0.5em;
-  margin: 0.5em 0;
+  width: 16em;
+  padding: 0.5em;
   display: inline-block;
   border: 0.25em solid #ccc;
   border-radius: 0.25em;
   box-sizing: border-box;
 }
 
-.myform .FormSpan {
+.myform .FullSpan {
   padding: 0.5em 0.0em;
-  margin: 0.0em;
+  max-width: 40em;
+  display: inline-block;
+  margin: 0.5em 1em;
 }
 
-.myform .InfoSpan {
+.myform .MediumSpan {
   padding: 0.5em 0.0em;
-  margin: 0.0em;
-  font-size: 85%;
+  max-width: 26em;
   display: inline-block;
-  width: 100%;
-  text-align: center;
+  margin: 0.5em 1em;
+}
+
+.myform .SmallSpan {
+  padding: 0.5em 0.0em;
+  width: 10em;
+  display: inline-block;
+  margin: 0.5em 1em;
 }
 
 .myform .DivButton {
   min-width: 10em;
-  padding: 0.5em 0.5em;
+  padding: 0.5em;
   margin: 0.5em;
   border-radius: 0.25em;
   cursor: pointer;

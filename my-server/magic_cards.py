@@ -49,9 +49,28 @@ def _sanitize(word: str) -> str:
     return unicodedata.normalize('NFD', word).encode('ascii', 'ignore').decode().lower()
 
 
-class CardResolver:
+class MagicCards:
+    _cards: List[SFCard] = None
+    _tokens: List[SFCard] = None
 
-    def __init__(self, cards: List[SFCard]):
+    _set_cards = None
+    _card_sets = None
+
+    @classmethod
+    def get_all_cards(cls) -> List[SFCard]:
+        if not cls._cards:
+            cls._cards = load_cards()
+        return cls._cards
+
+    @classmethod
+    def get_all_tokens(cls) -> List[SFCard]:
+        if not cls._tokens:
+            cls._tokens = load_cards("tokens")
+        return cls._tokens
+
+    @classmethod
+    def initialize(cls):
+        cards = cls.get_all_cards()
         # build map:
         set_cards: Dict[str, Dict[str, List[SFCard]]] = {}  # set -> card name -> list of card
         card_sets: Dict[str, Set[str]] = {}  # card name -> list of sets it is in
@@ -71,22 +90,27 @@ class CardResolver:
                 card_sets.setdefault(name, set()).add(card.set_name)
             if not card.face and not card.faces:
                 logger.error('Failed to map %s', card)
-        self.set_cards = set_cards
-        self.card_sets = {card: list(sets) for (card, sets) in card_sets.items()}  # convert to list for random picking
+        cls._set_cards = set_cards
+        cls._card_sets = {card: list(sets) for (card, sets) in card_sets.items()}  # convert to list for random picking
 
-    def find_card(self, name, set_name=None, number=None) -> SFCard:
+    @classmethod
+    def find_card(cls, name, set_name=None, number=None) -> SFCard:
+        # lazy init
+        if not cls._set_cards:
+            cls.initialize()
+
         card_name = _sanitize(name)
-        if card_name not in self.card_sets:
+        if card_name not in cls._card_sets:
             raise GameException(f"Card '{name}' not found.")
         if not set_name:
-            _set_name = random.choice(self.card_sets[card_name])
+            _set_name = random.choice(cls._card_sets[card_name])
         else:
             _set_name = _sanitize(set_name)
 
-        if _set_name not in self.set_cards:
+        if _set_name not in cls._set_cards:
             raise GameException(f"Set '{set_name}' not found for Card '{name}'.")
 
-        cards_by_name = self.set_cards[_set_name]
+        cards_by_name = cls._set_cards[_set_name]
         if card_name not in cards_by_name:
             raise GameException(f"Card '{name}' not found in set '{set_name}'.")
         card_list = cards_by_name[card_name]
@@ -98,6 +122,23 @@ class CardResolver:
             return card
         else:
             return random.choice(card_list)
+
+    @classmethod
+    def resolve_cards(cls, deck: List[Tuple[str, Optional[str], Optional[str]]]) -> List[SFCard]:
+        sf_cards = []
+        errors = []
+        for c in deck[:1000]:  # limit deck to 1000 cards
+            try:
+                sf_cards.append(cls.find_card(*c))
+            except Exception as e:
+                errors.append(e)
+        if errors:
+            raise GameException("Deck Error(s): " + ", ".join(str(e) for e in errors))
+        return sf_cards
+
+    @classmethod
+    def resolve_deck(cls, deck_text: str):
+        return cls.resolve_cards(parse_deck(deck_text))
 
 
 def parse_deck(deck_text: str) -> List[Tuple[str, Optional[str], Optional[str]]]:

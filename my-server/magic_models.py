@@ -30,7 +30,7 @@ class JoinRequest(Interface, DataClassJsonMixin):
     table: str
     name: str
     color: str
-    deck_list: str
+    deck: List[SFCard]
 
 
 @dataclass

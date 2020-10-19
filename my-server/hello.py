@@ -8,7 +8,6 @@ Main entry point to launch server and handle client requests.
 # best done as early as possible - https://flask-socketio.readthedocs.io/en/latest/#using-multiple-workers
 # breaks debugger breakpoints, requires "gevent": true in launch.json else crashes in debugger
 
-import argparse
 import json
 import os
 import typing
@@ -22,8 +21,9 @@ from flask_cors import CORS
 from flask_socketio import SocketIO, join_room, emit
 
 import persistence
+from magic_cards import parse_deck, MagicCards
 from magic_constants import GameException
-from magic_models import JoinRequest, PlayerAction, Table
+from magic_models import JoinRequest, PlayerAction, Table, SFCard
 from magic_table import MagicTable, is_test
 from test_table import test_table
 from utils import logger
@@ -58,6 +58,16 @@ socketio = SocketIO(app,
 # so i manually set the socketio port in MySocket.ts
 
 
+@app.route('/api/deckList', methods=['PUT'])
+def parse_deck_list():
+    try:
+        cards = MagicCards.resolve_deck(request.json)
+        return SFCard.schema().dumps(cards, many=True)
+    except Exception as e:
+        logger.warning(e)
+        return str(e), 400
+
+
 def get_table(table_name) -> typing.Tuple[str, MagicTable]:
     table_name = table_name.lower()  # lower case table names since windows filesystem case insensitive
     if table_name in tables:  # check memory
@@ -89,7 +99,7 @@ def join_table(table_name: str):
                     tables[table_name] = magic_table
                     created = True
                 d = json.loads(request.data)
-                join_request = JoinRequest(**d)
+                join_request = JoinRequest.schema().load(d)
                 if magic_table.add_player(join_request):
                     return ("Created table", 201) if created else ("Joined table.", 202)
                 else:

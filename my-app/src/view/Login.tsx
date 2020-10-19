@@ -1,6 +1,6 @@
-import React, { ChangeEvent, FormEvent, useEffect } from 'react'
+import React, { ChangeEvent, FormEvent, useEffect, useState } from 'react'
 import { useHistory } from 'react-router-dom';
-import { JoinRequest } from "../magic_models";
+import { JoinRequest, SFCard } from "../magic_models";
 import { setUserPrefs, setGame } from "../Actions";
 import { useDispatch } from "react-redux";
 import MySocket from '../MySocket';
@@ -29,87 +29,61 @@ export const LoginForm: React.FC = () => {
         ))
     })
 
-    return (
-        <JoinTableForm
-            routeChange={(r) => history.push(r)}
-            setUserPrefs={(up) => dispatch(up)}
-        ></JoinTableForm>
-    )
-}
+    const routeChange = (r: string) => history.push(r)
 
-interface LoginP {
-    routeChange: (arg0: string) => void
-    setUserPrefs: (arg0: object) => void
-}
+    const [deckList, setDeckList] = useState('')
+    const [joinRequest, setJoinRequest] = useState<JoinRequest>({
+        name: '',
+        table: '',
+        color: '',
+        deck: []
+    })
+    const [errorMsg, setErrorMsg] = useState('')
+    const [deckMsg, setDeckMsg] = useState('')
 
-
-class JoinTableForm extends React.Component<LoginP> {
-    state: JoinRequest
-    response: string
-
-    constructor(props: LoginP) {
-        super(props);
-        this.state = {
-            name: '',
-            table: '',
-            deck_list: '',
-            color: ''
-        }
-        this.response = ''
-
-        this.handleNameChange = this.handleNameChange.bind(this);
-        this.handleTableChange = this.handleTableChange.bind(this);
-        this.handleFileChange = this.handleFileChange.bind(this);
-        this.handleDeckChange = this.handleDeckChange.bind(this);
-        this.handleSubmit = this.handleSubmit.bind(this);
-        this.handleWatchTable = this.handleWatchTable.bind(this);
-        this.handlePickColor = this.handlePickColor.bind(this);
-        this.setErrorMsg = this.setErrorMsg.bind(this);
-    }
-
-    componentDidMount() {
+    useEffect(() => {
         const name = localStorage.getItem('userName')
         const color = localStorage.getItem('userColor')
         const deckList = localStorage.getItem('deckList')
 
+        let jr = {...joinRequest}
         if (name !== null) {
-            this.setState({ name })
+            jr = { ...jr, name }
         }
         if (color !== null) {
-            this.setState({ color })
+            jr = { ...jr, color }
         }
+        setJoinRequest(jr)
         if (deckList !== null) {
-            this.setState({ deck_list: deckList })
+            setDeckList(deckList)
         }
 
         MySocket.close_socket()  // in case it's open from an earlier game, remove event handlers
-    }
+    },
+        // since it wants joinRequest but that changes every render and infinite loops
+        // eslint-disable-next-line 
+        [])
 
-    setErrorMsg(msg: string) {
-        this.response = msg;
-        this.forceUpdate()
-    }
-
-    handleNameChange(event: ChangeEvent<HTMLInputElement>) {
-        this.setState({ name: event.target.value.replace(/[^A-Za-z0-9 .,_]/, '') });
+    const handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
+        setJoinRequest({ ...joinRequest, name: event.target.value.replace(/[^A-Za-z0-9 .,_]/, '') });
         // '-' used for indexed zone names
     }
 
-    handleTableChange(event: ChangeEvent<HTMLInputElement>) {
+    const handleTableChange = (event: ChangeEvent<HTMLInputElement>) => {
         const newTableName = event.target.value.replace(/[^A-Za-z0-9-_]/, '');
-        this.setState({ table: newTableName });
+        setJoinRequest({ ...joinRequest, table: newTableName });
         if (newTableName.startsWith("test")) {
-            this.setErrorMsg("Warning! Tables starting with 'test' have random games and are not saved!")
+            setErrorMsg("Warning! Tables starting with 'test' have random games and are not saved!")
         } else {
-            this.setErrorMsg("");
+            setErrorMsg("");
         }
     }
 
-    handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
         if (event.target && event.target.files) {
             event.persist() // make name stick next to chooser
             event.target.files[0].text()
-                .then(d => this.setState({ deck_list: d }))
+                .then(d => setDeckList(d))
                 .catch(function (reason) {
                     console.log(`Error reading deck file ${reason}`);
                     event.target.value = ''; // to allow upload of same file if error occurs
@@ -117,21 +91,53 @@ class JoinTableForm extends React.Component<LoginP> {
         }
     }
 
-    handleDeckChange(event: ChangeEvent<HTMLTextAreaElement>) {
-        this.setState({ deck_list: event.target.value })
+    const handleDeckChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+        setDeckList(event.target.value)
     }
 
-    handlePickColor(color: string) {
-        this.setState({ color: color })
+    const handlePickColor = (color: string) => {
+        setJoinRequest({ ...joinRequest, color: color })
     }
 
-    handleWatchTable(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+    const [cardsList, setCardsList] = useState('')
+
+    const handeLoadCards = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         event.preventDefault();
-        if (this.state.table === '') {
+        if (deckList === '') {
             return;
         }
-        console.log("watching table...", this.state.table)
-        fetch(`${process.env.REACT_APP_API_URL || ""}/api/table/${this.state.table}`)
+        sendDecklist()
+            .then(async response => {
+                console.log(response)
+
+                // check for error response
+                if (!response.ok) {
+                    const data = await response.text()  // server uses text rather than json for these specifically
+                    // get error message from body or default to response status
+                    const error = data || response.status;
+                    return Promise.reject(error);
+                }
+                const data: SFCard[] = await response.json()
+                setJoinRequest({ ...joinRequest, deck: data })
+                const cardCount = data.length
+                const firstCard = data ? data[0].name : "none"
+                const cmdrMsg = cardCount < 100 ? '' : `'${firstCard}' will be your commander.`
+                setDeckMsg(`${cardCount} cards loaded. ` + cmdrMsg)
+                setCardsList(data.map(sfcard => `1 ${sfcard.name} (${sfcard.set_name.toUpperCase()}) ${sfcard.number}`).join("\n"))
+            })
+            .catch(error => {
+                console.error('deck error', error);
+                setDeckMsg(error);
+            });
+    }
+
+    const handleWatchTable = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+        event.preventDefault();
+        if (joinRequest.table === '') {
+            return;
+        }
+        console.log("watching table...", joinRequest.table)
+        fetch(`${process.env.REACT_APP_API_URL || ""}/api/table/${joinRequest.table}`)
             .then(async response => {
                 console.log(response)
                 // check for error response
@@ -141,36 +147,40 @@ class JoinTableForm extends React.Component<LoginP> {
                     const error = data || response.status;
                     return Promise.reject(error);
                 }
-                this.props.routeChange('/table?name=' + this.state.table)
+                routeChange('/table?name=' + joinRequest.table)
             })
             .catch(error => {
                 console.error('There was an error!', error);
-                this.setErrorMsg(error);
+                setErrorMsg(error);
             });
     }
 
-    handleSubmit(event: FormEvent<HTMLFormElement>) {
+    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        if (this.state.color === '') {
-            this.setErrorMsg("Please pick a sleeve color before joining.");
+        if (joinRequest.color === '') {
+            setErrorMsg("Please pick a sleeve color before joining.");
             return;
         }
-        if (this.state.table.length > 32) {
-            this.setErrorMsg("Table name is too long.");
+        if (joinRequest.table.length > 32) {
+            setErrorMsg("Table name is too long.");
             return;
         }
-        if (this.state.name.length > 32) {
-            this.setErrorMsg("Player name too long.");
+        if (joinRequest.name.length > 32) {
+            setErrorMsg("Player name too long.");
             return;
         }
-        this.setErrorMsg('...');
+        if (joinRequest.deck.length === 0) {
+            setErrorMsg("Please load your cards before joining.");
+            return;
+        }
+        setErrorMsg('...');
 
-        localStorage.setItem('userName', this.state.name)
-        localStorage.setItem('userColor', this.state.color)
-        localStorage.setItem('deckList', this.state.deck_list)
+        localStorage.setItem('userName', joinRequest.name)
+        localStorage.setItem('userColor', joinRequest.color)
+        localStorage.setItem('deckList', deckList)
 
-        console.log("joining table...", this.state)
-        this.sendChoices()
+        console.log("joining table...", joinRequest)
+        sendChoices()
             .then(async response => {
                 console.log(response)
 
@@ -183,93 +193,116 @@ class JoinTableForm extends React.Component<LoginP> {
                 }
 
                 // set user name in app memory
-                this.props.setUserPrefs(setUserPrefs({ name: this.state.name }))
+                dispatch(setUserPrefs({ name: joinRequest.name }))
                 // route over to table
-                this.props.routeChange('/table?name=' + this.state.table)
+                routeChange('/table?name=' + joinRequest.table)
             })
             .catch(error => {
-                console.error('There was an error!', error);
-                this.setErrorMsg(error);
+                console.error('submission error', error);
+                setErrorMsg(error);
             });
     }
 
-    sendChoices() {
+    const sendChoices = () => {
         // POST request using fetch with error handling
         const requestOptions = {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(this.state)
+            body: JSON.stringify(joinRequest)
         };
-        return fetch(`${process.env.REACT_APP_API_URL || ""}/api/table/${this.state.table}`, requestOptions)
-
+        return fetch(`${process.env.REACT_APP_API_URL || ""}/api/table/${joinRequest.table}`, requestOptions)
     }
 
-    render() {
-        const colorItems = []
-        for (const color in colors) {
-            // for (let r = 0; r <= 3; r++) {
-            //   for (let g = 0; g <= 3; g++) {
-            //     for (let b = 0; b <= 3; b++) {
-            // const color = "#" + (r * 64 + 16).toString(16) + (g * 64 + 16).toString(16) + (b * 64 + 16).toString(16)
-            const { luminance } = analyzeColor(color);
-            // let too_pale = r < 0xa0 || g < 0xa0 || b < 0xa0;
-            // let too_bright = r > 0x40 || g > 0x40 || b > 0x40;
-            if (true) {
-                colorItems.push(<span
-                    key={color}
-                    style={{ backgroundColor: color, color: luminance < 0.5 ? "white" : "black", cursor: "pointer" }}
-                    onClick={() => this.handlePickColor(color)}
-                >{color}</span>)
-            }
-            //   }
-            // }
+    const sendDecklist = () => {
+        // POST request using fetch with error handling
+        const requestOptions = {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(deckList)
+        };
+        return fetch(`${process.env.REACT_APP_API_URL || ""}/api/deckList`, requestOptions)
+    }
+
+
+    const colorItems = []
+    for (const color in colors) {
+        // for (let r = 0; r <= 3; r++) {
+        //   for (let g = 0; g <= 3; g++) {
+        //     for (let b = 0; b <= 3; b++) {
+        // const color = "#" + (r * 64 + 16).toString(16) + (g * 64 + 16).toString(16) + (b * 64 + 16).toString(16)
+        const { luminance } = analyzeColor(color);
+        // let too_pale = r < 0xa0 || g < 0xa0 || b < 0xa0;
+        // let too_bright = r > 0x40 || g > 0x40 || b > 0x40;
+        if (true) {
+            colorItems.push(<span
+                key={color}
+                style={{ backgroundColor: color, color: luminance < 0.5 ? "white" : "black", cursor: "pointer" }}
+                onClick={() => handlePickColor(color)}
+            >{color}</span>)
         }
-
-        return (
-            <div className="myform" style={{
-                paddingTop: "2em",
-                paddingLeft: "2em",
-            }}>
-                <h2 style={{ textAlign: "center" }}>Welcome to my "Card Table"</h2>
-                <form onSubmit={this.handleSubmit} className="Login">
-                    <div>
-                        Your Name: &nbsp;
-                        <input type="text" value={this.state.name} required={true} onChange={this.handleNameChange} />
-                        Table Name: &nbsp;
-                        <input type="text" value={this.state.table} required={true} onChange={this.handleTableChange} />
-                        <br /><span className="FormSpan" style={{ color: "red" }}> {this.response ? this.response : null} </span>
-                        <div style={{ display: "flex", justifyContent: "space-evenly" }}>
-                            <button className="DivButton" onClick={this.handleWatchTable}>Watch Table</button>
-                            <input className="DivButton" type="submit" value="Join Table" />
-                        </div>
-                        <br /><span className="InfoSpan"><b>Join</b> adds you as a player with your deck to the table, creating the table if necessary.
-                        <br /><b>Watch</b> can be used for spectating or resuming a game as an existing player.</span>
-                        <br /><span className="FormSpan">Your Card Sleeve Color: &nbsp; </span>
-                        <div className="dropdown">
-                            <button type="button"
-                                style={{
-                                    //backgroundColor: this.state.color,
-                                    borderStyle: "solid",
-                                    borderColor: this.state.color,
-                                    borderWidth: "0.5em"
-                                }}>{this.state.color ? "Chosen" : "Choose"}</button>
-                            <div className="dropdown-content" style={{ maxHeight: colorItems.length / 4 + "em" }}>
-                                {colorItems}
-                            </div>
-                        </div>
-                        <br />
-                        <span className="FormSpan">Upload Your Deck File: &nbsp; </span>
-                        <input className="DivButton" accept=".txt,.dek,.dec,*" type="file" required={false} onChange={this.handleFileChange} />
-                        <br />
-                        <span className="FormSpan">Or Paste and edit it here. Please put your commander first or append *CMDR* to its line.</span>
-                        <br />
-                        <textarea value={this.state.deck_list} required={true} onChange={this.handleDeckChange} cols={60} rows={30} />
-                    </div>
-                </form>
-            </div>
-        );
+        //   }
+        // }
     }
+
+    return (
+        <div className="myform" style={{}}>
+            <h3 style={{ textAlign: "center" }}>Welcome to my "Card Table"</h3>
+            <form onSubmit={handleSubmit} className="Login">
+                <div style={{ border: '0.2em solid black' }}>
+                    <span className='SmallSpan'>Your Name:</span>
+                    <input type="text" value={joinRequest.name} required={true} onChange={handleNameChange} />
+                    <br />
+
+                    <span className='SmallSpan'>Your Card Sleeve Color:</span>
+                    <div className="dropdown">
+                        <button type="button"
+                            style={{
+                                borderStyle: "solid",
+                                borderColor: joinRequest.color,
+                                borderWidth: "0.75em",
+                                minWidth: '10em'
+                            }}>{joinRequest.color ? joinRequest.color : "Choose"}</button>
+                        <div className="dropdown-content" style={{ maxHeight: colorItems.length / 4 + "em" }}>
+                            {colorItems}
+                        </div>
+                    </div>
+                    <br />
+
+                    <span className='SmallSpan'>Table Name: </span>
+                    <input type="text" value={joinRequest.table} required={true} onChange={handleTableChange} />
+                    <br />
+
+                    <input className="DivButton" type="submit" value="Join Table" />
+                    <span className="MediumSpan"><b>Join</b> adds you as a player with your deck to the table, creating the table if necessary.</span>
+                    <br />
+
+                    <button className="DivButton" onClick={handleWatchTable}>Watch Table</button>
+                    <span className="MediumSpan"><b>Watch</b> can be used for spectating or resuming a game as an existing player.</span>
+                    <br />
+
+                    <span className="FullSpan" style={{ color: "red" }}> {errorMsg ? errorMsg : null} </span>
+                </div>
+                <br />
+                <div style={{ border: '0.2em solid black' }}>
+                    <span className="MediumSpan">Upload your deck from a file or paste it below. &nbsp; </span>
+                    <input className="DivButton" accept=".txt,.dek,.dec,*" type="file" required={false} onChange={handleFileChange} />
+                    <br />
+                    <span className="MediumSpan">Once your deck list is ready, load it! </span>
+                    <button className="DivButton" onClick={handeLoadCards}>{joinRequest.deck.length > 0 ? "Reload Cards" : "Load Cards"}</button>
+                    <br />
+                    <span className="FullSpan"><i>If playing commander, please put your commander first or append *CMDR* to its line.</i></span>
+                    <br />
+                    {deckMsg ? <span className="FullSpan" style={{ color: 'darkblue', width: '40em', textAlign: 'center' }}> {deckMsg} </span> : null}
+                    {deckMsg ? <br /> : null}
+                    <textarea value={deckList} required={true} onChange={handleDeckChange} cols={25} rows={25} />
+                    {cardsList ? <textarea value={cardsList} required={false} readOnly={true} cols={25} rows={25} /> : null}
+                </div>
+            </form>
+        </div>
+    );
+
 }
+
 
 export default LoginForm
 

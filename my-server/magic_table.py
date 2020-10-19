@@ -4,7 +4,7 @@ from random import shuffle, seed
 from typing import Tuple
 
 import persistence
-from magic_cards import load_cards, CardResolver, parse_deck
+from magic_cards import load_cards, parse_deck, MagicCards
 from magic_constants import *
 from magic_game import IndexedGame
 from magic_models import *
@@ -18,24 +18,10 @@ def is_test(table_name: str) -> bool:
 
 class MagicTable:
     _tables_path: str = os.path.join('tables')
-    _cards: List[SFCard] = None
-    _tokens: List[SFCard] = None
 
     @staticmethod
     def get_tables_path():
         return MagicTable._tables_path
-
-    @staticmethod
-    def get_all_cards() -> List[SFCard]:
-        if not MagicTable._cards:
-            MagicTable._cards = load_cards()
-        return MagicTable._cards
-
-    @staticmethod
-    def get_all_tokens() -> List[SFCard]:
-        if not MagicTable._tokens:
-            MagicTable._tokens = load_cards("tokens")
-        return MagicTable._tokens
 
     @staticmethod
     def load(table_name):
@@ -67,17 +53,7 @@ class MagicTable:
             return False  # already present
 
         # load cards into table
-        deck = parse_deck(join_request.deck_list)
-        cr = CardResolver(MagicTable.get_all_cards())
-        sf_cards = []
-        errors = []
-        for c in deck[:1000]:  # limit deck to 1000 cards
-            try:
-                sf_cards.append(cr.find_card(*c))
-            except Exception as e:
-                errors.append(e)
-        if errors:
-            raise GameException("Deck Error(s): " + ", ".join(str(e) for e in errors))
+        sf_cards = join_request.deck
         self.table.sf_cards.extend(sf_cards)
 
         # skip 0, use block of 1000 per player
@@ -162,7 +138,7 @@ class MagicTable:
         return self.table.actions
 
     def get_cards(self):
-        return SFCard.schema().dumps(self.table.sf_cards + MagicTable.get_all_tokens(), many=True)
+        return SFCard.schema().dumps(self.table.sf_cards + MagicCards.get_all_tokens(), many=True)
 
     def resolve_action(self, action: PlayerAction) -> Tuple[Optional[Game], List[LogLine], List[TableCard]]:
         look_back = min(5, len(self.table.actions))
@@ -282,7 +258,7 @@ class MagicTable:
             table_card = next(tc for tc in self.table.table_cards if tc.card_id == card_id)
             sf_card = next((sf for sf in self.table.sf_cards if sf.sf_id == table_card.sf_id), None)
             if not sf_card:  # if not in table cards check tokens
-                sf_card = next((sf for sf in MagicTable.get_all_tokens() if sf.sf_id == table_card.sf_id))
+                sf_card = next((sf for sf in MagicCards.get_all_tokens() if sf.sf_id == table_card.sf_id))
             card_name = "a facedown card" if card_state.facedown else sf_card.name
         return card_name
 
