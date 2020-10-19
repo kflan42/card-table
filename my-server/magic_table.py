@@ -4,7 +4,7 @@ from random import shuffle, seed
 from typing import Tuple
 
 import persistence
-from magic_cards import load_cards, parse_deck, MagicCards
+from magic_cards import load_cards, MagicCards
 from magic_constants import *
 from magic_game import IndexedGame
 from magic_models import *

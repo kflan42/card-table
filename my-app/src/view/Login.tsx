@@ -290,6 +290,8 @@ export const LoginForm: React.FC = () => {
                     <span className="MediumSpan">Once your deck list is ready, load it! </span>
                     <button className="DivButton" onClick={handeLoadCards}>{joinRequest.deck.length > 0 ? "Reload Cards" : "Load Cards"}</button>
                     <br />
+                    <span className="FullSpan"><i>Supported formats include Arena, TappedOut, TCGPlayer, and XMage.</i></span>
+                    <br />
                     <span className="FullSpan"><i>If playing commander, please put your commander first or append *CMDR* to its line.</i></span>
                     <br />
                     {deckMsg ? <span className="FullSpan" style={{ color: 'darkblue', width: '40em', textAlign: 'center' }}> {deckMsg} </span> : null}
