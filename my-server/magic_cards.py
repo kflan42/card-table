@@ -108,7 +108,8 @@ class MagicCards:
             _set_name = _sanitize(set_name)
 
         if _set_name not in cls._set_cards:
-            raise GameException(f"Set '{set_name}' not found for Card '{name}'.")
+            raise GameException(f"Set '{set_name}' not found for Card '{name}'; "
+                                f"found {', '.join((s.upper() for s in cls._card_sets[card_name]))}.")
 
         cards_by_name = cls._set_cards[_set_name]
         if card_name not in cards_by_name:
@@ -133,7 +134,7 @@ class MagicCards:
             except Exception as e:
                 errors.append(e)
         if errors:
-            raise GameException("Deck Error(s): " + ", ".join(str(e) for e in errors))
+            raise GameException("Deck Error(s): " + " ".join(str(e) for e in errors))
         return sf_cards
 
     @classmethod
@@ -157,7 +158,7 @@ def parse_deck(deck_text: str) -> List[Tuple[str, Optional[str], Optional[str]]]
         except Exception as e:
             errors.append((line, e))
     if errors:
-        raise GameException(f"Error(s) parsing cards: "+", ".join(f"{line} > {e}" for (line, e) in errors))
+        raise GameException(f"Error(s) parsing cards: "+" ".join(f"{line} > {e}" for (line, e) in errors))
     return cards
 
 
