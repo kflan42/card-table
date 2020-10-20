@@ -24,11 +24,16 @@ def get_zone(game: Game, player: str, zone: str) -> Zone:
 def test_table(name: str) -> MagicTable:
     table = MagicTable(name)
     # add players
-    table.add_player(JoinRequest(name='Arena 1', table='test', deck=MagicCards.resolve_deck(arena_deck), color='Green'))
-    table.add_player(JoinRequest(name='Text 2', table='test', deck=MagicCards.resolve_deck(txt_deck), color='Red'))
-    table.add_player(JoinRequest(name='Side 3', table='test', deck=MagicCards.resolve_deck(deck_w_side), color='Blue'))
-    table.add_player(JoinRequest(name='T Out 4', table='test', deck=MagicCards.resolve_deck(tapped_out), color='White'))
-    table.add_player(JoinRequest(name='Std 5', table='test', deck=MagicCards.resolve_deck(pioneer_60), color='Black'))
+    table.add_player(JoinRequest(name='Arena 1', table='test', password='',
+                                 deck=MagicCards.resolve_deck(arena_deck), color='Green'))
+    table.add_player(JoinRequest(name='Text 2', table='test', password='',
+                                 deck=MagicCards.resolve_deck(txt_deck), color='Red'))
+    table.add_player(JoinRequest(name='Side 3', table='test', password='',
+                                 deck=MagicCards.resolve_deck(deck_w_side), color='Blue'))
+    table.add_player(JoinRequest(name='T Out 4', table='test', password='',
+                                 deck=MagicCards.resolve_deck(tapped_out), color='White'))
+    table.add_player(JoinRequest(name='Std 5', table='test', password='',
+                                 deck=MagicCards.resolve_deck(pioneer_60), color='Black'))
 
     # make it busy
     game = table.table.game

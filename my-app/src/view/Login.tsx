@@ -1,9 +1,10 @@
-import React, { ChangeEvent, FormEvent, useEffect, useState } from 'react'
+import React, { ChangeEvent, useEffect, useState } from 'react'
 import { useHistory } from 'react-router-dom';
-import { JoinRequest, SFCard } from "../magic_models";
+import { JoinRequest, SFCard, TableRequest } from "../magic_models";
 import { setUserPrefs, setGame } from "../Actions";
 import { useDispatch } from "react-redux";
 import MySocket from '../MySocket';
+import { usePageVisibility } from './Visibility';
 
 
 export const LoginForm: React.FC = () => {
@@ -32,21 +33,25 @@ export const LoginForm: React.FC = () => {
     const routeChange = (r: string) => history.push(r)
 
     const [deckList, setDeckList] = useState('')
+    const [tableRequest, setTableRequest] = useState<TableRequest>({ table: '', password: '' })
     const [joinRequest, setJoinRequest] = useState<JoinRequest>({
-        name: '',
         table: '',
+        password: '',
+        name: '',
         color: '',
         deck: []
     })
     const [errorMsg, setErrorMsg] = useState('')
     const [deckMsg, setDeckMsg] = useState('')
 
+    const [loaded, setLoaded] = useState(false)
+
     useEffect(() => {
         const name = localStorage.getItem('userName')
         const color = localStorage.getItem('userColor')
         const deckList = localStorage.getItem('deckList')
 
-        let jr = {...joinRequest}
+        let jr = { ...joinRequest }
         if (name !== null) {
             jr = { ...jr, name }
         }
@@ -59,24 +64,58 @@ export const LoginForm: React.FC = () => {
         }
 
         MySocket.close_socket()  // in case it's open from an earlier game, remove event handlers
+        loadTables()
+        setLoaded(true)
     },
         // since it wants joinRequest but that changes every render and infinite loops
         // eslint-disable-next-line 
-        [])
+        [loaded])
+
+    const isVisible = usePageVisibility();
+
+    const timerID = isVisible ? setInterval(
+        () => tick(),
+        10000
+    ) : undefined;
+
+    useEffect(() => {
+        return function cleanup() {
+            if (timerID)
+                clearInterval(timerID);
+        }
+    })
+
+    const tick = () => {
+        if (!isVisible) return;
+        loadTables()
+    }
 
     const handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
         setJoinRequest({ ...joinRequest, name: event.target.value.replace(/[^A-Za-z0-9 .,_]/, '') });
         // '-' used for indexed zone names
     }
 
+    const handlePasswordChange = (event: ChangeEvent<HTMLInputElement>) => {
+        setJoinRequest({ ...joinRequest, password: event.target.value });
+        setTableRequest({ ...tableRequest, password: event.target.value });
+    }
+
     const handleTableChange = (event: ChangeEvent<HTMLInputElement>) => {
         const newTableName = event.target.value.replace(/[^A-Za-z0-9-_]/, '');
-        setJoinRequest({ ...joinRequest, table: newTableName });
+        setTableRequest({ ...tableRequest, table: newTableName });
         if (newTableName.startsWith("test")) {
             setErrorMsg("Warning! Tables starting with 'test' have random games and are not saved!")
         } else {
             setErrorMsg("");
         }
+    }
+
+    const handleSelectTable = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        if (event.target.selectedIndex === undefined) {
+            return;
+        }
+        const option = event.target[event.target.selectedIndex] as any
+        setJoinRequest({ ...joinRequest, table: option.value as string });
     }
 
     const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -97,6 +136,13 @@ export const LoginForm: React.FC = () => {
 
     const handlePickColor = (color: string) => {
         setJoinRequest({ ...joinRequest, color: color })
+        setColorsShown(false)
+    }
+
+    const [colorsShown, setColorsShown] = useState(false)
+
+    const toggleColorChooser = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+        setColorsShown(!colorsShown);
     }
 
     const [cardsList, setCardsList] = useState('')
@@ -127,7 +173,8 @@ export const LoginForm: React.FC = () => {
             })
             .catch(error => {
                 console.error('deck error', error);
-                setDeckMsg(error);
+                setDeckMsg('');
+                setCardsList(error)
             });
     }
 
@@ -155,14 +202,37 @@ export const LoginForm: React.FC = () => {
             });
     }
 
-    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    const handleCreateTable = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+        event.preventDefault();
+        if (joinRequest.table.length > 32) {
+            setErrorMsg("Table name is too long.");
+            return;
+        }
+        sendCreate()
+            .then(async response => {
+                console.log(response)
+                // check for error response
+                if (!response.ok) {
+                    const data = await response.text()  // server uses text rather than json for these specifically
+                    // get error message from body or default to response status
+                    const error = data || response.status;
+                    return Promise.reject(error);
+                }
+                setErrorMsg('');
+                loadTables();
+            })
+            .catch(error => {
+                console.error('submission error', error);
+                setErrorMsg(error);
+                loadTables();
+            });
+
+    }
+
+    const handleJoinTable = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         event.preventDefault();
         if (joinRequest.color === '') {
             setErrorMsg("Please pick a sleeve color before joining.");
-            return;
-        }
-        if (joinRequest.table.length > 32) {
-            setErrorMsg("Table name is too long.");
             return;
         }
         if (joinRequest.name.length > 32) {
@@ -180,7 +250,7 @@ export const LoginForm: React.FC = () => {
         localStorage.setItem('deckList', deckList)
 
         console.log("joining table...", joinRequest)
-        sendChoices()
+        sendJoin()
             .then(async response => {
                 console.log(response)
 
@@ -203,10 +273,46 @@ export const LoginForm: React.FC = () => {
             });
     }
 
-    const sendChoices = () => {
-        // POST request using fetch with error handling
+    const [tableItems, setTableItems] = useState<JSX.Element[]>([])
+
+    const loadTables = () => {
+        console.log("loading tables")
+        fetch(`${process.env.REACT_APP_API_URL || ""}/api/tables`).then(
+            async response => {
+                // check for error response
+                if (!response.ok) {
+                    const data = await response.text()  // server uses text rather than json for these specifically
+                    // get error message from body or default to response status
+                    const error = data || response.status;
+                    return Promise.reject(error);
+                }
+                const tables = await response.json()
+
+                const tableList = []
+                for (const table of tables) {
+                    const label = `${table.table} ` + '🧙'.repeat(table.players)
+                    tableList.push(<option key={table.table} value={table.table}>{label}</option>)
+                }
+                setTableItems(tableList)
+            }
+        ).catch(error => {
+            console.error('loadTables error', error);
+            setTableItems([<option key={-1} value={''}>Error Loading Tables</option>])
+        });
+    }
+
+    const sendCreate = () => {
         const requestOptions = {
-            method: 'POST',
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(tableRequest)
+        };
+        return fetch(`${process.env.REACT_APP_API_URL || ""}/api/tables/${tableRequest.table}`, requestOptions)
+    }
+
+    const sendJoin = () => {
+        const requestOptions = {
+            method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(joinRequest)
         };
@@ -214,7 +320,6 @@ export const LoginForm: React.FC = () => {
     }
 
     const sendDecklist = () => {
-        // POST request using fetch with error handling
         const requestOptions = {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -236,7 +341,10 @@ export const LoginForm: React.FC = () => {
         if (true) {
             colorItems.push(<span
                 key={color}
-                style={{ backgroundColor: color, color: luminance < 0.5 ? "white" : "black", cursor: "pointer" }}
+                style={{
+                    backgroundColor: color, color: luminance < 0.5 ? "white" : "black", cursor: "pointer",
+                    margin: "unset"
+                }}
                 onClick={() => handlePickColor(color)}
             >{color}</span>)
         }
@@ -245,47 +353,13 @@ export const LoginForm: React.FC = () => {
     }
 
     return (
-        <div className="myform" style={{}}>
+        <div className="myform" style={{ width: "100%", overflowY: "scroll" }}>
             <h3 style={{ textAlign: "center" }}>Welcome to my "Card Table"</h3>
-            <form onSubmit={handleSubmit} className="Login">
-                <div style={{ border: '0.2em solid black' }}>
-                    <span className='SmallSpan'>Your Name:</span>
-                    <input type="text" value={joinRequest.name} required={true} onChange={handleNameChange} />
-                    <br />
+            <div style={{ width: "100%", display: "flex", flexWrap: "wrap", justifyContent: "center" }}>
 
-                    <span className='SmallSpan'>Your Card Sleeve Color:</span>
-                    <div className="dropdown">
-                        <button type="button"
-                            style={{
-                                borderStyle: "solid",
-                                borderColor: joinRequest.color,
-                                borderWidth: "0.75em",
-                                minWidth: '10em'
-                            }}>{joinRequest.color ? joinRequest.color : "Choose"}</button>
-                        <div className="dropdown-content" style={{ maxHeight: colorItems.length / 4 + "em" }}>
-                            {colorItems}
-                        </div>
-                    </div>
-                    <br />
-
-                    <span className='SmallSpan'>Table Name: </span>
-                    <input type="text" value={joinRequest.table} required={true} onChange={handleTableChange} />
-                    <br />
-
-                    <input className="DivButton" type="submit" value="Join Table" />
-                    <span className="MediumSpan"><b>Join</b> adds you as a player with your deck to the table, creating the table if necessary.</span>
-                    <br />
-
-                    <button className="DivButton" onClick={handleWatchTable}>Watch Table</button>
-                    <span className="MediumSpan"><b>Watch</b> can be used for spectating or resuming a game as an existing player.</span>
-                    <br />
-
-                    <span className="FullSpan" style={{ color: "red" }}> {errorMsg ? errorMsg : null} </span>
-                </div>
-                <br />
-                <div style={{ border: '0.2em solid black' }}>
+                <div style={{ border: '0.2em solid black', margin: "1em" }}>
                     <span className="MediumSpan">Upload your deck from a file or paste it below. &nbsp; </span>
-                    <input className="DivButton" accept=".txt,.dek,.dec,*" type="file" required={false} onChange={handleFileChange} />
+                    <input className="DivButton" accept=".txt,.dek,.dec,*" type="file" onChange={handleFileChange} />
                     <br />
                     <span className="MediumSpan">Once your deck list is ready, load it! </span>
                     <button className="DivButton" onClick={handeLoadCards}>{joinRequest.deck.length > 0 ? "Reload Cards" : "Load Cards"}</button>
@@ -294,15 +368,75 @@ export const LoginForm: React.FC = () => {
                     <br />
                     <span className="FullSpan"><i>If playing commander, please put your commander first or append *CMDR* to its line.</i></span>
                     <br />
-                    {deckMsg ? <span className="FullSpan" style={{ color: 'darkblue', width: '40em', textAlign: 'center' }}> {deckMsg} </span> : null}
-                    {deckMsg ? <br /> : null}
-                    <textarea value={deckList} required={true} onChange={handleDeckChange} cols={25} rows={25} />
-                    {cardsList ? <textarea value={cardsList} required={false} readOnly={true} cols={25} rows={25} /> : null}
+                    <span className='SmallSpan'
+                        style={{ margin: "0.5em 1em 0em 1em", padding: "0em" }}>Deck Input:</span>
+                    {deckMsg ? <span className="MediumSpan"
+                        style={{ margin: "0.5em 1em 0em 1em", padding: "0em", color: 'darkblue', textAlign: 'right' }}> {deckMsg} </span> : null}
+                    <br />
+                    <textarea value={deckList} required={true} onChange={handleDeckChange} cols={25} rows={25}
+                        style={{ backgroundColor: "white", border: "0.125em solid #ccc" }} />
+                    {cardsList ? <textarea value={cardsList} readOnly={true} cols={25} rows={25}
+                        style={{ backgroundColor: "beige", border: "0.125em solid darkblue" }} /> : null}
                 </div>
-            </form>
-        </div>
-    );
 
+                <div style={{ display: "flex", flexWrap: "wrap", flexDirection: "column" }}>
+                    <div style={{ border: '0.2em solid black', margin: "1em" }}>
+                        <span className='SmallSpan'>Your Name:</span>
+                        <input type="text" value={joinRequest.name} onChange={handleNameChange} />
+                        <br />
+                        <span className='SmallSpan'>Your Card Sleeve Color:</span>
+                        <button type="button" onClick={toggleColorChooser}
+                            style={{
+                                borderStyle: "solid",
+                                borderColor: joinRequest.color,
+                                borderWidth: "0.5em",
+                                minWidth: '10em',
+                                margin: "0.25em"
+                            }}>{joinRequest.color ? joinRequest.color : "Choose"}</button>
+                        {colorsShown ? <div style={{
+                            display: "flex", flexDirection: "column", flexWrap: "wrap",
+                            maxHeight: (colorItems.length) * 1.25 / 3 + "em", padding: "1em"
+                        }}>
+                            {colorItems}
+                        </div> : null}
+                        <br />
+                    </div>
+
+                    <div style={{ border: '0.2em solid black', margin: "1em" }}>
+                        <span className="SmallSpan">Tables:</span>
+                        <div style={{ display: "flex", alignItems: "center" }}>
+                            <select size={10} className='SmallSpan' onChange={handleSelectTable}
+                                style={{ backgroundColor: "white", border: "0.125em solid #ccc", margin: "0.5em", fontSize: "medium" }}>
+                                {tableItems}
+                            </select>
+                            <div style={{ display: "inline-block" }}>
+                                {/* TODO <span className="SmallSpan">Password:</span>
+                                <br />
+                                <input type="text" value={joinRequest.password} onChange={handlePasswordChange} style={{ width: "10em" }} />
+                                <br /> */}
+                                <button className="DivButton" onClick={handleJoinTable}>Join Table</button>
+                                <br />
+                                <button className="DivButton" onClick={handleWatchTable}>Watch Table</button>
+                            </div>
+                        </div>
+                        <span className="MediumSpan"><b>Join Table</b> adds you as a player with your deck to the table.</span>
+                        <br />
+                        <span className="MediumSpan"><b>Watch Table</b> is for spectating.</span>
+                        <br />
+                    </div>
+                    <span className="FullSpan" style={{ color: "red" }}> {errorMsg ? errorMsg : null} </span>
+                    <div style={{ border: '0.2em solid black', margin: "1em", display: "inline-grid" }}>
+                        <span style={{ gridRow: 1 }} className='SmallSpan'>Table Name: </span>
+                        <input style={{ gridRow: 1 }} type="text" value={tableRequest.table} onChange={handleTableChange} />
+                        {/* TODO <span style={{ gridRow: 2 }} className="SmallSpan">Password: </span>
+                        <input style={{ gridRow: 2 }} type="text" value={joinRequest.password} onChange={handlePasswordChange} />*/}
+                        <button style={{ gridRow: 3 }} className="DivButton" onClick={handleCreateTable}>Create Table</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    ); // TODO actually do something with password
 }
 
 

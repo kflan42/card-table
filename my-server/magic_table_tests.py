@@ -49,7 +49,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_add_player(self):
         arena_deck_cards = MagicCards.resolve_deck(arena_deck)
-        player = JoinRequest(name='kerran', table='test1', deck=arena_deck_cards, color='OliveDrab')
+        player = JoinRequest(name='kerran', table='test1', password='', deck=arena_deck_cards, color='OliveDrab')
         table = MagicTable(player.table)
         table.add_player(player)
         print(table.table.to_json())

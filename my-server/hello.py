@@ -21,9 +21,9 @@ from flask_cors import CORS
 from flask_socketio import SocketIO, join_room, emit
 
 import persistence
-from magic_cards import parse_deck, MagicCards
+from magic_cards import MagicCards
 from magic_constants import GameException
-from magic_models import JoinRequest, PlayerAction, Table, SFCard
+from magic_models import JoinRequest, PlayerAction, Table, SFCard, TableInfo
 from magic_table import MagicTable, is_test
 from test_table import test_table
 from utils import logger
@@ -68,6 +68,29 @@ def parse_deck_list():
         return str(e), 400
 
 
+@app.route('/api/tables', methods=['GET'])
+def get_tables_info():
+    table_infos = [TableInfo(t.table.name, len(t.table.game.players)) for t in tables.values()]
+    table_infos.append(TableInfo(f"test-{len(table_infos)}", 0))
+    return TableInfo.schema().dumps(table_infos, many=True)
+
+
+@app.route('/api/tables/<path:table_name>', methods=['PUT'])
+def create_table(table_name: str):
+    table_name, magic_table = get_table(table_name=table_name)
+    if request.method == 'PUT':
+        with table_locks[table_name]:
+            if not magic_table:
+                magic_table = MagicTable(table_name)  # create if joining
+                logger.info("created table " + table_name)
+                tables[table_name] = magic_table
+                return "Created table", 201
+            else:
+                return f"{table_name} already exists.", 409
+    else:
+        return "Unrecognized method for this endpoint.", 400
+
+
 def get_table(table_name) -> typing.Tuple[str, MagicTable]:
     table_name = table_name.lower()  # lower case table names since windows filesystem case insensitive
     if table_name in tables:  # check memory
@@ -84,26 +107,20 @@ def get_table(table_name) -> typing.Tuple[str, MagicTable]:
         return table_name, table
 
 
-@app.route('/api/table/<path:table_name>', methods=['GET', 'POST'])
+@app.route('/api/table/<path:table_name>', methods=['GET', 'PUT'])
 def join_table(table_name: str):
     table_name, magic_table = get_table(table_name=table_name)
-    if request.method == 'POST':
+    if request.method == 'PUT':
         try:
             logger.info(request.data.decode('utf-8'))
-            created = False
             # todo - this will work for single process dev server but not multi process prod
             with table_locks[table_name]:
-                if not magic_table:
-                    magic_table = MagicTable(table_name)  # create if joining
-                    logger.info("created table " + table_name)
-                    tables[table_name] = magic_table
-                    created = True
                 d = json.loads(request.data)
                 join_request = JoinRequest.schema().load(d)
+                if [p for p in magic_table.table.game.players if p.name == join_request.name]:
+                    return "Already at table", 200
                 if magic_table.add_player(join_request):
-                    return ("Created table", 201) if created else ("Joined table.", 202)
-                else:
-                    return "Already at table.", 409
+                    return "Joined table.", 202
         except GameException as e:
             logger.warning(e)
             return "Error joining table: " + str(e), 400

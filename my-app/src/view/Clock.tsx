@@ -9,12 +9,12 @@ import { useHistory } from "react-router-dom";
 
 const Clock: React.FC = () => {
 
+  const [state, setState] = useState({ date: new Date() })
+
   const timerID = setInterval(
     () => tick(),
     1000
   );
-  const [state, setState] = useState({ date: new Date() })
-
 
   useEffect(() => {
     return function cleanup() {

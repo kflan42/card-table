@@ -26,8 +26,21 @@ class SFCard(Interface, DataClassJsonMixin):
 
 
 @dataclass
+class TableInfo(Interface, DataClassJsonMixin):
+    table: str
+    players: int
+
+
+@dataclass
+class TableRequest(Interface, DataClassJsonMixin):
+    table: str
+    password: str
+
+
+@dataclass
 class JoinRequest(Interface, DataClassJsonMixin):
     table: str
+    password: str
     name: str
     color: str
     deck: List[SFCard]

@@ -160,7 +160,7 @@ class MagicTable:
         game_updates = game_updates_i.to_game()
         return game_updates, game_updates_i.log_updates, game_updates_i.card_updates
 
-    ################################# Game state logic below ########################
+    ################################# Game state logic below #################################
 
     def apply(self, action: PlayerAction) -> IndexedGame:
         """returns updated portions of a game or None"""
