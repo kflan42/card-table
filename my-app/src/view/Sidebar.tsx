@@ -25,6 +25,14 @@ const Sidebar: React.FC = () => {
         }
     })
 
+    const [loadTime, setLoadTime] = useState(0)
+
+    useEffect(()=> {
+        if(loadTime === 0) {
+        setLoadTime(new Date().getTime() / 1000)
+        }
+    }, [loadTime]);
+
     const history = useHistory()
     const logLines = useSelector((state: ClientState) => state.game.actionLog)
     const elapsedS = logLines.length > 0 
@@ -35,7 +43,8 @@ const Sidebar: React.FC = () => {
         setState({
             date: new Date()
         });
-        if(elapsedS > 900) {
+        const ageS = new Date().getTime() / 1000 - loadTime
+        if(elapsedS > 900 &&  ageS > 180) {
             history.push('/login')  // leave game and close socket so api server will spin down
         }
     }
