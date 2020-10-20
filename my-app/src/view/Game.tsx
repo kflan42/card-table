@@ -151,6 +151,13 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
                 MySocket.get_socket().on('error', function (msg: any) {
                     console.log('received error', msg)
                 })
+                MySocket.get_socket().on('disconnect', function () {
+                    if(window.location.pathname === '/table' && window.location.search.endsWith(gameId as string)) {
+                        // only reload if still on the game page
+                        console.log('reloading page...')
+                        window.location.reload()
+                    }
+                })
             } catch (e) {
                 console.error(e)
             }
