@@ -46,6 +46,7 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
                     location: {x: e.clientX, y: e.clientY}
                 })
                     .then((s: ConfirmationResult) => {
+                        let message = ''
                         switch (s.choice) {
                             case "Draw _":
                                 const draws: CardMove[] = []
@@ -61,19 +62,22 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
                                     draws.push(cardMove)
                                 }
                                 playerDispatch({...baseAction(), card_moves:draws, kind:s.choice})
-                                return; // don't want to show
+                                return; // don't need a message for this, server generates one
                             case "Search":
                                 setTopN([]);
+                                message = 'searched'
                                 break;
                             case "Look at Top _":
                                 setTopN(zoneState.cards.slice(0, s.n))
+                                message = `looked at the top ${s.n} cards of`
                                 break;
                         }
                         setShown(true)
                         setQuery('')
                         playerDispatch({...baseAction(), kind:MESSAGE, 
-                            message:` ${s.choice.replace("_", `${s.n} of`)} ${playerName === owner ? "their" : `${owner}'s`} Library`})
-                            // TODO move library looking / searching stuff to server to avoid client side hacking
+                            message: message + ` ${playerName === owner ? "their" : `${owner}'s`} Library`
+                        })
+                        // TODO move library looking / searching stuff to server to avoid client side hacking
                     })
                     .catch(() => setShown(false));
             } else {

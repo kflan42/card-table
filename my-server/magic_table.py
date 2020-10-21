@@ -269,10 +269,10 @@ class MagicTable:
     def do_random(when, message) -> str:
         seed(when, version=2)
         if message == "Coin Flip":
-            return f"Coin flip is {choice(['heads', 'tails'])}."
+            return f"coin flip is {choice(['heads', 'tails'])}."
         elif message.startswith("Roll d"):
             size = int(message.replace("Roll d", ""))
-            return f"Rolled a {randint(1, size)} on a {message.split(' ')[1]}."
+            return f"rolled a {randint(1, size)} on a {message.split(' ')[1]}."
 
     @staticmethod
     def shuffle_library(owner, when, game, game_updates):
@@ -340,7 +340,7 @@ class MagicTable:
         elif action.kind.startswith(SHUFFLE_LIBRARY):
             tgt_owner = action.kind.replace(SHUFFLE_LIBRARY + "_", "")
             MagicTable.shuffle_library(tgt_owner, action.when, self.indexed_game, game_updates)
-            line = "shuffled " + ("their" if action.who == tgt_owner else f"{tgt_owner}'s") + " library"
+            line = "shuffled " + ("their" if action.who == tgt_owner else f"{tgt_owner}'s") + " Library"
             game_updates.log_updates.append(LogLine(who=action.who, when=action.when, line=line))
         elif action.kind == MULLIGAN:
             # move hand cards to library
