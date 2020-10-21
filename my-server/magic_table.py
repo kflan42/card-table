@@ -181,7 +181,7 @@ class MagicTable:
         if action.kind == RANDOMNESS:
             line = MagicTable.do_random(action.when, action.message)
             game_updates_i.log_updates.append(LogLine(who=action.who, when=action.when, line=line))
-        elif action.message:
+        elif action.kind == MESSAGE and action.message:
             game_updates_i.log_updates.append(LogLine(who=action.who, when=action.when, line=action.message))
 
         logger.info(f"resulted in {game_updates_i}")
@@ -343,18 +343,36 @@ class MagicTable:
             line = "shuffled " + ("their" if action.who == tgt_owner else f"{tgt_owner}'s") + " Library"
             game_updates.log_updates.append(LogLine(who=action.who, when=action.when, line=line))
         elif action.kind == MULLIGAN:
-            # move hand cards to library
+            mulls_so_far = len([a for a in self.table.actions if a.who == action.who and a.kind == MULLIGAN])
+            if not [c for c in self.indexed_game.players[action.who].counters if c.name == 'Life' and c.value == 40]:
+                # mulligans reduce your hand size by one, but commander has 1 free mulligan
+                mulls_so_far += 1
+
             hand = self.indexed_game.zones[action.who + "-" + HAND]
             library = self.indexed_game.zones[action.who + "-" + LIBRARY]
-            library.cards += hand.cards
-            hand.cards.clear()
+
+            sub_kind = action.message
+            if sub_kind == "London":
+                replace_count = 7
+                new_cards = 7 - mulls_so_far
+                line = f"took a London mulligan to {new_cards} cards"
+            elif sub_kind.startswith("Partial"):
+                replace_count = int(sub_kind.split(' ')[1])
+                new_cards = replace_count - (1 if mulls_so_far else 0)
+                line = f"took a {replace_count} card partial mulligan to {7-mulls_so_far} cards"
+            else:
+                raise Exception("Unrecognized mulligan type " + sub_kind)
+            # move hand cards to library
+            library.cards += hand.cards[0:replace_count]
+            hand.cards = hand.cards[replace_count:]
             game_updates.zones[action.who + "-" + HAND] = hand
             game_updates.zones[action.who + "-" + LIBRARY] = library
             # shuffle library
             MagicTable.shuffle_library(action.who, action.when, self.indexed_game, game_updates)
-            # draw 7
-            hand.cards, library.cards = library.cards[:7], library.cards[7:]
-            line = "took a mulligan"
+            # draw new cards to front of hand
+            hand.cards = library.cards[:new_cards] + hand.cards
+            library.cards = library.cards[new_cards:]
+
             game_updates.log_updates.append(LogLine(who=action.who, when=action.when, line=line))
 
         return game_updates

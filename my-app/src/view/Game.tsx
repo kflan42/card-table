@@ -213,7 +213,7 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
 
     const mulliganDialog = () => {
         if (!userName) return
-        const choices = ["London"]
+        const choices = ["London", "Partial Replace _ Leftmost Cards"]
         confirmation({
             choices,
             catchOnCancel: true,
@@ -224,9 +224,17 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
                 case "London":
                     playerDispatch({
                         ...baseAction(),
-                        kind: MULLIGAN
+                        kind: MULLIGAN,
+                        message: `London`
                     })
-                break;
+                    break;
+                case "Partial Replace _ Leftmost Cards":
+                    playerDispatch({
+                        ...baseAction(),
+                        kind:MULLIGAN,
+                        message: `Partial ${s.n}`
+                    })
+                    break;
             }
         }).catch(()=>null)
     }
