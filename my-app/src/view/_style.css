@@ -70,15 +70,20 @@
   }
 
 .Table {
-  flex-grow: 1;
+  display:flex;
+  flex-direction:column;
   text-align: center;
-  vertical-align: middle;
+  flex-grow: 1;
   background-color: #461F07;
-  display: flex;
-  flex-wrap: wrap;
   overflow-y: auto;
-  align-items: stretch;
+}
+
+.TableRow {
+  display: flex;
+  flex-grow: 1;
   justify-content: space-around;
+  align-items: stretch;
+  vertical-align: middle;
 }
 
 .Playmat {
