@@ -156,18 +156,15 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
 
     const size = zoneState ? zoneState.cards.length : 0
     const cardsShown = topN.length > 0 ? topN.length : size
-    const cardHeight = useSelector((state: ClientState) => {
+    const cardHeight = Number(useSelector((state: ClientState) => {
         return state.playerPrefs.bfCardSize/2 + state.playerPrefs.handCardSize/2;
-    })
+    }))
 
     function renderPopupBox() {
-        const target_cols = 1 + Math.round(Math.sqrt(cardsShown - 7))
-        const cards_per_col = Math.round(cardsShown / target_cols)
-        const cardPortionShown = Math.max(1 / 3, Math.min(2 / cards_per_col, 1))
+        const cardPortionShown = Math.max(1 / 6, Math.min(12/cardsShown, 1))  // so less than 12 cards = whole cards
+        const cols = Math.ceil(cardsShown * cardPortionShown / 3)
         const shownHeight = cardHeight * cardPortionShown
-        const cardWidth = shownHeight / cardPortionShown * 146 / 204.0 // show top 1/7th, use small image ratio
-        const boxHeight = shownHeight * cards_per_col * 1.1; // .1 margins, scrollbar
-        const boxWidth = target_cols * cardWidth * 1.1
+        const cardWidth = cardHeight * 488 / 680.0
         const listItems = []
         if (zoneState) {
             const cardsToShow = topN.length > 0 ? topN : zoneState.cards
@@ -188,7 +185,7 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
         }
 
         return (<div className="StackPopUpBox">
-                <div style={{display: "flex", justifyContent: "left", alignItems: "baseline", margin: "0.1em"}}>
+                <div style={{display: "flex", justifyContent: "left", alignItems: "baseline", margin: "0.1em", minWidth: "max-content"}}>
                     <span>{name}</span>&nbsp;
                     {cardsShown > 7
                         ?
@@ -202,11 +199,7 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
                         Close
                     </button>
                 </div>
-                <div className="CardStack" style={{
-                    fontSize: "small", // match Card
-                    height: `${boxHeight}em`,
-                    minWidth: `${boxWidth}em`,
-                }}>
+                <div className="CardStack" style={{gridTemplateColumns:"auto ".repeat(cols)}}>
                     {listItems}
                 </div>
             </div>

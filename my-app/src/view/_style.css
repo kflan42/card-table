@@ -103,6 +103,8 @@
 }
 
 .PlayerBox > div {
+  word-wrap: break-word;
+  max-width: 5em;
   background-color: Gainsboro;
   margin-bottom: 0.15em;
   margin-right: 0.1em;
@@ -167,24 +169,24 @@
   position: absolute;
   left: 100%;
   z-index: 1;
+  min-width: max-content;
 }
 
 .CardStack {
-  display: flex;
-  flex-direction: column;
-  flex-wrap: wrap;
-  overflow-x: auto;
-  align-items: flex-start;
-  align-content: flex-start;
-  justify-content: flex-start;
+  display: grid;
   padding: 0.2em;
-  resize: both;
+  font-size: small; /* like Card */
 }
 
-.CardStack .Card > img {
+.StackCard {
+  overflow-y: hidden; 
   border: none;
+  padding: 0.13em;
 }
 
+.StackCard .Card > img {
+  border-width: 0.1em;
+}
 
 /* Tooltip container */
 .buttontooltip {

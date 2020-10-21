@@ -35,12 +35,7 @@ const StackCard: React.FC<StackCardP> = ({ cardId, height, width, zone, owner })
     const opacity = isDragging ? 0 : 1
 
     return (
-        <div ref={drag}
-            style={{
-                fontSize: "small", // match Card
-                height: height + "em", width: width + "em", overflowY: "hidden", opacity, border: "none",
-                margin:"0.1em",
-            }}>
+        <div ref={drag} className="StackCard" style={{height: height + "em", width: width + "em"}}>
             <Card cardId={cardId} />
         </div>
     )
