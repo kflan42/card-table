@@ -74,13 +74,13 @@ export function usePlayerActions() {
         QueuedActions.queueMove(moveAction)
     }
 
-    function draw(action: { type: string }) {
+    function send_action(event: string, action: { type: string }) {
         const playerDraw = { ...action, who: playerName, when: Date.now() }
         console.log(`sending to ${gameId}`, playerDraw, new Date(playerDraw.when).toLocaleTimeString())
-        MySocket.get_socket().emit('player_draw', { ...playerDraw, table: gameId }, (ack: boolean) => {
+        MySocket.get_socket().emit(event, { ...playerDraw, table: gameId }, (ack: boolean) => {
             console.log('got ack for ', playerDraw, ack)
         })
     }
 
-    return { action: send, queue: queue, draw, baseAction }
+    return { action: send, queue: queue, info: send_action, baseAction }
 }

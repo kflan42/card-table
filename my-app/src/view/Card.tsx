@@ -29,7 +29,7 @@ const Card: React.FC<CardProps> = ({ cardId, imageSize, cardHeight, showCollecto
         ? state.game.players[state.playerPrefs.name].color
         : "gray")
     const dispatch = useDispatch()
-    const { draw: drawDispatch } = usePlayerActions()
+    const { info: infoDispatch } = usePlayerActions()
 
     if (!card) {
         return <div className={`Card cardtooltip c-${cardId}`}>{`Card ${cardId}`}</div>
@@ -73,7 +73,7 @@ const Card: React.FC<CardProps> = ({ cardId, imageSize, cardHeight, showCollecto
             return
         }
         if (drawingFirst !== null && drawingFirst !== '') {
-            drawDispatch(drawLine({ color: drawerColor, from: drawingFirst, to: `c-${cardId}` }))
+            infoDispatch('player_draw', drawLine({ color: drawerColor, from: drawingFirst, to: `c-${cardId}` }))
             dispatch(drawing(null))
             event.preventDefault()
             return;

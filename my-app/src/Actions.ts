@@ -33,6 +33,11 @@ export function clearLines(color: string) {
     return { type: CLEAR_LINES, color }
 }
 
+export const NEXT_TURN = 'NEXT_TURN'
+export function nextTurn(player: string) {
+    return { type: NEXT_TURN, player }
+}
+
 export const HOVERED_CARD = 'HOVERED_CARD'
 export function hoveredCard(cardId: number | null) {
     return {

@@ -25,7 +25,7 @@ const PlayerBox: React.FC<PlayerBoxP> = ({ player }) => {
         counters.push(<PlayerCounter key={counter.name} player={player} kind={counter.name} value={counter.value} />)
     }
 
-    const { action: playerDispatch, draw: drawDispatch, baseAction } = usePlayerActions()
+    const { action: playerDispatch, info: infoDispatch, baseAction } = usePlayerActions()
     const confirmation = useConfirmation();
 
     const addCounter = () => {
@@ -67,19 +67,21 @@ const PlayerBox: React.FC<PlayerBoxP> = ({ player }) => {
             return
         }
         if (drawingFirst !== null && drawingFirst !== '') {
-            drawDispatch(drawLine({ color: drawerColor, from: drawingFirst, to: `p-${player}` }))
+            infoDispatch('player_draw', drawLine({ color: drawerColor, from: drawingFirst, to: `p-${player}` }))
             dispatch(drawing(null))
             event.preventDefault()
             return;
         }
     }
 
+    const currentTurn = useSelector((state: ClientState) => state.whoseTurn === player)
+
     return (
         /* eslint-disable jsx-a11y/accessible-emoji */
         <div className="PlayerBox" style={{ backgroundColor: playerState.color }}>
             <div className={`p-${player}`} style={{
-                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                maxWidth: "5em",
+                color: currentTurn ? "gainsboro" : undefined,
+                backgroundColor: currentTurn ? "black" : undefined
             }} onClick={click}>
                 <strong>{player}</strong>
             </div>

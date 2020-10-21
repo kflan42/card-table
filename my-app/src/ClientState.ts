@@ -7,6 +7,7 @@ export interface ClientState {
     hoveredCard: HoveredCard,
     drawing: Drawing,
     hiddenPlaymats: string[],
+    whoseTurn: string,
     gameId: string|null
 }
 

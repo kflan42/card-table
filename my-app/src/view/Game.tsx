@@ -10,7 +10,7 @@ import {
     setUserPrefs,
     setGame,
     TOGGLE_FACEDOWN_CARD,
-    TOGGLE_TRANSFORM_CARD, togglePlaymat, updateGame, UNTAP_ALL, SET_CARD_COUNTER, CREATE_TOKEN, MULLIGAN, setGameId
+    TOGGLE_TRANSFORM_CARD, togglePlaymat, updateGame, UNTAP_ALL, SET_CARD_COUNTER, CREATE_TOKEN, MULLIGAN, setGameId, nextTurn
 } from '../Actions';
 import CardPopup from './CardPopup';
 import CustomDragLayer from './CustomDragLayer';
@@ -47,7 +47,7 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
     const [hasSockets, setHasSockets] = useState(false)
 
     const dispatch = useDispatch()
-    const { action: playerDispatch, baseAction, draw: drawDispatch } = usePlayerActions()
+    const { action: playerDispatch, baseAction, info: infoDispatch } = usePlayerActions()
     const [loadedId, setLoadedId] = useState('')
     const [optionsOpen, setOptionsOpen] = useState(false)
 
@@ -141,6 +141,10 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
                     console.log('received player_draw', msg)
                     return dispatch(msg);
                 })
+                MySocket.get_socket().on('next_turn', function (msg: object) {
+                    console.log('received next_turn', msg)
+                    return dispatch(msg);
+                })
                 MySocket.get_socket().on('joined', function (msg: { table: string, username: string }) {
                     if (!msg.username.startsWith('(') && !players.hasOwnProperty(msg.username)) {
                         // new player joined table since we loaded it, need to reload table data
@@ -168,11 +172,34 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
         dispatch(drawing(''))
     }
 
+    const whoseTurn = useSelector((state: ClientState) => state.whoseTurn)
+    const hiddenPlayers = useSelector((state: ClientState) => state.hiddenPlaymats)
+
+    const nextPlayerTurn = () => {
+        if (whoseTurn === null || userName === whoseTurn) {
+            let playerIsNext = false;
+            let next = '';
+            for (const playerName in players) {
+                if (playerName in hiddenPlayers) {
+                    continue // skip those out of the game
+                }
+                if(playerIsNext) {
+                    next = playerName
+                }
+                playerIsNext = playerName === (whoseTurn ? whoseTurn : userName) // if null assume it's our turn
+            }
+            if (playerIsNext) {  // wrap around
+                next = Object.keys(players)[0]  // ES2015 garauntees string keys iterated in insertion order
+            }
+            infoDispatch('next_turn', nextTurn(next))
+        }
+    }
+
     const drawerColor = useSelector((state: ClientState) => state.game.players.hasOwnProperty(state.playerPrefs.name)
         ? state.game.players[state.playerPrefs.name].color
         : "gray")
     const clearMyLines = () => {
-        drawDispatch(clearLines(drawerColor))
+        infoDispatch('player_draw', clearLines(drawerColor))
     }
 
     const topCard = useSelector((state: ClientState) => {
@@ -409,6 +436,10 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
                 break;
             case 'M':
                 mulliganDialog()
+                event.preventDefault()
+                break;
+            case 'n':
+                nextPlayerTurn()
                 event.preventDefault()
                 break;
             case 'H':

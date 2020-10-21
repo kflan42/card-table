@@ -195,15 +195,24 @@ def on_player_action(data):
 
 @socketio.on('player_draw')
 def on_player_draw(data):
-    logger.info('player_draw %s', data)
+    on_info_event('player_draw', data)
+
+
+@socketio.on('next_turn')
+def on_player_draw(data):
+    on_info_event('next_turn', data)
+
+
+def on_info_event(event, data):
+    logger.info('%s %s', event, data)
     table_name = data['table']
     table_name, table = get_table(table_name=table_name)
     if table:
         # todo - this will work for single process server but not multi process
         with table_locks[table_name]:
             # send it out
-            emit('player_draw', data, room=table_name, broadcast=True)  # on('player_draw'
-            # don't need to store draw
+            emit(event, data, room=table_name, broadcast=True)
+            # don't need to store info events
     else:
         emit('error', {'error': 'Unable to do action. Table does not exist.'})
         return False
