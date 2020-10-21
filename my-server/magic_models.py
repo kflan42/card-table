@@ -28,7 +28,7 @@ class SFCard(Interface, DataClassJsonMixin):
 @dataclass
 class TableInfo(Interface, DataClassJsonMixin):
     table: str
-    players: int
+    colors: List[str]
 
 
 @dataclass

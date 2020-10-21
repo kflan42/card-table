@@ -1,6 +1,6 @@
 import React, { ChangeEvent, useEffect, useState } from 'react'
 import { useHistory } from 'react-router-dom';
-import { JoinRequest, SFCard, TableRequest } from "../magic_models";
+import { JoinRequest, SFCard, TableInfo, TableRequest } from "../magic_models";
 import { setUserPrefs, setGame } from "../Actions";
 import { useDispatch } from "react-redux";
 import MySocket from '../MySocket';
@@ -9,29 +9,9 @@ import { usePageVisibility } from './Visibility';
 
 export const LoginForm: React.FC = () => {
     const history = useHistory()
-
     const dispatch = useDispatch()
-
-    useEffect(() => {
-        dispatch(setGame(
-            {
-                name: "",
-                game: {
-                    players: [],
-                    cards: [],
-                    zones: [],
-                    battlefield_cards: [],
-                },
-                log_lines: [],
-                actions: [],
-                sf_cards: [],
-                table_cards: []
-            }
-        ))
-    })
-
     const routeChange = (r: string) => history.push(r)
-
+    
     const [deckList, setDeckList] = useState('')
     const [tableRequest, setTableRequest] = useState<TableRequest>({ table: '', password: '' })
     const [joinRequest, setJoinRequest] = useState<JoinRequest>({
@@ -43,10 +23,33 @@ export const LoginForm: React.FC = () => {
     })
     const [errorMsg, setErrorMsg] = useState('')
     const [deckMsg, setDeckMsg] = useState('')
-
+    
     const [loaded, setLoaded] = useState(false)
+        useEffect(() => {
+            if(loaded) {
+                return;
+            }
+            dispatch(setGame(
+                {
+                    name: "",
+                    game: {
+                        players: [],
+                        cards: [],
+                        zones: [],
+                        battlefield_cards: [],
+                    },
+                    log_lines: [],
+                    actions: [],
+                    sf_cards: [],
+                    table_cards: []
+                }
+            ))
+        }, [loaded, dispatch])
 
     useEffect(() => {
+        if(loaded) {
+            return;
+        }
         const name = localStorage.getItem('userName')
         const color = localStorage.getItem('userColor')
         const deckList = localStorage.getItem('deckList')
@@ -75,7 +78,7 @@ export const LoginForm: React.FC = () => {
 
     const timerID = isVisible ? setInterval(
         () => tick(),
-        10000
+        60 * 1000
     ) : undefined;
 
     useEffect(() => {
@@ -110,11 +113,14 @@ export const LoginForm: React.FC = () => {
         }
     }
 
+    const [selectedTableIdx, setSelectedTableIdx] = useState(-1)
+
     const handleSelectTable = (event: React.ChangeEvent<HTMLSelectElement>) => {
         if (event.target.selectedIndex === undefined) {
             return;
         }
         const option = event.target[event.target.selectedIndex] as any
+        setSelectedTableIdx(event.target.selectedIndex)
         setJoinRequest({ ...joinRequest, table: option.value as string });
     }
 
@@ -273,10 +279,17 @@ export const LoginForm: React.FC = () => {
             });
     }
 
+    // parallel arrays
     const [tableItems, setTableItems] = useState<JSX.Element[]>([])
+    const [playerItems, setPlayerItems] = useState<JSX.Element[][]>([])
+    const [lastLoad, setLastLoad] = useState(0)
 
     const loadTables = () => {
+        if (new Date().getTime() < lastLoad + 5000) {
+            return // skip if loaded within 5s
+        }
         console.log("loading tables")
+        setLastLoad(new Date().getTime())
         fetch(`${process.env.REACT_APP_API_URL || ""}/api/tables`).then(
             async response => {
                 // check for error response
@@ -286,20 +299,31 @@ export const LoginForm: React.FC = () => {
                     const error = data || response.status;
                     return Promise.reject(error);
                 }
-                const tables = await response.json()
+                const tables = await response.json() as TableInfo[]
 
                 const tableList = []
+                const playersList = []
                 for (const table of tables) {
-                    const label = `${table.table} ` + '🧙'.repeat(table.players)
+                    const label = `${table.table} (${table.colors.length})`
                     tableList.push(<option key={table.table} value={table.table}>{label}</option>)
+
+                    const players = []
+                    let i = 0
+                    for (const color of table.colors) {
+                        /* eslint-disable jsx-a11y/accessible-emoji */
+                        players.push(<span key={i++} style={{backgroundColor:color}}>🧙</span>)
+                    }
+                    playersList.push(players)
                 }
                 setTableItems(tableList)
+                setPlayerItems(playersList)
             }
         ).catch(error => {
             console.error('loadTables error', error);
             setTableItems([<option key={-1} value={''}>Error Loading Tables</option>])
         });
     }
+    loadTables() // try a refresh on any page render due to some other prop being edited by player
 
     const sendCreate = () => {
         const requestOptions = {
@@ -410,6 +434,8 @@ export const LoginForm: React.FC = () => {
                                 {tableItems}
                             </select>
                             <div style={{ display: "inline-block" }}>
+                                {selectedTableIdx > -1 ? <span style={{display:"block"}}>Players:<br/> {playerItems[selectedTableIdx]}</span>  : null}
+                                <br/>
                                 {/* TODO <span className="SmallSpan">Password:</span>
                                 <br />
                                 <input type="text" value={joinRequest.password} onChange={handlePasswordChange} style={{ width: "10em" }} />
@@ -436,7 +462,7 @@ export const LoginForm: React.FC = () => {
 
             </div>
         </div>
-    ); // TODO actually do something with password
+    );
 }
 
 

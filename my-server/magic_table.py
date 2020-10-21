@@ -1,6 +1,6 @@
 import os
 import time
-from random import shuffle, seed
+from random import shuffle, seed, random, choice, randint
 from typing import Tuple
 
 import persistence
@@ -178,7 +178,10 @@ class MagicTable:
         if action.create_tokens:
             game_updates_i.merge(self.handle_create_token(action))
 
-        if action.message:
+        if action.kind == RANDOMNESS:
+            line = MagicTable.do_random(action.when, action.message)
+            game_updates_i.log_updates.append(LogLine(who=action.who, when=action.when, line=line))
+        elif action.message:
             game_updates_i.log_updates.append(LogLine(who=action.who, when=action.when, line=action.message))
 
         logger.info(f"resulted in {game_updates_i}")
@@ -261,6 +264,15 @@ class MagicTable:
                 sf_card = next((sf for sf in MagicCards.get_all_tokens() if sf.sf_id == table_card.sf_id))
             card_name = "a facedown card" if card_state.facedown else sf_card.name
         return card_name
+
+    @staticmethod
+    def do_random(when, message) -> str:
+        seed(when, version=2)
+        if message == "Coin Flip":
+            return f"Coin flip is {choice(['heads', 'tails'])}."
+        elif message.startswith("Roll d"):
+            size = int(message.replace("Roll d", ""))
+            return f"Rolled a {randint(1, size)} on a {message.split(' ')[1]}."
 
     @staticmethod
     def shuffle_library(owner, when, game, game_updates):

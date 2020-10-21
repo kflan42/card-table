@@ -1,8 +1,7 @@
 import React from "react";
 import { ConfirmationResult } from "./ConfirmationDialog";
-import { MESSAGE } from "../Actions";
+import { RANDOMNESS } from "../Actions";
 import { useConfirmation } from "./ConfirmationService";
-import { randchoice, randint } from "../Utilities";
 import { usePlayerActions } from "../PlayerDispatch";
 
 
@@ -23,17 +22,16 @@ const Die: React.FC = () => {
         let line = ""
         switch (s.choice) {
           case "Coin Flip":
-            line = `Coin flip is ${randchoice(["Heads", "Tails"])}`
+            line = s.choice
             break;
           case "Roll d20":
-            line = `Rolled a ${randint(20) + 1} on a d20`
+            line = s.choice
             break;
           case "Roll d _":
-            line = `Rolled a ${randint(s.n) + 1} on a d${s.n}`
+            line = `Roll d${s.n}`
             break;
         }
-        playerDispatch({...baseAction(), kind:MESSAGE, message:line})
-        // TODO move random stuff to server to avoid client side hacking
+        playerDispatch({...baseAction(), kind:RANDOMNESS, message:line})
       })
       .catch(() => null);
   }

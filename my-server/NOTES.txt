@@ -12,9 +12,9 @@ cd scryfall; python3 updateCards.py; extractCards.sh; cd ..
 cd my-server
 
 # for cloud
-gsutil cp -r cards $CLOUD_STORAGE_BUCKET
-gsutil ls $CLOUD_STORAGE_BUCKET
-
+gsutil cp -r cards gs://$CLOUD_STORAGE_BUCKET
+gsutil ls gs://$CLOUD_STORAGE_BUCKET
+gcloud app deploy --version VERSION --verbosity info
 # for hosting frontend in google storage bucket with dns name - change url if not running locally
 export MY_API_SERVER_URL=http://localhost:5000
 cd my-app; ./rebuildForServer.sh;

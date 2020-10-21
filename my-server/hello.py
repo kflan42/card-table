@@ -70,9 +70,9 @@ def parse_deck_list():
 
 @app.route('/api/tables', methods=['GET'])
 def get_tables_info():
-    table_infos = [TableInfo(t.table.name, len(t.table.game.players)) for t in tables.values()]
-    table_infos.append(TableInfo(f"test-{len(table_infos)}", 0))
-    return TableInfo.schema().dumps(table_infos, many=True)
+    tables_info = [TableInfo(t.table.name, [p.color for p in t.table.game.players]) for t in tables.values()]
+    tables_info.append(TableInfo(f"test-{len(tables_info)}", []))
+    return TableInfo.schema().dumps(tables_info, many=True)
 
 
 @app.route('/api/tables/<path:table_name>', methods=['PUT'])
