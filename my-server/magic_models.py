@@ -28,6 +28,7 @@ class SFCard(Interface, DataClassJsonMixin):
 @dataclass
 class TableInfo(Interface, DataClassJsonMixin):
     table: str
+    date: str
     colors: List[str]
 
 

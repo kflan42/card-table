@@ -1,6 +1,6 @@
 import os
 import time
-from random import shuffle, seed, random, choice, randint
+from random import shuffle, seed, choice, randint
 from typing import Tuple
 
 import persistence
@@ -9,6 +9,8 @@ from magic_constants import *
 from magic_game import IndexedGame
 from magic_models import *
 from utils import logger
+
+SAVE_GAME_JSON = '.save_game.json'
 
 
 def is_test(table_name: str) -> bool:
@@ -22,6 +24,16 @@ class MagicTable:
     @staticmethod
     def get_tables_path():
         return MagicTable._tables_path
+
+    @staticmethod
+    def list_table_files():
+        table_files = persistence.ls_dir(MagicTable.get_tables_path()+os.path.sep)
+        tables = []
+        for (table_file, m_time) in table_files:
+            if table_file.endswith(SAVE_GAME_JSON):
+                table_name = table_file.replace(SAVE_GAME_JSON, '')
+                tables.append((table_name, m_time))
+        return tables
 
     @staticmethod
     def load(table_name):
@@ -130,7 +142,7 @@ class MagicTable:
         # todo either find better append only data store for actions and log lines or split by 100s
         # since saving them gets linearly slower over the course of the game
         sg = SaveGame(self.table.game, self.table.actions, self.table.log_lines)
-        persistence.save(file_path + ".save_game.json", SaveGame.schema().dumps(sg))
+        persistence.save(file_path + SAVE_GAME_JSON, SaveGame.schema().dumps(sg))
         t1 = time.time()
         logger.info(f"Saved in {t1 - t0:.3f}s")
 

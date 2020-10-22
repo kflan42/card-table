@@ -210,11 +210,11 @@ export const LoginForm: React.FC = () => {
 
     const handleCreateTable = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         event.preventDefault();
-        if (joinRequest.table.length > 32) {
+        if (tableRequest.table.length > 32) {
             setErrorMsg("Table name is too long.");
             return;
         }
-        if (joinRequest.table.length < 1) {
+        if (tableRequest.table.length < 1) {
             setErrorMsg("Must enter a table name.");
             return;
         }
@@ -308,7 +308,7 @@ export const LoginForm: React.FC = () => {
                 const tableList = []
                 const playersList = []
                 for (const table of tables) {
-                    const label = `${table.table} (${table.colors.length})`
+                    const label = `${table.table} ` + (table.date === 'today' ? `(${table.colors.length} players)` : `[from ${table.date}]`)
                     tableList.push(<option key={table.table} value={table.table}>{label}</option>)
 
                     const players = []

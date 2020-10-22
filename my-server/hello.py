@@ -12,7 +12,7 @@ import json
 import os
 import typing
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, date
 from threading import Lock
 
 from flask import Flask, jsonify
@@ -70,8 +70,16 @@ def parse_deck_list():
 
 @app.route('/api/tables', methods=['GET'])
 def get_tables_info():
-    tables_info = [TableInfo(t.table.name, [p.color for p in t.table.game.players]) for t in tables.values()]
-    tables_info.append(TableInfo(f"test-{len(tables_info)}", []))
+    # live tables
+    tables_info = [TableInfo(t.table.name, 'today', [p.color for p in t.table.game.players]) for t in tables.values()]
+
+    # storage tables
+    file_tables = MagicTable.list_table_files()
+    file_tables.sort(key=lambda ft: -ft[1])
+    for (table_name, updated) in file_tables:
+        if not any(t.table == table_name for t in tables_info):
+            tables_info.append(TableInfo(table_name, date.fromtimestamp(updated).strftime("%m/%d"), []))
+
     return TableInfo.schema().dumps(tables_info, many=True)
 
 

@@ -4,6 +4,8 @@ import os
 from google.cloud import storage
 
 # Configure this environment variable via app.yaml
+from google.cloud.storage import Client, Bucket
+
 from utils import logger
 
 CLOUD_STORAGE_BUCKET = os.environ.get('CLOUD_STORAGE_BUCKET', None)
@@ -16,16 +18,33 @@ _storage_client = None
 _bucket = None
 
 
-def get_bucket():
+def get_client() -> Client:
     global _storage_client
     if not _storage_client:
         # Create a Cloud Storage client once and re-use it.
         _storage_client = storage.Client()
+    return _storage_client
+
+
+def get_bucket() -> Bucket:
     global _bucket
     if not _bucket:
         # Re-use the bucket object too.
-        _bucket = _storage_client.get_bucket(CLOUD_STORAGE_BUCKET)
+        _bucket = get_client().get_bucket(CLOUD_STORAGE_BUCKET)
     return _bucket
+
+
+def ls_dir(file_path: str):
+    if LOCAL:
+        if os.path.isdir(file_path):
+            logger.info(f"Listing {file_path}")
+            files = os.listdir(file_path)
+            times = [os.stat(os.path.join(file_path, f)).st_mtime for f in files]
+            return list(zip(files, times))
+        return []
+    else:
+        blobs = get_client().list_blobs(CLOUD_STORAGE_BUCKET, prefix=file_path, fields='items(name,updated)')
+        return [(b.name.replace(file_path, "", 1), b.updated.timestamp()) for b in blobs]
 
 
 def save(file_path: str, what: str, is_json=True):
@@ -75,10 +94,14 @@ def load(file_path: str, encoding=None, decoder=json.loads):
 def main():
     from test_table import test_table
     from magic_models import Table
-    # Get the bucket that the file will be uploaded to.
-    bucket = get_bucket()
+
+    tables = ls_dir("tables/")
+    print(tables)
+
     magic_table = test_table("test3")
 
+    # Get the bucket that the file will be uploaded to.
+    bucket = get_bucket()
     times0 = upload(bucket, "hello world", lambda t: t)
     times1 = upload(bucket, magic_table.table, lambda t: Table.schema().dumps(t))
     times2 = upload(bucket, magic_table.table, lambda t: t.to_json())
