@@ -11,7 +11,7 @@ export const LoginForm: React.FC = () => {
     const history = useHistory()
     const dispatch = useDispatch()
     const routeChange = (r: string) => history.push(r)
-    
+
     const [deckList, setDeckList] = useState('')
     const [tableRequest, setTableRequest] = useState<TableRequest>({ table: '', password: '' })
     const [joinRequest, setJoinRequest] = useState<JoinRequest>({
@@ -22,32 +22,32 @@ export const LoginForm: React.FC = () => {
         deck: []
     })
     const [errorMsg, setErrorMsg] = useState('')
-    const [deckMsg, setDeckMsg] = useState('')
-    
+    const [deckMsg, setDeckMsg] = useState('Upload Result:')
+
     const [loaded, setLoaded] = useState(false)
-        useEffect(() => {
-            if(loaded) {
-                return;
+    useEffect(() => {
+        if (loaded) {
+            return;
+        }
+        dispatch(setGame(
+            {
+                name: "",
+                game: {
+                    players: [],
+                    cards: [],
+                    zones: [],
+                    battlefield_cards: [],
+                },
+                log_lines: [],
+                actions: [],
+                sf_cards: [],
+                table_cards: []
             }
-            dispatch(setGame(
-                {
-                    name: "",
-                    game: {
-                        players: [],
-                        cards: [],
-                        zones: [],
-                        battlefield_cards: [],
-                    },
-                    log_lines: [],
-                    actions: [],
-                    sf_cards: [],
-                    table_cards: []
-                }
-            ))
-        }, [loaded, dispatch])
+        ))
+    }, [loaded, dispatch])
 
     useEffect(() => {
-        if(loaded) {
+        if (loaded) {
             return;
         }
         const name = localStorage.getItem('userName')
@@ -173,8 +173,8 @@ export const LoginForm: React.FC = () => {
                 setJoinRequest({ ...joinRequest, deck: data })
                 const cardCount = data.length
                 const firstCard = data ? data[0].name : "none"
-                const cmdrMsg = cardCount < 100 ? '' : `'${firstCard}' will be your commander.`
-                setDeckMsg(`${cardCount} cards loaded. ` + cmdrMsg)
+                const cmdrMsg = cardCount < 100 ? '' : `"${firstCard}" will be your commander.`
+                setDeckMsg(`${cardCount} cards found. ` + cmdrMsg)
                 setCardsList(data.map(sfcard => `1 ${sfcard.name} (${sfcard.set_name.toUpperCase()}) ${sfcard.number}`).join("\n"))
             })
             .catch(error => {
@@ -212,6 +212,10 @@ export const LoginForm: React.FC = () => {
         event.preventDefault();
         if (joinRequest.table.length > 32) {
             setErrorMsg("Table name is too long.");
+            return;
+        }
+        if (joinRequest.table.length < 1) {
+            setErrorMsg("Must enter a table name.");
             return;
         }
         sendCreate()
@@ -311,7 +315,7 @@ export const LoginForm: React.FC = () => {
                     let i = 0
                     for (const color of table.colors) {
                         /* eslint-disable jsx-a11y/accessible-emoji */
-                        players.push(<span key={i++} style={{backgroundColor:color}}>🧙</span>)
+                        players.push(<span key={i++} style={{ backgroundColor: color }}>🧙</span>)
                     }
                     playersList.push(players)
                 }
@@ -367,7 +371,7 @@ export const LoginForm: React.FC = () => {
                 key={color}
                 style={{
                     backgroundColor: color, color: luminance < 0.5 ? "white" : "black", cursor: "pointer",
-                    margin: "unset"
+                    margin: "0.5%", width: "24%"
                 }}
                 onClick={() => handlePickColor(color)}
             >{color}</span>)
@@ -377,90 +381,81 @@ export const LoginForm: React.FC = () => {
     }
 
     return (
-        <div className="myform" style={{ width: "100%", overflowY: "scroll" }}>
+        <div className="myform" style={{ width: "100%", overflowY: "auto", overflowX:"auto" }}>
             <h3 style={{ textAlign: "center" }}>Welcome to my "Card Table"</h3>
-            <div style={{ width: "100%", display: "flex", flexWrap: "wrap", justifyContent: "center" }}>
+            <div style={{
+                width: "100%", height: "100%",
+                display: "inline-grid", gridTemplateColumns: "auto auto",
+                justifyContent: "center", alignContent:"start"
+            }}>
 
-                <div style={{ border: '0.2em solid black', margin: "1em" }}>
-                    <span className="MediumSpan">Upload your deck from a file or paste it below. &nbsp; </span>
-                    <input className="DivButton" accept=".txt,.dek,.dec,*" type="file" onChange={handleFileChange} />
-                    <br />
-                    <span className="MediumSpan">Once your deck list is ready, load it! </span>
-                    <button className="DivButton" onClick={handeLoadCards}>{joinRequest.deck.length > 0 ? "Reload Cards" : "Load Cards"}</button>
-                    <br />
-                    <span className="FullSpan"><i>Supported formats include Arena, TappedOut, TCGPlayer, and XMage.</i></span>
-                    <br />
-                    <span className="FullSpan"><i>If playing commander, please put your commander first or append *CMDR* to its line.</i></span>
-                    <br />
-                    <span className='SmallSpan'
-                        style={{ margin: "0.5em 1em 0em 1em", padding: "0em" }}>Deck Input:</span>
-                    {deckMsg ? <span className="MediumSpan"
-                        style={{ margin: "0.5em 1em 0em 1em", padding: "0em", color: 'darkblue', textAlign: 'right' }}> {deckMsg} </span> : null}
-                    <br />
-                    <textarea value={deckList} required={true} onChange={handleDeckChange} cols={25} rows={25}
-                        style={{ backgroundColor: "white", border: "0.125em solid #ccc" }} />
-                    {cardsList ? <textarea value={cardsList} readOnly={true} cols={25} rows={25}
-                        style={{ backgroundColor: "beige", border: "0.125em solid darkblue" }} /> : null}
+                <div className="FormBox" style={{ gridArea: "1/2/4/3" }}>
+                    <span style={{ gridColumn: "1/5", textAlign: "center" }}><b>Deck Loader</b></span>
+                    <button style={{ gridColumn: "2/4", alignSelf: "center" }} className="DivButton" onClick={handeLoadCards}>Upload Deck List</button>
+                    <input style={{ gridColumn: "1/3", alignSelf:"center" }} className="DivButton" accept=".txt,.dek,.dec,*" type="file" onChange={handleFileChange} />
+                    <span style={{ gridColumn: "3/5", textAlign: 'center', color: 'blue' }}> {deckMsg} </span>
+                    <textarea style={{ gridColumn: "1/3", backgroundColor: "white", border: "0.125em solid #ccc" }}
+                        value={deckList} required={true} onChange={handleDeckChange} cols={25} rows={25} />
+                    <textarea style={{ gridColumn: "3/5", backgroundColor: "beige", borderColor: joinRequest.color }}
+                        value={cardsList} readOnly={true} cols={25} rows={25} />
+                    <span style={{ gridColumn: "1/5", fontStyle: "italic" }}>
+                        Supported formats include Arena, TappedOut, TCGPlayer, and XMage. <br />
+                         If playing commander, please put your commander first or append *CMDR* to its line.</span>
                 </div>
 
-                <div style={{ display: "flex", flexWrap: "wrap", flexDirection: "column" }}>
-                    <div style={{ border: '0.2em solid black', margin: "1em" }}>
-                        <span className='SmallSpan'>Your Name:</span>
-                        <input type="text" value={joinRequest.name} onChange={handleNameChange} />
-                        <br />
-                        <span className='SmallSpan'>Your Card Sleeve Color:</span>
-                        <button type="button" onClick={toggleColorChooser}
-                            style={{
-                                borderStyle: "solid",
-                                borderColor: joinRequest.color,
-                                borderWidth: "0.5em",
-                                minWidth: '10em',
-                                margin: "0.25em"
-                            }}>{joinRequest.color ? joinRequest.color : "Choose"}</button>
-                        {colorsShown ? <div style={{
-                            display: "flex", flexDirection: "column", flexWrap: "wrap",
-                            maxHeight: (colorItems.length) * 1.25 / 3 + "em", padding: "1em"
-                        }}>
-                            {colorItems}
-                        </div> : null}
-                        <br />
-                    </div>
+                <div className="FormBox" style={{ gridArea: "1/1/2/2" }}>
+                    <span style={{ gridColumn: "1/3", textAlign: "center" }}><b>Player Info</b></span>
+                    <span >Name:</span>
+                    <input type="text" value={joinRequest.name} onChange={handleNameChange} />
+                    <span>Card Sleeve Color:</span>
+                    <button className="DivButton" type="button" onClick={toggleColorChooser}
+                        style={{
+                            borderStyle: "solid",
+                            borderColor: joinRequest.color,
+                            borderWidth: "0.5em",
+                        }}>{joinRequest.color ? joinRequest.color : "Choose"}</button>
+                    {colorsShown ? <div style={{
+                        gridColumn: "1/3", padding: "1em", display: "inline-block"
+                    }}>
+                        {colorItems}
+                    </div> : null}
+                </div>
 
-                    <div style={{ border: '0.2em solid black', margin: "1em" }}>
-                        <span className="SmallSpan">Tables:</span>
-                        <div style={{ display: "flex", alignItems: "center" }}>
-                            <select size={10} className='SmallSpan' onChange={handleSelectTable}
-                                style={{ backgroundColor: "white", border: "0.125em solid #ccc", margin: "0.5em", fontSize: "medium" }}>
-                                {tableItems}
-                            </select>
-                            <div style={{ display: "inline-block" }}>
-                                {selectedTableIdx > -1 ? <span style={{display:"block"}}>Players:<br/> {playerItems[selectedTableIdx]}</span>  : null}
-                                <br/>
-                                {/* TODO <span className="SmallSpan">Password:</span>
+                <div className="FormBox" style={{ gridArea: "2/1/3/2" }}>
+                    <span style={{ textAlign: "center", gridColumn: "1/4" }}><b>Tables</b></span>
+                    <select size={10} onChange={handleSelectTable}
+                        style={{
+                            gridArea: "2 / 1 / 7 / 3",
+                            backgroundColor: "white",
+                            border: "0.125em solid #ccc",
+                            margin: "0.5em",
+                            fontSize: "medium"
+                        }}>
+                        {tableItems}
+                    </select>
+                    {selectedTableIdx > -1 ? <div>
+                        <span style={{ display: "block" }}>Players</span>
+                        <span>{playerItems[selectedTableIdx]}</span>
+                    </div> : null}
+                    {/* TODO <span className="SmallSpan">Password:</span>
                                 <br />
                                 <input type="text" value={joinRequest.password} onChange={handlePasswordChange} style={{ width: "10em" }} />
                                 <br /> */}
-                                <button className="DivButton" onClick={handleJoinTable}>Join Table</button>
-                                <br />
-                                <button className="DivButton" onClick={handleWatchTable}>Watch Table</button>
-                            </div>
-                        </div>
-                        <span className="MediumSpan"><b>Join Table</b> adds you as a player with your deck to the table.</span>
-                        <br />
-                        <span className="MediumSpan"><b>Watch Table</b> is for spectating.</span>
-                        <br />
-                    </div>
-                    <span className="FullSpan" style={{ color: "red" }}> {errorMsg ? errorMsg : null} </span>
-                    <div style={{ border: '0.2em solid black', margin: "1em", display: "inline-grid" }}>
-                        <span style={{ gridRow: 1 }} className='SmallSpan'>Table Name: </span>
-                        <input style={{ gridRow: 1 }} type="text" value={tableRequest.table} onChange={handleTableChange} />
-                        {/* TODO <span style={{ gridRow: 2 }} className="SmallSpan">Password: </span>
-                        <input style={{ gridRow: 2 }} type="text" value={joinRequest.password} onChange={handlePasswordChange} />*/}
-                        <button style={{ gridRow: 3 }} className="DivButton" onClick={handleCreateTable}>Create Table</button>
-                    </div>
+                    <button className="DivButton" onClick={handleJoinTable}>Join with Deck</button>
+                    <button className="DivButton" onClick={handleWatchTable}>Watch or Rejoin</button>
                 </div>
 
+                <div className="FormBox" style={{ gridArea: "3/1/4/2" }}>
+                    <span style={{ textAlign: "center", gridColumn: "1/3" }}><b>Table Creator</b></span>
+                    <span style={{ gridRow: 2 }} >Table Name: </span>
+                    <input style={{ gridRow: 2 }} type="text" value={tableRequest.table} onChange={handleTableChange} />
+                    {/* TODO <span style={{ gridRow: 3 }} className="SmallSpan">Password: </span>
+                        <input style={{ gridRow: 3 }} type="text" value={joinRequest.password} onChange={handlePasswordChange} />*/}
+                    <button style={{ gridRow: 3, gridColumn: "1/3" }} className="DivButton" onClick={handleCreateTable}>Create Table</button>
+                    <span style={{ color: "red", gridColumn: "1/3" }}> {errorMsg ? errorMsg : null} </span>
+                </div>
             </div>
+
         </div>
     );
 }

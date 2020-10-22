@@ -53,8 +53,7 @@
   border-left: 0.1em solid black;
   flex-shrink: 0;
   flex-grow: 0;
-  min-width: 15em;
-  max-width: 15em;
+  width: 20%;
 }
 
 .Game {
@@ -243,36 +242,30 @@
   word-wrap: break-word;
 }
 
+.myform .FormBox {
+  border: 0.2em solid black;
+  margin: 1em;
+  display: inline-grid;
+  grid-template-columns:auto auto;
+}
+
 .myform input[type=text] {
-  width: 16em;
-  padding: 0.25em;
-  margin: 0.5em;
+  margin: 0.25em 1em 0.25em 1em;
   display: inline-block;
   border: 0.25em solid #ccc;
   border-radius: 0.25em;
-  box-sizing: border-box;
 }
 
 .myform span {
-  margin: 0.5em 1em 0em 1em;
+  margin: 0.25em 1em 0.25em 1em;
   display: inline-block;
-}
-
-.myform .FullSpan {
-  max-width: 40em;
-  display: block;
-}
-
-.myform .MediumSpan {
-  max-width: 26em;
-}
-
-.myform .SmallSpan {
-  width: 10em;
+  align-self: center;
 }
 
 .myform .DivButton {
-  min-width: 10em;
+  max-width: fit-content;
+  align-self: center;
+  justify-self: center;
   padding: 0.25em;
   margin: 0.5em;
   border-radius: 0.25em;
@@ -282,4 +275,5 @@
 .myform textarea {
   margin: 0.5em;
   border-radius: 0.25em;
+  border-style: solid;
 }
