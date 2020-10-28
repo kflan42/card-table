@@ -31,7 +31,8 @@ const Help: React.FC = () => {
                         <tr><td><b>D</b></td><td>draw a card</td></tr>
                         <tr><td><b>M</b></td><td>mulligan dialog</td></tr>
                         <tr><td><b>n</b></td><td>pass turn to next player</td></tr>
-                        <tr><td><b>F</b></td><td>flip a card facedown (or up)</td></tr>
+                        <tr><td><b>F</b></td><td>turn a card facedown (or up)</td></tr>
+                        <tr><td><b>R</b></td><td>rotate a card 180 degrees (e.g. a Flip card)</td></tr>
                         <tr><td><b>T</b></td><td>transform a card (if two sided)</td></tr>
                         <tr><td><b>U</b></td><td>untap all your tapped cards</td></tr>
                         <tr><td><b>v</b></td><td>view a close up popup of the card under the cursor, then v to close</td></tr>

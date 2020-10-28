@@ -10,7 +10,7 @@ import {
     setUserPrefs,
     setGame,
     TOGGLE_FACEDOWN_CARD,
-    TOGGLE_TRANSFORM_CARD, togglePlaymat, updateGame, UNTAP_ALL, SET_CARD_COUNTER, CREATE_TOKEN, MULLIGAN, setGameId, nextTurn
+    TOGGLE_TRANSFORM_CARD, togglePlaymat, updateGame, UNTAP_ALL, SET_CARD_COUNTER, CREATE_TOKEN, MULLIGAN, setGameId, nextTurn, TOGGLE_FLIP_CARD
 } from '../Actions';
 import CardPopup from './CardPopup';
 import CustomDragLayer from './CustomDragLayer';
@@ -396,6 +396,15 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
                     playerDispatch({
                         ...baseAction(),
                         card_changes: [{ change: TOGGLE_FACEDOWN_CARD, card_id: hoveredCard.cardId as number, to_x: null, to_y: null }]
+                    })
+                    event.preventDefault()
+                }
+                break;
+            case 'R':
+                if (isHoveredCard) {
+                    playerDispatch({
+                        ...baseAction(),
+                        card_changes: [{ change: TOGGLE_FLIP_CARD, card_id: hoveredCard.cardId as number, to_x: null, to_y: null }]
                     })
                     event.preventDefault()
                 }

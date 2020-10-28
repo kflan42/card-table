@@ -142,7 +142,7 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
                 position: "absolute",
                 top: bfState.y + "%",
                 left: bfState.x + "%",
-                transform: bfState.tapped ? "rotate(90deg)" : "",
+                transform: "rotate("+ ((bfState.tapped ? 90 : 0) + (bfState.flipped ? 180: 0)) + "deg)",
                 transition: "top 0.5s, left 0.5s, transform 0.5s, background-image 0.5s",
                 transitionTimingFunction: "ease-in",
                 opacity: isDragging ? 0.25 : undefined,

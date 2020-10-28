@@ -318,6 +318,13 @@ class MagicTable:
                 self.indexed_game.merge(game_updates)
                 line = f"{'' if bf_card.tapped else 'un'}tapped {self.get_card_name_for_log(card_change.card_id)}"
                 game_updates.log_updates.append(LogLine(who=action.who, when=action.when, line=line))
+            elif card_change.change == TOGGLE_FLIP_CARD:
+                bf_card = self.indexed_game.battlefield_cards[card_change.card_id]
+                bf_card.flipped = not bf_card.flipped
+                game_updates.battlefield_cards[bf_card.card_id] = bf_card
+                self.indexed_game.merge(game_updates)
+                line = f"{'' if bf_card.flipped else 'un'}flipped {self.get_card_name_for_log(card_change.card_id)}"
+                game_updates.log_updates.append(LogLine(who=action.who, when=action.when, line=line))
             elif card_change.change == TOGGLE_FACEDOWN_CARD:
                 card_state = self.indexed_game.cards[card_change.card_id]
                 card_state.facedown = not card_state.facedown
@@ -408,8 +415,9 @@ class MagicTable:
             if card_move.src_zone == BATTLEFIELD and not same_zone:
                 # leaving battlefield logic
                 bf_card = self.indexed_game.battlefield_cards[card_id]
-                if bf_card.tapped or bf_card.counters:
+                if bf_card.tapped or bf_card.flipped or bf_card.counters:
                     bf_card.tapped = False
+                    bf_card.flipped = False
                     bf_card.counters = []
                     game_updates.battlefield_cards[bf_card.card_id] = bf_card
 
