@@ -41,6 +41,7 @@ export const LIBRARY: string = "Library"
 export const GRAVEYARD: string = "Graveyard"
 export const COMMAND_ZONE: string = "Command Zone"
 export const EXILE: string = "Exile"
+export const SIDEBOARD: string = "Sideboard"
 export const BATTLEFIELD: string = "Battlefield"
 
 export interface Game {

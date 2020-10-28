@@ -381,26 +381,30 @@ export const LoginForm: React.FC = () => {
     }
 
     return (
-        <div className="myform" style={{ width: "100%", overflowY: "auto", overflowX:"auto" }}>
+        <div className="myform" style={{ width: "100%", overflowY: "auto", overflowX: "auto" }}>
             <h3 style={{ textAlign: "center" }}>Welcome to my "Card Table"</h3>
             <div style={{
                 width: "100%", height: "100%",
                 display: "inline-grid", gridTemplateColumns: "auto auto",
-                justifyContent: "center", alignContent:"start"
+                justifyContent: "center", alignContent: "start"
             }}>
 
                 <div className="FormBox" style={{ gridArea: "1/2/4/3" }}>
                     <span style={{ gridColumn: "1/5", textAlign: "center" }}><b>Deck Loader</b></span>
                     <button style={{ gridColumn: "2/4", alignSelf: "center" }} className="DivButton" onClick={handeLoadCards}>Upload Deck List</button>
-                    <input style={{ gridColumn: "1/3", alignSelf:"center" }} className="DivButton" accept=".txt,.dek,.dec,*" type="file" onChange={handleFileChange} />
+                    <input style={{ gridColumn: "1/3", alignSelf: "center" }} className="DivButton" accept=".txt,.dek,.dec,*" type="file" onChange={handleFileChange} />
                     <span style={{ gridColumn: "3/5", textAlign: 'center', color: 'blue' }}> {deckMsg} </span>
                     <textarea style={{ gridColumn: "1/3", backgroundColor: "white", border: "0.125em solid #ccc" }}
                         value={deckList} required={true} onChange={handleDeckChange} cols={25} rows={25} />
                     <textarea style={{ gridColumn: "3/5", backgroundColor: "beige", borderColor: joinRequest.color }}
                         value={cardsList} readOnly={true} cols={25} rows={25} />
-                    <span style={{ gridColumn: "1/5", fontStyle: "italic" }}>
-                        Supported formats include Arena, TappedOut, TCGPlayer, and XMage. <br />
-                         If playing commander, please put your commander first or append *CMDR* to its line.</span>
+                    <ul style={{ gridColumn: "1/5" }}>
+                        <li>This understands formats used by Arena, TappedOut, TCGPlayer, XMage, and others. <br />
+                         e.g. Card Name (set) number, Card Name (num) [set], or Card Name [set:number] </li>
+                        <li>Deck and Sideboard will be auto-split based on number of cards. <br/>
+                         Deck size cutoffs are 30, 40, 60, and 100.</li>
+                        <li><i>If playing commander,</i> please put your commander first or append *CMDR* to its line.</li>
+                    </ul>
                 </div>
 
                 <div className="FormBox" style={{ gridArea: "1/1/2/2" }}>

@@ -1,6 +1,6 @@
 import React, {useState, ChangeEvent} from 'react'
 import {useSelector} from 'react-redux'
-import {ClientState, LIBRARY, HAND, GRAVEYARD} from '../ClientState'
+import {ClientState, LIBRARY, HAND, GRAVEYARD, SIDEBOARD} from '../ClientState'
 import StackCard from './StackCard'
 import {useDrop, DropTargetMonitor} from 'react-dnd'
 import {ItemTypes, DragCard} from './DnDUtils'
@@ -84,6 +84,9 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
                 if (zoneState.name === HAND && playerName !== owner) {
                     playerDispatch({...baseAction(), kind:MESSAGE, message:` looked at ${owner}'s Hand`})
                     // TODO move hand looking to server to avoid client side hacking
+                } else if (zoneState.name === SIDEBOARD && playerName !== owner) {
+                    playerDispatch({...baseAction(), kind:MESSAGE, message:` looked at ${owner}'s Sideboard`})
+                    // TODO move sideboard looking to server to avoid client side hacking
                 }
                 setShown(true)
                 setQuery('')

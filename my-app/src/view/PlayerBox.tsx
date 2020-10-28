@@ -3,7 +3,7 @@ import React from 'react'
 import './_style.css';
 import PlayerCounter from './PlayerCounter';
 import CardStack from './CardStack';
-import { EXILE, COMMAND_ZONE, GRAVEYARD, LIBRARY, HAND, ClientState } from '../ClientState';
+import { EXILE, COMMAND_ZONE, GRAVEYARD, LIBRARY, HAND, ClientState, SIDEBOARD } from '../ClientState';
 import { useDispatch, useSelector } from 'react-redux';
 import { useConfirmation } from './ConfirmationService';
 import { drawing, drawLine, SET_PLAYER_COUNTER } from '../Actions';
@@ -87,8 +87,9 @@ const PlayerBox: React.FC<PlayerBoxP> = ({ player }) => {
             </div>
             <CardStack name={HAND} owner={player} icon="✋" />
             <CardStack name={LIBRARY} owner={player} icon="📚" />
-            <CardStack name={GRAVEYARD} owner={player} icon="🗑️" />
-            <CardStack name={EXILE} owner={player} icon="📒" />
+            <CardStack name={GRAVEYARD} owner={player} icon="💀" /> {/* TODO use Headstone emoji once supported. */}
+            <CardStack name={EXILE} owner={player} icon="🕳️" />
+            <CardStack name={SIDEBOARD} owner={player} icon="📒" />
             <CardStack name={COMMAND_ZONE} owner={player} icon="👑" />
             {counters}
             <div className=" buttontooltip">

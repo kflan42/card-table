@@ -114,7 +114,7 @@ class MagicTable:
         shuffle(library.cards)  # shuffle the library
         # extras into exile
         ex_cards = [Card(card_id=c.card_id) for c in extra_table_cards]
-        next((z for z in zones if z.name == EXILE)).cards.extend([c.card_id for c in ex_cards])
+        next((z for z in zones if z.name == SIDEBOARD)).cards.extend([c.card_id for c in ex_cards])
         self.table.game.cards.extend(library_cards + ex_cards)
 
         # setup player
