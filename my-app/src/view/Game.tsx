@@ -67,8 +67,9 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
             dispatch(setUserPrefs({ bfImageQuality, bfCardSize, handCardSize, rightClickPopup }))
 
             // prompt for password if missing
-            if (!document.cookie.split(';').some((item) => item.trim().startsWith(`${gameId}:Password=`))) {
-              await confirmation({
+            if (!document.cookie.split(';').some((item) => item.trim().startsWith(`${gameId}:Password=`)) &&
+                password === null) {
+                await confirmation({
                     choices: ["Enter Password *"],
                     catchOnCancel: true,
                     title: "Password",
@@ -84,7 +85,9 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
                     .catch(() => null);
             }
         },
-        [dispatch, gameId, confirmation])
+        // since it wants confirmation but that changes every render and infinite loops
+        // eslint-disable-next-line
+        [dispatch, gameId, password])
 
 
     const loadGame = useCallback(
@@ -109,7 +112,7 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
 
             console.log(`loading game from ${gameUrl}`)
             const requestOptions = (password !== null) ? {
-                headers: { 'x-my-app-table-password': password as string },
+                headers: { 'X-My-App-Table-Password': password as string },
             } : {}; // set it just for this request
 
             fetch(gameUrl, requestOptions).then(async (response) => {
@@ -117,11 +120,14 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
                     const data = await response.text()  // server uses text rather than json for these specifically
                     // get error message from body or default to response status
                     const error = data || response.status;
+                    if(data.match(".*Wrong password.*")) {
+                        setPassword(null) // clear value
+                    }
                     return Promise.reject(error);
                 }
                 if (password !== null) {
                     // save it for a longer time
-                    document.cookie = `${gameId}:Password=${password};max-age=${60 * 60 * 24};SameSite=Strict`
+                    document.cookie = `${gameId}:Password=${password};max-age=${60 * 60 * 24};SameSite=None`
                 }
                 onGameLoaded(response)
                 setLoadedId(gameId as string)

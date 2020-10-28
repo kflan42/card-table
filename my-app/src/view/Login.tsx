@@ -191,7 +191,7 @@ export const LoginForm: React.FC = () => {
         }
         console.log("watching table...", joinRequest.table)
         const requestOptions = {
-            headers: { 'my-app-table-password': joinRequest.password }
+            headers: { 'X-My-App-Table-Password': joinRequest.password }
         };
         fetch(`${process.env.REACT_APP_API_URL || ""}/api/table/${joinRequest.table}`, requestOptions)
             .then(async response => {
@@ -203,7 +203,7 @@ export const LoginForm: React.FC = () => {
                     const error = data || response.status;
                     return Promise.reject(error);
                 }
-                document.cookie = `${joinRequest.table}:Password=${joinRequest.password};max-age=${60*60*24};SameSite=Strict`
+                document.cookie = `${joinRequest.table}:Password=${joinRequest.password};max-age=${60*60*24};SameSite=None`
                 routeChange('/table?name=' + joinRequest.table)
             })
             .catch(error => {
@@ -279,7 +279,7 @@ export const LoginForm: React.FC = () => {
                 // set user name in app memory
                 dispatch(setUserPrefs({ name: joinRequest.name }))
                 // route over to table
-                document.cookie = `${joinRequest.table}:Password=${joinRequest.password};max-age=${60*60*24};SameSite=Strict`
+                document.cookie = `${joinRequest.table}:Password=${joinRequest.password};max-age=${60*60*24};SameSite=None`
                 routeChange('/table?name=' + joinRequest.table)
             })
             .catch(error => {

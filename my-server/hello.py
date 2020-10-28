@@ -120,7 +120,7 @@ def get_table(table_name) -> typing.Tuple[str, MagicTable]:
 @app.route('/api/table/<path:table_name>', methods=['GET', 'PUT'])
 def join_table(table_name: str):
     try:
-        table_name, magic_table = get_table(table_name=table_name)
+        found_table_name, magic_table = get_table(table_name=table_name)
     except Exception as e:
         logger.exception(e)
         return "Error getting table " + table_name, 500
@@ -128,7 +128,7 @@ def join_table(table_name: str):
         try:
             logger.info(request.data.decode('utf-8'))
             # todo - this will work for single process dev server but not multi process prod
-            with table_locks[table_name]:
+            with table_locks[found_table_name]:
                 d = json.loads(request.data)
                 join_request = JoinRequest.schema().load(d)
                 if len(magic_table.table.password) > 0 and \
@@ -148,7 +148,7 @@ def join_table(table_name: str):
         if magic_table:
             password = request.cookies.get(f'{table_name}:Password')
             if not password:
-                password = request.headers.get('x-my-app-table-password')
+                password = request.headers.get('X-My-App-Table-Password')
             if len(magic_table.table.password) > 0 and \
                     password != magic_table.table.password:
                 return "Wrong password", 401
