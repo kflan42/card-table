@@ -20,7 +20,7 @@ const StackCard: React.FC<StackCardP> = ({ cardId, height, width, zone, owner })
         type: ItemTypes.CARD, cardId: cardId, srcZone: zone, srcOwner: owner
     }
 
-    const [{ isDragging }, drag, preview] = useDrag({
+    const [, drag, preview] = useDrag({
         item: dragCard,
         collect: (monitor) => ({
             isDragging: monitor.isDragging(),
@@ -31,8 +31,6 @@ const StackCard: React.FC<StackCardP> = ({ cardId, height, width, zone, owner })
         // hide default html drag preview since we have a custom one based on the card props
         preview(getEmptyImage(), { captureDraggingState: true })
     }, [preview])
-
-    const opacity = isDragging ? 0 : 1
 
     return (
         <div ref={drag} className="StackCard" style={{height: height + "em", width: width + "em"}}>

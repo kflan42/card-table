@@ -190,7 +190,10 @@ export const LoginForm: React.FC = () => {
             return;
         }
         console.log("watching table...", joinRequest.table)
-        fetch(`${process.env.REACT_APP_API_URL || ""}/api/table/${joinRequest.table}`)
+        const requestOptions = {
+            headers: { 'my-app-table-password': joinRequest.password }
+        };
+        fetch(`${process.env.REACT_APP_API_URL || ""}/api/table/${joinRequest.table}`, requestOptions)
             .then(async response => {
                 console.log(response)
                 // check for error response
@@ -200,6 +203,7 @@ export const LoginForm: React.FC = () => {
                     const error = data || response.status;
                     return Promise.reject(error);
                 }
+                document.cookie = `${joinRequest.table}:Password=${joinRequest.password};max-age=${60*60*24};SameSite=Strict`
                 routeChange('/table?name=' + joinRequest.table)
             })
             .catch(error => {
@@ -275,6 +279,7 @@ export const LoginForm: React.FC = () => {
                 // set user name in app memory
                 dispatch(setUserPrefs({ name: joinRequest.name }))
                 // route over to table
+                document.cookie = `${joinRequest.table}:Password=${joinRequest.password};max-age=${60*60*24};SameSite=Strict`
                 routeChange('/table?name=' + joinRequest.table)
             })
             .catch(error => {
@@ -401,7 +406,7 @@ export const LoginForm: React.FC = () => {
                     <ul style={{ gridColumn: "1/5" }}>
                         <li>This understands formats used by Arena, TappedOut, TCGPlayer, XMage, and others. <br />
                          e.g. Card Name (set) number, Card Name (num) [set], or Card Name [set:number] </li>
-                        <li>Deck and Sideboard will be auto-split based on number of cards. <br/>
+                        <li>Deck and Sideboard will be auto-split based on number of cards. <br />
                          Deck size cutoffs are 30, 40, 60, and 100.</li>
                         <li><i>If playing commander,</i> please put your commander first or append *CMDR* to its line.</li>
                     </ul>
@@ -441,10 +446,8 @@ export const LoginForm: React.FC = () => {
                         <span style={{ display: "block" }}>Players</span>
                         <span>{playerItems[selectedTableIdx]}</span>
                     </div> : null}
-                    {/* TODO <span className="SmallSpan">Password:</span>
-                                <br />
-                                <input type="text" value={joinRequest.password} onChange={handlePasswordChange} style={{ width: "10em" }} />
-                                <br /> */}
+                    <span className="SmallSpan">Password:</span>
+                    <input type="text" value={joinRequest.password} onChange={handlePasswordChange} style={{ width: "10em" }} />
                     <button className="DivButton" onClick={handleJoinTable}>Join with Deck</button>
                     <button className="DivButton" onClick={handleWatchTable}>Watch or Rejoin</button>
                 </div>
@@ -453,9 +456,9 @@ export const LoginForm: React.FC = () => {
                     <span style={{ textAlign: "center", gridColumn: "1/3" }}><b>Table Creator</b></span>
                     <span style={{ gridRow: 2 }} >Table Name: </span>
                     <input style={{ gridRow: 2 }} type="text" value={tableRequest.table} onChange={handleTableChange} />
-                    {/* TODO <span style={{ gridRow: 3 }} className="SmallSpan">Password: </span>
-                        <input style={{ gridRow: 3 }} type="text" value={joinRequest.password} onChange={handlePasswordChange} />*/}
-                    <button style={{ gridRow: 3, gridColumn: "1/3" }} className="DivButton" onClick={handleCreateTable}>Create Table</button>
+                    <span style={{ gridRow: 3 }} className="SmallSpan">Password: </span>
+                    <input style={{ gridRow: 3 }} type="text" value={joinRequest.password} onChange={handlePasswordChange} />
+                    <button style={{ gridRow: 4, gridColumn: "1/3" }} className="DivButton" onClick={handleCreateTable}>Create Table</button>
                     <span style={{ color: "red", gridColumn: "1/3" }}> {errorMsg ? errorMsg : null} </span>
                 </div>
             </div>

@@ -169,6 +169,7 @@ class PlayerAction(Interface, DataClassJsonMixin):
 @dataclass
 class Table(Interface, DataClassJsonMixin):
     name: str
+    password: str
     game: Game
     sf_cards: List[SFCard]
     table_cards: List[TableCard]
@@ -180,5 +181,6 @@ class Table(Interface, DataClassJsonMixin):
 class SaveGame(Interface, DataClassJsonMixin):
     """Just what we have to save often."""
     game: Game
+    password: str
     actions: List[PlayerAction]
     log_lines: List[LogLine]

@@ -49,29 +49,50 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
     const dispatch = useDispatch()
     const { action: playerDispatch, baseAction, info: infoDispatch } = usePlayerActions()
     const [loadedId, setLoadedId] = useState('')
+    const [password, setPassword] = useState<string|null>(null)
     const [optionsOpen, setOptionsOpen] = useState(false)
 
     const confirmation = useConfirmation();
 
+    const loadOptions = useCallback(
+        async () => {
+            let bfImageQuality = localStorage.getItem('bfImageQuality')
+            bfImageQuality = "normal" // removed links for low images since all players using normal
+            let bfCardSize = localStorage.getItem('bfCardSize')
+            bfCardSize = bfCardSize ? bfCardSize : "7"
+            let handCardSize = localStorage.getItem('handCardSize')
+            handCardSize = handCardSize ? handCardSize : "14"
+            let rightClickPopupStr = localStorage.getItem('rightClickPopup')
+            const rightClickPopup = rightClickPopupStr === 'false' ? false : true;
+            dispatch(setUserPrefs({ bfImageQuality, bfCardSize, handCardSize, rightClickPopup }))
+
+            // prompt for password if missing
+            if (!document.cookie.split(';').some((item) => item.trim().startsWith(`${gameId}:Password=`))) {
+              await confirmation({
+                    choices: ["Enter Password *"],
+                    catchOnCancel: true,
+                    title: "Password",
+                    description: ""
+                })
+                    .then((s: ConfirmationResult) => {
+                        switch (s.choice) {
+                            case "Enter Password *":
+                                setPassword(s.s)
+                                break;
+                        }
+                    })
+                    .catch(() => null);
+            }
+        },
+        [dispatch, gameId, confirmation])
+
+
     const loadGame = useCallback(
         () => {
-            const loadOptions = () => {
-                let bfImageQuality = localStorage.getItem('bfImageQuality')
-                bfImageQuality = "normal" // removed links for low images since all players using normal
-                let bfCardSize = localStorage.getItem('bfCardSize')
-                bfCardSize = bfCardSize ? bfCardSize : "7"
-                let handCardSize = localStorage.getItem('handCardSize')
-                handCardSize = handCardSize ? handCardSize : "14"
-                let rightClickPopupStr = localStorage.getItem('rightClickPopup')
-                const rightClickPopup = rightClickPopupStr === 'false' ? false : true;
-                dispatch(setUserPrefs({ bfImageQuality, bfCardSize, handCardSize, rightClickPopup }))
-            }
-
             const gameUrl = `${process.env.REACT_APP_API_URL || ""}/api/table/${gameId}`
             const cardsUrl = `${process.env.REACT_APP_API_URL || ""}/api/table/${gameId}/cards`
 
             async function onGameLoaded(r: Response) {
-                loadOptions()
                 await CardDB.loadCards(cardsUrl)
                 // now that cards are loaded, initialize the game
                 const data = r.json()
@@ -80,21 +101,43 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
                 dispatch(setGameId(gameId as string))
             }
 
+            if (!document.cookie.split(';').some((item) => item.trim().startsWith(`${gameId}:Password=`))
+                && password === null) {
+                console.warn('No cookie password found.')
+                return
+            }
+
             console.log(`loading game from ${gameUrl}`)
-            fetch(gameUrl).then(
-                onGameLoaded
+            const requestOptions = (password !== null) ? {
+                headers: { 'x-my-app-table-password': password as string },
+            } : {}; // set it just for this request
+
+            fetch(gameUrl, requestOptions).then(async (response) => {
+                if (!response.ok) {
+                    const data = await response.text()  // server uses text rather than json for these specifically
+                    // get error message from body or default to response status
+                    const error = data || response.status;
+                    return Promise.reject(error);
+                }
+                if (password !== null) {
+                    // save it for a longer time
+                    document.cookie = `${gameId}:Password=${password};max-age=${60 * 60 * 24};SameSite=Strict`
+                }
+                onGameLoaded(response)
+                setLoadedId(gameId as string)
+            }
             ).catch(r => console.error("exception loading game", r))
-            setLoadedId(gameId as string)
         },
-        [gameId, dispatch],
+        [gameId, dispatch, password],
     );
 
 
     useEffect(() => {
         if (loadedId !== gameId) {
+            loadOptions()
             loadGame()
         }
-    }, [loadGame, gameId, loadedId]);
+    }, [loadGame, loadOptions, gameId, loadedId]);
 
     useEffect(() => {
         const playerNames = Object.keys(players)
@@ -118,7 +161,7 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
     },
         // since it wants confirmation but that changes every render and infinite loops
         // eslint-disable-next-line
-        [userName, players, dispatch])
+        [userName, players, dispatch, gameId, loadedId])
 
     useEffect(() => {
         if (userName && Object.keys(players).length > 0 && !hasSockets) {

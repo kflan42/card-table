@@ -23,7 +23,7 @@ from flask_socketio import SocketIO, join_room, emit
 import persistence
 from magic_cards import MagicCards
 from magic_constants import GameException
-from magic_models import JoinRequest, PlayerAction, Table, SFCard, TableInfo
+from magic_models import JoinRequest, PlayerAction, Table, SFCard, TableInfo, TableRequest
 from magic_table import MagicTable, is_test
 from test_table import test_table
 from utils import logger
@@ -89,7 +89,9 @@ def create_table(table_name: str):
     if request.method == 'PUT':
         with table_locks[table_name]:
             if not magic_table:
-                magic_table = MagicTable(table_name)  # create if joining
+                d = json.loads(request.data)
+                table_request = TableRequest.schema().load(d)
+                magic_table = MagicTable(table_request.table, password=table_request.password)
                 logger.info("created table " + table_name)
                 tables[table_name] = magic_table
                 return "Created table", 201
@@ -129,6 +131,9 @@ def join_table(table_name: str):
             with table_locks[table_name]:
                 d = json.loads(request.data)
                 join_request = JoinRequest.schema().load(d)
+                if len(magic_table.table.password) > 0 and \
+                        join_request.password != magic_table.table.password:
+                    return "Wrong password", 401
                 if [p for p in magic_table.table.game.players if p.name == join_request.name]:
                     return "Already at table", 200
                 if magic_table.add_player(join_request):
@@ -139,12 +144,18 @@ def join_table(table_name: str):
         except Exception as e:
             logger.exception(e)
             return "Error joining table: " + str(e), 500
-    else:
+    elif request.method == 'GET':
         if magic_table:
+            password = request.cookies.get(f'{table_name}:Password')
+            if not password:
+                password = request.headers.get('x-my-app-table-password')
+            if len(magic_table.table.password) > 0 and \
+                    password != magic_table.table.password:
+                return "Wrong password", 401
             table = magic_table.table
-            return Table(name=table.name, game=table.game, sf_cards=[], table_cards=table.table_cards,
+            return Table(name=table.name, password='', game=table.game, sf_cards=[], table_cards=table.table_cards,
                          actions=[], log_lines=table.log_lines).to_dict()
-        return {"message": "Table not found."}, 404
+        return "Table not found.", 404
 
 
 @app.route('/api/table/<path:table_name>/cards', methods=['GET'])
@@ -194,8 +205,8 @@ def on_player_action(data):
             game_update, log_lines, table_cards = table.resolve_action(player_action)
             if game_update:
                 # send it out
-                table_update = Table(name=table_name, game=game_update, sf_cards=[], table_cards=table_cards,
-                                     actions=[], log_lines=log_lines).to_dict()
+                table_update = Table(name=table_name, password='', game=game_update, sf_cards=[],
+                                     table_cards=table_cards, actions=[], log_lines=log_lines).to_dict()
                 emit('game_update', table_update, room=table_name, broadcast=True)  # on('game_update'
             else:
                 emit('error', {'error': 'Action failed.'})

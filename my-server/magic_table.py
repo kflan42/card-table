@@ -47,15 +47,15 @@ class MagicTable:
         table_cards = persistence.load(file_path + ".table_cards.json",
                                        decoder=lambda d: TableCard.schema().loads(d, many=True))
 
-        table = Table(name=table_name, sf_cards=sf_cards, table_cards=table_cards, game=sg.game,
-                      actions=sg.actions, log_lines=sg.log_lines)
+        table = Table(name=table_name, password=sg.password, sf_cards=sf_cards, table_cards=table_cards,
+                      game=sg.game, actions=sg.actions, log_lines=sg.log_lines)
         return MagicTable(table_name, table)
 
-    def __init__(self, name, table: Table = None):
+    def __init__(self, name, table: Table = None, password=''):
         if table:
             self.table = table
         else:
-            self.table = Table(name=name, sf_cards=[], table_cards=[],
+            self.table = Table(name=name, password=password, sf_cards=[], table_cards=[],
                                game=Game(cards=[], players=[], zones=[], battlefield_cards=[]),
                                actions=[], log_lines=[])
         self.indexed_game = IndexedGame(self.table.game)
@@ -143,7 +143,7 @@ class MagicTable:
         # actions are huge (~300b each) so only save last 100
         actions_to_save = self.table.actions[-100:]
         # log lines are usually <100b and aren't created for trivial actions like rearranging cards
-        sg = SaveGame(self.table.game, actions_to_save, self.table.log_lines)
+        sg = SaveGame(self.table.game, self.table.password, actions_to_save, self.table.log_lines)
         persistence.save(file_path + SAVE_GAME_JSON, SaveGame.schema().dumps(sg))
         t1 = time.time()
         logger.info(f"Saved in {t1 - t0:.3f}s")
