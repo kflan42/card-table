@@ -59,6 +59,7 @@ class MagicTable:
                                game=Game(cards=[], players=[], zones=[], battlefield_cards=[]),
                                actions=[], log_lines=[])
         self.indexed_game = IndexedGame(self.table.game)
+        self.last_save = time.time()
 
     def add_player(self, join_request: JoinRequest):
         if [p for p in self.table.game.players if p.name == join_request.name]:
@@ -139,9 +140,10 @@ class MagicTable:
         if table_cards:
             persistence.save(file_path + ".table_cards.json",
                              TableCard.schema().dumps(self.table.table_cards, many=True))
-        # todo either find better append only data store for actions and log lines or split by 100s
-        # since saving them gets linearly slower over the course of the game
-        sg = SaveGame(self.table.game, self.table.actions, self.table.log_lines)
+        # actions are huge (~300b each) so only save last 100
+        actions_to_save = self.table.actions[-100:]
+        # log lines are usually <100b and aren't created for trivial actions like rearranging cards
+        sg = SaveGame(self.table.game, actions_to_save, self.table.log_lines)
         persistence.save(file_path + SAVE_GAME_JSON, SaveGame.schema().dumps(sg))
         t1 = time.time()
         logger.info(f"Saved in {t1 - t0:.3f}s")
@@ -166,13 +168,17 @@ class MagicTable:
 
         if not is_test(self.table.name):  # don't save test tables
             # only save if it was an action worth adding to the log (e.g. not hand re-ordering or bf re-arranging)
-            if game_updates_i.log_updates:
-                # only need to save sf cards on join. only need to save table cards if new ones created.
+            # only save at most every 10s
+            now = time.time()
+            if game_updates_i.log_updates and now > self.last_save + 10:
+                self.last_save = now
+                # only need to save sf cards on join
+                # only need to save table cards if new ones created.
                 self.save(sf_cards=False, table_cards=len(game_updates_i.card_updates) > 0)
         game_updates = game_updates_i.to_game()
         return game_updates, game_updates_i.log_updates, game_updates_i.card_updates
 
-    ################################# Game state logic below #################################
+    # ---------------- Game state logic below ----------------
 
     def apply(self, action: PlayerAction) -> IndexedGame:
         """returns updated portions of a game or None"""

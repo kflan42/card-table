@@ -117,7 +117,11 @@ def get_table(table_name) -> typing.Tuple[str, MagicTable]:
 
 @app.route('/api/table/<path:table_name>', methods=['GET', 'PUT'])
 def join_table(table_name: str):
-    table_name, magic_table = get_table(table_name=table_name)
+    try:
+        table_name, magic_table = get_table(table_name=table_name)
+    except Exception as e:
+        logger.exception(e)
+        return "Error getting table " + table_name, 500
     if request.method == 'PUT':
         try:
             logger.info(request.data.decode('utf-8'))

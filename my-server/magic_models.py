@@ -178,7 +178,7 @@ class Table(Interface, DataClassJsonMixin):
 
 @dataclass
 class SaveGame(Interface, DataClassJsonMixin):
-    """Just what we have to save a lot."""
+    """Just what we have to save often."""
     game: Game
     actions: List[PlayerAction]
     log_lines: List[LogLine]
