@@ -21,8 +21,8 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
 
     const bfState = useSelector((state: ClientState) => state.game.battlefieldCards[bfId])
 
-    const [cardHeight, imageQuality] = useSelector((state: ClientState) => {
-        return [state.playerPrefs.bfCardSize, state.playerPrefs.bfImageQuality];
+    const [cardHeight, imageSize] = useSelector((state: ClientState) => {
+        return [state.playerPrefs.bfCardSize, state.playerPrefs.bfImageSize] as [number, string];
     })
 
     const dispatch = useDispatch()
@@ -158,7 +158,7 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
             }}
         >
             <Card cardId={cardProps.cardId} borderStyle={borderWidth + " solid"} 
-                  cardHeight={cardHeight} imageSize={imageQuality} ></Card>
+                  cardHeight={cardHeight} imageSize={imageSize} ></Card>
             <div style={{
                 // for counters
                 position: "absolute",

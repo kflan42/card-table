@@ -32,7 +32,7 @@ export interface PlayerPrefs {
     name: string,
     handCardSize: number,
     bfCardSize: number,
-    bfImageQuality: string,
+    bfImageSize: string,
     rightClickPopup: boolean
 }
 

@@ -4,7 +4,6 @@ import { JoinRequest, SFCard, TableInfo, TableRequest } from "../magic_models";
 import { setUserPrefs, setGame } from "../Actions";
 import { useDispatch } from "react-redux";
 import MySocket from '../MySocket';
-import { usePageVisibility } from './Visibility';
 
 
 export const LoginForm: React.FC = () => {
@@ -73,25 +72,6 @@ export const LoginForm: React.FC = () => {
         // since it wants joinRequest but that changes every render and infinite loops
         // eslint-disable-next-line 
         [loaded])
-
-    const isVisible = usePageVisibility();
-
-    const timerID = isVisible ? setInterval(
-        () => tick(),
-        60 * 1000
-    ) : undefined;
-
-    useEffect(() => {
-        return function cleanup() {
-            if (timerID)
-                clearInterval(timerID);
-        }
-    })
-
-    const tick = () => {
-        if (!isVisible) return;
-        loadTables()
-    }
 
     const handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
         setJoinRequest({ ...joinRequest, name: event.target.value.replace(/[^A-Za-z0-9 .,_]/, '') });
@@ -203,7 +183,6 @@ export const LoginForm: React.FC = () => {
                     const error = data || response.status;
                     return Promise.reject(error);
                 }
-                document.cookie = `${joinRequest.table}:Password=${joinRequest.password};max-age=${60*60*24};SameSite=None`
                 routeChange('/table?name=' + joinRequest.table)
             })
             .catch(error => {
@@ -238,7 +217,6 @@ export const LoginForm: React.FC = () => {
             .catch(error => {
                 console.error('submission error', error);
                 setErrorMsg(error);
-                loadTables();
             });
 
     }
@@ -279,7 +257,6 @@ export const LoginForm: React.FC = () => {
                 // set user name in app memory
                 dispatch(setUserPrefs({ name: joinRequest.name }))
                 // route over to table
-                document.cookie = `${joinRequest.table}:Password=${joinRequest.password};max-age=${60*60*24};SameSite=None`
                 routeChange('/table?name=' + joinRequest.table)
             })
             .catch(error => {

@@ -221,7 +221,7 @@ class MagicTable:
             bf_card = BattlefieldCard(card_id=card.card_id, x=1, y=1, last_touched=action.when)
             game_updates.battlefield_cards[bf_card.card_id] = bf_card
             self.indexed_game.merge(game_updates)
-            line = f"{action.who} created {self.get_card_name_for_log(card.card_id)}"
+            line = f"created {self.get_card_name_for_log(card.card_id)}"
             game_updates.log_updates.append(LogLine(who=action.who, when=action.when, line=line))
 
         return game_updates
@@ -272,9 +272,9 @@ class MagicTable:
 
     def get_card_name_for_log(self, card_id: int, card_move: CardMove = None) -> str:
         card_name = "a card"
-        to_or_from_field = card_move and (card_move.src_zone in [BATTLEFIELD, GRAVEYARD]
-                                          or card_move.tgt_zone in [BATTLEFIELD, GRAVEYARD])
-        if to_or_from_field or self.where_is_card(card_id) in [BATTLEFIELD, GRAVEYARD]:
+        to_or_from_field = card_move and (card_move.src_zone in PUBLIC_ZONES
+                                          or card_move.tgt_zone in PUBLIC_ZONES)
+        if to_or_from_field or self.where_is_card(card_id) in PUBLIC_ZONES:
             card_state = self.indexed_game.cards[card_id]
             table_card = next(tc for tc in self.table.table_cards if tc.card_id == card_id)
             sf_card = next((sf for sf in self.table.sf_cards if sf.sf_id == table_card.sf_id), None)
@@ -379,8 +379,8 @@ class MagicTable:
             sub_kind = action.message
             if sub_kind == "London":
                 replace_count = 7
-                new_cards = 7 - mulls_so_far
-                line = f"took a London mulligan to {new_cards} cards"
+                new_cards = 7
+                line = f"took a London mulligan, now must bury {mulls_so_far} cards"
             elif sub_kind.startswith("Partial"):
                 replace_count = int(sub_kind.split(' ')[1])
                 new_cards = replace_count - (1 if mulls_so_far else 0)

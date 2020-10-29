@@ -53,7 +53,7 @@
   border-left: 0.1em solid black;
   flex-shrink: 0;
   flex-grow: 0;
-  width: 20%;
+  width: 15%;
 }
 
 .Game {
@@ -145,11 +145,10 @@
 }
 
 .Card > img {
-  border-width: medium;
+  border-width: 0.15em;
   border-style: solid;
-  object-fit: contain;
+  object-fit: cover;
   width: 100%;
-  height: 100%;
   border-radius: 5%;
 }
 
@@ -172,19 +171,20 @@
 }
 
 .CardStack {
-  display: grid;
-  padding: 0.2em;
-  font-size: small; /* like Card */
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  overflow-x: auto;
 }
 
 .StackCard {
   overflow-y: hidden; 
-  border: none;
-  padding: 0.13em;
+  overflow-x: hidden;
 }
 
 .StackCard .Card > img {
-  border-width: 0.1em;
+  border-width: 0.1em 0 0 0;
 }
 
 /* Tooltip container */

@@ -15,7 +15,7 @@ from collections import defaultdict
 from datetime import datetime, date
 from threading import Lock
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, make_response
 from flask import request
 from flask_cors import CORS
 from flask_socketio import SocketIO, join_room, emit
@@ -91,7 +91,7 @@ def create_table(table_name: str):
             if not magic_table:
                 d = json.loads(request.data)
                 table_request = TableRequest.schema().load(d)
-                magic_table = MagicTable(table_request.table, password=table_request.password)
+                magic_table = MagicTable(table_name, password=table_request.password)
                 logger.info("created table " + table_name)
                 tables[table_name] = magic_table
                 return "Created table", 201
@@ -135,9 +135,17 @@ def join_table(table_name: str):
                         join_request.password != magic_table.table.password:
                     return "Wrong password", 401
                 if [p for p in magic_table.table.game.players if p.name == join_request.name]:
-                    return "Already at table", 200
-                if magic_table.add_player(join_request):
-                    return "Joined table.", 202
+                    msg = "Already at table"
+                    code = 200
+                elif magic_table.add_player(join_request):
+                    msg = "Joined table."
+                    code = 202
+                resp = make_response(msg, code)
+                if join_request.password:
+                    # todo use flask session rather than mess with cookie weirdness
+                    # resp.set_cookie('pw', join_request.password, path=f'/api/table/{table_name}', max_age=60 * 60 * 24, samesite='None')
+                    resp.set_cookie('pw', join_request.password)
+                return resp
         except GameException as e:
             logger.warning(e)
             return "Error joining table: " + str(e), 400
@@ -146,15 +154,19 @@ def join_table(table_name: str):
             return "Error joining table: " + str(e), 500
     elif request.method == 'GET':
         if magic_table:
-            password = request.cookies.get(f'{table_name}:Password')
+            password = request.cookies.get('pw')
             if not password:
                 password = request.headers.get('X-My-App-Table-Password')
             if len(magic_table.table.password) > 0 and \
                     password != magic_table.table.password:
                 return "Wrong password", 401
             table = magic_table.table
-            return Table(name=table.name, password='', game=table.game, sf_cards=[], table_cards=table.table_cards,
-                         actions=[], log_lines=table.log_lines).to_dict()
+            resp = make_response(Table(name=table.name, password='', game=table.game, sf_cards=[],
+                                     table_cards=table.table_cards, actions=[], log_lines=table.log_lines).to_dict())
+            if password:
+                # resp.set_cookie('pw', password, path=f'/api/table/{table_name}', max_age=60*60*24, samesite='None')
+                resp.set_cookie('pw', password)
+            return resp
         return "Table not found.", 404
 
 

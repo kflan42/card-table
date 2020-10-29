@@ -49,6 +49,19 @@ export const OptionsDialog: React.FC<OptionsDialogProps> = ({
 
             <div style={{
                 display: "flex", alignItems: "center"
+            }} key="bfImageSize">
+                Use "small" Battlefield Card Images (Sometimes Less Fuzzy)
+                <input className="DivButton"
+                    style={{ marginLeft: "0.5em", marginRight: "0.5em", marginTop: "1em", marginBottom: "1em" }}
+                    type="checkbox" id="x" name="x"
+                    checked={prefs.bfImageSize === "small"} onChange={e => {
+                        const bfImageSize = e.currentTarget.checked ? "small" : "normal"
+                        setPrefs({ ...prefs, bfImageSize })
+                    }} />
+            </div>
+
+            <div style={{
+                display: "flex", alignItems: "center"
             }} key="bfCardSize">
                 Battlefield Card Height
                 <input className="DivButton"
@@ -90,7 +103,7 @@ export const OptionsDialog: React.FC<OptionsDialogProps> = ({
                     onClick={() => {
                         dispatch(setUserPrefs(prefs))
                         localStorage.setItem('rightClickPopup', '' + prefs.rightClickPopup)
-                        localStorage.setItem('bfImageQuality', prefs.bfImageQuality)
+                        localStorage.setItem('bfImageSize', prefs.bfImageSize)
                         localStorage.setItem('bfCardSize', '' + prefs.bfCardSize)
                         localStorage.setItem('handCardSize', '' + prefs.handCardSize)
                         onClose()

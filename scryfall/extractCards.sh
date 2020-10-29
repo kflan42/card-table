@@ -15,12 +15,12 @@ CORE='sf_id: .id, name: .name, set_name: .set, number: .collector_number'
 CARD='
 {'${CORE}', 
   face: (if .image_uris then 
-    .image_uris | { normal: .normal}
+    .image_uris | { normal: .normal, small: .small}
   else
     null
   end), 
   faces: (if .card_faces then
-      [.card_faces[] | {name: .name,  normal: .image_uris.normal } ]
+      [.card_faces[] | {name: .name,  normal: .image_uris.normal, small: .image_uris.small } ]
     else
       []
     end),

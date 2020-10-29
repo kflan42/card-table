@@ -11,10 +11,11 @@ interface StackCardP {
     width: number,
     zone: string,
     owner: string,
+    imageSize: string,
 }
 
 
-const StackCard: React.FC<StackCardP> = ({ cardId, height, width, zone, owner }) => {
+const StackCard: React.FC<StackCardP> = ({ cardId, height, width, zone, owner, imageSize }) => {
 
     const dragCard: DragCard = {
         type: ItemTypes.CARD, cardId: cardId, srcZone: zone, srcOwner: owner
@@ -34,7 +35,7 @@ const StackCard: React.FC<StackCardP> = ({ cardId, height, width, zone, owner })
 
     return (
         <div ref={drag} className="StackCard" style={{height: height + "em", width: width + "em"}}>
-            <Card cardId={cardId} />
+            <Card cardId={cardId} imageSize={imageSize} />
         </div>
     )
 }

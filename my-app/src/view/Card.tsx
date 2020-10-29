@@ -105,7 +105,7 @@ const Card: React.FC<CardProps> = ({ cardId, imageSize, cardHeight, showCollecto
                         <a target="_blank" rel="noopener noreferrer" href={link}>{front[0]}</a>
                     }
                 </span>}
-            <img style={{ borderColor: ownerColor }} src={front[1]} alt={front[0]} />
+            <img style={{ borderColor: ownerColor, background: ownerColor }} src={front[1]} alt={front[0]} />
         </div>
     )
 }

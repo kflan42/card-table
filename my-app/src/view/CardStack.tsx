@@ -159,29 +159,32 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
 
     const size = zoneState ? zoneState.cards.length : 0
     const cardsShown = topN.length > 0 ? topN.length : size
-    const cardHeight = Number(useSelector((state: ClientState) => {
-        return state.playerPrefs.bfCardSize/2 + state.playerPrefs.handCardSize/2;
-    }))
+    const [cardHeight, bfImageSize] = useSelector((state: ClientState) => {
+        return [state.playerPrefs.bfCardSize, state.playerPrefs.bfImageSize];
+    }) as [number, string]
 
     function renderPopupBox() {
-        const cardPortionShown = Math.max(1 / 6, Math.min(12/cardsShown, 1))  // so less than 12 cards = whole cards
-        const cols = Math.ceil(cardsShown * cardPortionShown / 3)
+        const boxHeight = Math.min(cardsShown, 3.2) * cardHeight
+        const cardPortionShown = cardsShown < 12 ? 1 : cardsShown < 24 ? 0.5 : 0.25;
         const shownHeight = cardHeight * cardPortionShown
-        const cardWidth = cardHeight * 488 / 680.0
+        const ratio = bfImageSize === "small" ? 146 / 204.0 : 488 / 680.0;
+        const cardWidth = cardHeight * ratio
+        const cols = cardsShown * shownHeight / boxHeight
+        const minBoxWidth = cardWidth * Math.min(Math.ceil(cols), 3)
         const listItems = []
         if (zoneState) {
             const cardsToShow = topN.length > 0 ? topN : zoneState.cards
             for (let i = 0; i < cardsToShow.length; i++) {
                 const cardId = cardsToShow[i];
-                if (zoneState.cards.indexOf(cardId) < 0) {
+                if (zoneState.cards.indexOf(cardId) < 0 || zoneState.cards.indexOf(cardId) > cardsToShow.length) {
                     continue
-                } // skip cards removed since opened topN
+                } // skip cards removed or buried since opened topN
                 if (!query
                     || cards[cardId].facedown
                     || CardDB.getCard(tableCards[cardId].sf_id).name.toLowerCase().indexOf(query.toLowerCase()) > -1) {
                     listItems.push(
                         <StackCard key={cardId} cardId={cardId} height={shownHeight} width={cardWidth}
-                                   zone={name} owner={owner}/>
+                                   zone={name} owner={owner} imageSize={bfImageSize}/>
                     )
                 }
             }
@@ -202,7 +205,7 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
                         Close
                     </button>
                 </div>
-                <div className="CardStack" style={{gridTemplateColumns:"auto ".repeat(cols)}}>
+                <div className="CardStack" style={{height: boxHeight + "em", minWidth: minBoxWidth + "em"}}>
                     {listItems}
                 </div>
             </div>

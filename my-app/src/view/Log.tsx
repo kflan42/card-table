@@ -25,24 +25,38 @@ const Log: React.FC = () => {
 
     let i = 0;
 
-    function renderLogLine(logLine: LogLine) {
+    const renderedLines = []
+    let currentPlayer = ''
+    for(const logLine of logLines) {
         let otherPlayers = Object.keys(players).filter(p => p !== logLine.who)
         const crossPlayer = otherPlayers.find(p => logLine.line.includes(p)) !== undefined
         const whoColor = players[logLine.who]?.color || "black"
         const { luminance } = analyzeColor(whoColor)
         const frontColor = luminance > 0.5 ? "black" : "white"
 
+        if (logLine.who !== currentPlayer) {
+            const when = new Date(logLine.when).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            }).substring(0, 5) // strip seconds, am/pm
+            renderedLines.push(
+                <div key={i++} style={{ margin: "0.1em", color: frontColor, backgroundColor: whoColor }}>
+                    {when} {logLine.who}
+                </div>
+            )
+            currentPlayer = logLine.who
+        }
         const when = new Date(logLine.when).toLocaleTimeString([], {
             hour: '2-digit',
             minute: '2-digit',
             second: '2-digit'
-        }).substring(0, 8) // strip am/pm
-        return <div key={i++} style={{ margin: "0.1em", color: crossPlayer ? "DarkRed" : undefined }}>
-            {when} <span style={{
-                color: frontColor,
-                backgroundColor: whoColor
-            }}>{logLine.who}</span> {logLine.line}
-        </div>
+        }).substring(2, 8) // strip hour, am/pm
+        renderedLines.push(
+            <div key={i++} style={{ margin: "0.1em", color: crossPlayer ? "DarkRed" : undefined }}>
+                {when}  {logLine.line}
+            </div>
+        )
     }
 
 
@@ -54,7 +68,7 @@ const Log: React.FC = () => {
                 fontSize: "small",
 
             }}>
-                {logLines.map(renderLogLine)}
+                {renderedLines}
                 <div ref={linesEndRef}>
                     ----
                 </div>

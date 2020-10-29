@@ -56,38 +56,17 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
 
     const loadOptions = useCallback(
         async () => {
-            let bfImageQuality = localStorage.getItem('bfImageQuality')
-            bfImageQuality = "normal" // removed links for low images since all players using normal
+            let bfImageSize = localStorage.getItem('bfImageSize')
+            bfImageSize = bfImageSize ? bfImageSize : "small"
             let bfCardSize = localStorage.getItem('bfCardSize')
             bfCardSize = bfCardSize ? bfCardSize : "7"
             let handCardSize = localStorage.getItem('handCardSize')
             handCardSize = handCardSize ? handCardSize : "14"
             let rightClickPopupStr = localStorage.getItem('rightClickPopup')
             const rightClickPopup = rightClickPopupStr === 'false' ? false : true;
-            dispatch(setUserPrefs({ bfImageQuality, bfCardSize, handCardSize, rightClickPopup }))
-
-            // prompt for password if missing
-            if (!document.cookie.split(';').some((item) => item.trim().startsWith(`${gameId}:Password=`)) &&
-                password === null) {
-                await confirmation({
-                    choices: ["Enter Password *"],
-                    catchOnCancel: true,
-                    title: "Password",
-                    description: ""
-                })
-                    .then((s: ConfirmationResult) => {
-                        switch (s.choice) {
-                            case "Enter Password *":
-                                setPassword(s.s)
-                                break;
-                        }
-                    })
-                    .catch(() => null);
-            }
+            dispatch(setUserPrefs({ bfImageSize, bfCardSize, handCardSize, rightClickPopup }))
         },
-        // since it wants confirmation but that changes every render and infinite loops
-        // eslint-disable-next-line
-        [dispatch, gameId, password])
+        [dispatch])
 
 
     const loadGame = useCallback(
@@ -104,12 +83,6 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
                 dispatch(setGameId(gameId as string))
             }
 
-            if (!document.cookie.split(';').some((item) => item.trim().startsWith(`${gameId}:Password=`))
-                && password === null) {
-                console.warn('No cookie password found.')
-                return
-            }
-
             console.log(`loading game from ${gameUrl}`)
             const requestOptions = (password !== null) ? {
                 headers: { 'X-My-App-Table-Password': password as string },
@@ -122,18 +95,32 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
                     const error = data || response.status;
                     if(data.match(".*Wrong password.*")) {
                         setPassword(null) // clear value
+                        // prompt for password
+                        await confirmation({
+                            choices: ["Enter Password *"],
+                            catchOnCancel: true,
+                            title: "Password",
+                            description: ""
+                        })
+                            .then((s: ConfirmationResult) => {
+                                switch (s.choice) {
+                                    case "Enter Password *":
+                                        setPassword(s.s)
+                                        break;
+                                }
+                            })
+                            .catch(() => null);
+                        
                     }
                     return Promise.reject(error);
-                }
-                if (password !== null) {
-                    // save it for a longer time
-                    document.cookie = `${gameId}:Password=${password};max-age=${60 * 60 * 24};SameSite=None`
                 }
                 onGameLoaded(response)
                 setLoadedId(gameId as string)
             }
             ).catch(r => console.error("exception loading game", r))
         },
+        // since it wants confirmation but that changes every render and infinite loops
+        // eslint-disable-next-line
         [gameId, dispatch, password],
     );
 
