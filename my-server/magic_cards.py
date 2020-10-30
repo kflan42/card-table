@@ -2,6 +2,7 @@ import os
 import random
 import re
 import time
+from threading import Lock
 from typing import List, Tuple, Optional, Dict, Set
 
 import persistence
@@ -52,9 +53,9 @@ def _sanitize(word: str) -> str:
 class MagicCards:
     _cards: List[SFCard] = None
     _tokens: List[SFCard] = None
-
     _set_cards = None
     _card_sets = None
+    _lock = Lock()
 
     @classmethod
     def get_all_cards(cls) -> List[SFCard]:
@@ -70,6 +71,7 @@ class MagicCards:
 
     @classmethod
     def initialize(cls):
+        logger.info("Initializing")
         cards = cls.get_all_cards()
         # build map:
         set_cards: Dict[str, Dict[str, List[SFCard]]] = {}  # set -> card name -> list of card
@@ -97,7 +99,8 @@ class MagicCards:
     def find_card(cls, name, set_name=None, number=None) -> SFCard:
         # lazy init
         if not cls._set_cards:
-            cls.initialize()
+            with cls._lock:
+                cls.initialize()
 
         card_name = _sanitize(name)
         if card_name not in cls._card_sets:

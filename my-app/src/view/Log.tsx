@@ -3,7 +3,6 @@ import React, { useRef, useEffect } from 'react'
 import './_style.css';
 import { useSelector } from 'react-redux';
 import { ClientState } from '../ClientState';
-import { LogLine } from "../magic_models";
 import { analyzeColor } from "./Login";
 
 

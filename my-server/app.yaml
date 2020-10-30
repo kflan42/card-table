@@ -1,9 +1,5 @@
 runtime: python38
 
-env_variables:
-  # todo replace with https://cloud.google.com/appengine/docs/standard/python3/using-cloud-storage#default_bucket
-  CLOUD_STORAGE_BUCKET: cloud-card-table-bucket
-
 entrypoint: gunicorn -b :$PORT --worker-class eventlet --workers 1 hello:app
 
 # could use a B1 for 9h/day free
@@ -21,7 +17,7 @@ automatic_scaling:
   max_instances: 1  # concurrency risk if more than 1
   max_idle_instances: 0  # $
   min_idle_instances: 0  # $
-  max_concurrent_requests: 30  # card game players can tolerate occasional load spikes
+  max_concurrent_requests: 50  # card game players can tolerate occasional load spikes
   max_pending_latency:  15s  # tiny server has slow startup
 
 # necessary for min_instances to work

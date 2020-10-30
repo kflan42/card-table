@@ -1,26 +1,27 @@
 # To run from fresh checkout:
 ## close IDEs while running installs else files get stuck
-
 cd my-server
 python3 -m venv "venv"
 source venv/bin/activate
 pip3 install -r requirements.txt
 ./genTsInterfaces.sh
-cd ..
-cd my-app; npm install; ./rebuildForServer.sh; cd ..
-cd scryfall; python3 updateCards.py; extractCards.sh; cd ..
-cd my-server
+# then do local part of cards update and frontend build
 
-# for cloud
-gsutil cp -r cards gs://$CLOUD_STORAGE_BUCKET
-gsutil ls gs://$CLOUD_STORAGE_BUCKET
-gcloud app deploy --version VERSION --verbosity info
-# for hosting frontend in google storage bucket with dns name - change url if not running locally
-export MY_API_SERVER_URL=http://localhost:5000
-cd my-app; ./rebuildForServer.sh;
+# Cloud cards update
+cd scryfall; python3 updateCards.py; extractCards.sh
+gsutil cp -r cards gs://${GOOGLE_CLOUD_PROJECT}.appspot.com
+
+
+# Cloud frontend update
+cd my-app; npm install;
+./rebuildForServer.sh $MY_API_SERVER_URL
 gsutil cp -r build/*  gs://$FRONTEND_BUCKET
 gsutil iam ch allUsers:legacyObjectReader gs://$FRONTEND_BUCKET
 gsutil web set -m index.html -e index.html gs://$FRONTEND_BUCKET
+
+# Cloud server update
+cd my-server
+gcloud app deploy --version VERSION --verbosity info
 
 # for local debug
 export FLASK_DEV True; export BASE_IP localhost; export BASE_PORT 5000
@@ -28,9 +29,9 @@ python3 hello.py
 # Optionally run a dev ui from
 cd my-app; npm start
 
-# for local run that resembles cloud
+# Local run using cloud storage
 export GOOGLE_APPLICATION_CREDENTIALS=$$$_key.json
-export CLOUD_STORAGE_BUCKET=
+export GOOGLE_CLOUD_PROJECT=
 gunicorn --worker-class eventlet -w 1 hello:app
 
 # Can run redis via:

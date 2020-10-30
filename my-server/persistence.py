@@ -8,11 +8,11 @@ from google.cloud.storage import Client, Bucket
 
 from utils import logger
 
-CLOUD_STORAGE_BUCKET = os.environ.get('CLOUD_STORAGE_BUCKET', None)
+GOOGLE_CLOUD_PROJECT = os.environ.get('GOOGLE_CLOUD_PROJECT', None)
 
-LOCAL = not CLOUD_STORAGE_BUCKET
+BUCKET = (GOOGLE_CLOUD_PROJECT + ".appspot.com") if GOOGLE_CLOUD_PROJECT else None
 
-logger.info(f"Using {'Local' if LOCAL else CLOUD_STORAGE_BUCKET} persistence.")
+logger.info(f"Using {'local disk' if not GOOGLE_CLOUD_PROJECT else BUCKET} for persistence.")
 
 _storage_client = None
 _bucket = None
@@ -30,12 +30,12 @@ def get_bucket() -> Bucket:
     global _bucket
     if not _bucket:
         # Re-use the bucket object too.
-        _bucket = get_client().get_bucket(CLOUD_STORAGE_BUCKET)
+        _bucket = get_client().get_bucket(BUCKET)
     return _bucket
 
 
 def ls_dir(file_path: str):
-    if LOCAL:
+    if not BUCKET:
         if os.path.isdir(file_path):
             logger.info(f"Listing {file_path}")
             files = os.listdir(file_path)
@@ -43,12 +43,12 @@ def ls_dir(file_path: str):
             return list(zip(files, times))
         return []
     else:
-        blobs = get_client().list_blobs(CLOUD_STORAGE_BUCKET, prefix=file_path, fields='items(name,updated)')
+        blobs = get_client().list_blobs(BUCKET, prefix=file_path, fields='items(name,updated)')
         return [(b.name.replace(file_path, "", 1), b.updated.timestamp()) for b in blobs]
 
 
 def save(file_path: str, what: str, is_json=True):
-    if LOCAL:
+    if not BUCKET:
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         logger.info(f"Writing {file_path}")
         with open(file_path, mode='w') as f:
@@ -67,7 +67,7 @@ def save(file_path: str, what: str, is_json=True):
 
 
 def load(file_path: str, encoding=None, decoder=json.loads):
-    if LOCAL:
+    if not BUCKET:
         if os.path.isfile(file_path):
             logger.info(f"Reading {file_path}")
             with open(file_path, mode='r', encoding=encoding) as f:

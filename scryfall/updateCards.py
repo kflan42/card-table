@@ -1,9 +1,14 @@
+"""
+Runs with system python packages, no other dependencies.
+"""
+
 import json
 import os
 import shutil
 import urllib.request
 from datetime import datetime, timedelta
 
+print("downloading URI for latest card data ...")
 with urllib.request.urlopen("https://api.scryfall.com/bulk-data/default_cards") as f:
     data1 = f.read()
 j1 = json.loads(data1)

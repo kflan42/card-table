@@ -1,6 +1,6 @@
 import unittest
 
-from persistence import get_bucket, ls_dir
+from persistence import get_bucket, ls_dir, BUCKET
 from utils import logger
 
 
@@ -14,6 +14,10 @@ class MyTestCase(unittest.TestCase):
         print(tables)
 
         magic_table = test_table("test3")
+
+        if not BUCKET:
+            print("No bucket to test.")
+            return
 
         # Get the bucket that the file will be uploaded to.
         bucket = get_bucket()

@@ -13,7 +13,7 @@ import os
 import typing
 from collections import defaultdict
 from datetime import datetime, date
-from threading import Lock
+from threading import Lock, Thread
 
 from flask import Flask, jsonify, make_response
 from flask import request
@@ -32,7 +32,7 @@ tables: typing.Dict[str, MagicTable] = {}  # dict to track active tables
 table_locks: typing.Dict[str, Lock] = defaultdict(Lock)
 
 # note that flask logs to stderr by default
-if persistence.LOCAL:  # only log to file locally
+if not persistence.GOOGLE_CLOUD_PROJECT:  # only log to file locally
     import logging
     # socket.io doesn't handle rotating file appender, gets stuck on old one after the move (at least on windows)
     os.makedirs(os.path.join('logs'), exist_ok=True)
@@ -162,7 +162,7 @@ def join_table(table_name: str):
                 return "Wrong password", 401
             table = magic_table.table
             resp = make_response(Table(name=table.name, password='', game=table.game, sf_cards=[],
-                                     table_cards=table.table_cards, actions=[], log_lines=table.log_lines).to_dict())
+                                       table_cards=table.table_cards, actions=[], log_lines=table.log_lines).to_dict())
             if password:
                 # resp.set_cookie('pw', password, path=f'/api/table/{table_name}', max_age=60*60*24, samesite='None')
                 resp.set_cookie('pw', password)
@@ -278,7 +278,8 @@ def on_join(data):
 
 @app.route('/_ah/warmup')
 def warmup():
-    # google cloud will call this. could load card data here, but better to be lazy for now.
+    # google cloud will call this, return then kick off card data load in background
+    Thread(target=lambda _: logger.info(f"Loaded Forest: {MagicCards.find_card('Forest')}")).run()
     return '', 200, {}
 
 
