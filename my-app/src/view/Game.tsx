@@ -216,7 +216,7 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
             let playerIsNext = false;
             let next = '';
             for (const playerName in players) {
-                if (playerName in hiddenPlayers) {
+                if (hiddenPlayers.includes(playerName)) {
                     continue // skip those out of the game
                 }
                 if(playerIsNext) {

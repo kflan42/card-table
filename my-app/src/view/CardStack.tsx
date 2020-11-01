@@ -197,7 +197,7 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
                         ?
                         <span>Search:<input value={query} type="text" id="query" name="query" onChange={queryChanged}/></span>
                         : null}
-                    {name === LIBRARY
+                    {name === LIBRARY && topN.length === 0
                         ? <button style={{textAlign: "right", cursor: "pointer"}} onClick={e => closeShuffleClicked(e)}>
                             Close &amp; Shuffle</button>
                         : null}

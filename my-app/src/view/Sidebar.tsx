@@ -51,21 +51,21 @@ const Sidebar: React.FC = () => {
 
 
     const tooLong = elapsedS > 45
-    const flash = elapsedS % 15 <= 5
+    const flash = elapsedS % 5 < 3
     const whoseTurn = useSelector((state: ClientState) => state.whoseTurn)
 
     return (
         <div className="Log">
             <Clock></Clock>
             <Log></Log>
-                <div style={{
-                    margin: "0.1em",
-                    fontWeight: tooLong ? "bold" : undefined,
-                    color: tooLong && flash ? "red" : undefined
-                }}>
-                {whoseTurn && !(tooLong && flash) ? `${whoseTurn}'s turn` : null}
-                {tooLong && flash ? `+ ${elapsedS} seconds` : null}
-                </div>
+            <div style={{
+                margin: "0.1em",
+                fontWeight: "bold",
+                color: tooLong ? "red" : undefined
+            }}>
+                {tooLong && flash ? `... waited ${elapsedS} seconds!` :
+                    whoseTurn ? `${whoseTurn}'s turn` : null}
+            </div>
         </div>
     )
 }

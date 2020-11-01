@@ -37,8 +37,7 @@ const Log: React.FC = () => {
             const when = new Date(logLine.when).toLocaleTimeString([], {
                 hour: '2-digit',
                 minute: '2-digit',
-                second: '2-digit'
-            }).substring(0, 5) // strip seconds, am/pm
+            })
             renderedLines.push(
                 <div key={i++} style={{ margin: "0.1em", color: frontColor, backgroundColor: whoColor }}>
                     {when} {logLine.who}
@@ -47,13 +46,12 @@ const Log: React.FC = () => {
             currentPlayer = logLine.who
         }
         const when = new Date(logLine.when).toLocaleTimeString([], {
-            hour: '2-digit',
             minute: '2-digit',
             second: '2-digit'
-        }).substring(2, 8) // strip hour, am/pm
+        })
         renderedLines.push(
             <div key={i++} style={{ margin: "0.1em", color: crossPlayer ? "DarkRed" : undefined }}>
-                {when}  {logLine.line}
+                :{when}  {logLine.line}
             </div>
         )
     }
