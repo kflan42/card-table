@@ -10,7 +10,7 @@ import {
     setUserPrefs,
     setGame,
     TOGGLE_FACEDOWN_CARD,
-    TOGGLE_TRANSFORM_CARD, togglePlaymat, updateGame, UNTAP_ALL, SET_CARD_COUNTER, CREATE_TOKEN, MULLIGAN, setGameId, nextTurn, TOGGLE_FLIP_CARD
+    TOGGLE_TRANSFORM_CARD, togglePlaymat, updateGame, UNTAP_ALL, SET_CARD_COUNTER, CREATE_TOKEN, MULLIGAN, setGameId, nextTurn, TOGGLE_FLIP_CARD, setSessionId
 } from '../Actions';
 import CardPopup from './CardPopup';
 import CustomDragLayer from './CustomDragLayer';
@@ -26,9 +26,10 @@ import { OptionsDialog } from './OptionsDialog';
 
 interface GameViewProps {
     gameId: string|null
+    sessionId: string|null
 }
 
-const GameView: React.FC<GameViewProps> = ({gameId}) => {
+const GameView: React.FC<GameViewProps> = ({sessionId, gameId}) => {
     const [userName, rightClickPopup]: [string|undefined, boolean] = useSelector((state: ClientState) =>
         [state.playerPrefs.name as string | undefined, state.playerPrefs.rightClickPopup])
     const hoveredCard = useSelector((state: ClientState) => state.hoveredCard)
@@ -49,7 +50,6 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
     const dispatch = useDispatch()
     const { action: playerDispatch, baseAction, info: infoDispatch } = usePlayerActions()
     const [loadedId, setLoadedId] = useState('')
-    const [password, setPassword] = useState<string|null>(null)
     const [optionsOpen, setOptionsOpen] = useState(false)
 
     const confirmation = useConfirmation();
@@ -71,8 +71,8 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
 
     const loadGame = useCallback(
         () => {
-            const gameUrl = `${process.env.REACT_APP_API_URL || ""}/api/table/${gameId}`
-            const cardsUrl = `${process.env.REACT_APP_API_URL || ""}/api/table/${gameId}/cards`
+            const gameUrl = `${process.env.REACT_APP_API_URL || ""}/api/session/${sessionId}/table/${gameId}`
+            const cardsUrl = `${gameUrl}/cards`
 
             async function onGameLoaded(r: Response) {
                 await CardDB.loadCards(cardsUrl)
@@ -80,38 +80,17 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
                 const data = r.json()
                 const table_update = await data as TableU
                 dispatch(setGame(table_update))
+                dispatch(setSessionId(sessionId as string))
                 dispatch(setGameId(gameId as string))
             }
 
             console.log(`loading game from ${gameUrl}`)
-            const requestOptions = (password !== null) ? {
-                headers: { 'X-My-App-Table-Password': password as string },
-            } : {}; // set it just for this request
 
-            fetch(gameUrl, requestOptions).then(async (response) => {
+            fetch(gameUrl).then(async (response) => {
                 if (!response.ok) {
                     const data = await response.text()  // server uses text rather than json for these specifically
                     // get error message from body or default to response status
                     const error = data || response.status;
-                    if(data.match(".*Wrong password.*")) {
-                        setPassword(null) // clear value
-                        // prompt for password
-                        await confirmation({
-                            choices: ["Enter Password *"],
-                            catchOnCancel: true,
-                            title: "Password",
-                            description: ""
-                        })
-                            .then((s: ConfirmationResult) => {
-                                switch (s.choice) {
-                                    case "Enter Password *":
-                                        setPassword(s.s)
-                                        break;
-                                }
-                            })
-                            .catch(() => null);
-                        
-                    }
                     return Promise.reject(error);
                 }
                 onGameLoaded(response)
@@ -121,7 +100,7 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
         },
         // since it wants confirmation but that changes every render and infinite loops
         // eslint-disable-next-line
-        [gameId, dispatch, password],
+        [gameId, dispatch],
     );
 
 
@@ -167,7 +146,7 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
             try {
                 console.log('Connecting sockets...')
                 // now that game is loaded, register for updates to it
-                MySocket.get_socket().emit('join', { table: gameId, username: userName })
+                MySocket.get_socket().emit('join', { session: sessionId, table: gameId, username: userName })
                 MySocket.get_socket().on('game_update', function (msg: object) {
                     const game_update = msg as TableU
                     console.log('received game_update', game_update)
@@ -202,7 +181,7 @@ const GameView: React.FC<GameViewProps> = ({gameId}) => {
                 console.error(e)
             }
         }
-    }, [gameId, userName, players, hasSockets, dispatch, loadGame])
+    }, [gameId, sessionId, userName, players, hasSockets, dispatch, loadGame])
 
     const drawArrow = () => {
         dispatch(drawing(''))

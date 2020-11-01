@@ -7,7 +7,7 @@ import {useDrop, DropTargetMonitor} from 'react-dnd';
 import MemoizeHandCard from './HandCard';
 import {ItemTypes, DragCard} from './DnDUtils';
 import {usePlayerActions} from '../PlayerDispatch';
-import {analyzeColor} from "./Login";
+import {analyzeColor} from "./RoomForm";
 
 export interface HandProps {
 }

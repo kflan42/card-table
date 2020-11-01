@@ -12,10 +12,10 @@ import json
 import os
 import typing
 from collections import defaultdict
-from datetime import datetime, date
-from threading import Lock, Thread
+from datetime import datetime
+from threading import Thread
 
-from flask import Flask, jsonify, make_response
+from flask import Flask
 from flask import request
 from flask_cors import CORS
 from flask_socketio import SocketIO, join_room, emit
@@ -23,13 +23,11 @@ from flask_socketio import SocketIO, join_room, emit
 import persistence
 from magic_cards import MagicCards
 from magic_constants import GameException
-from magic_models import JoinRequest, PlayerAction, Table, SFCard, TableInfo, TableRequest
-from magic_table import MagicTable, is_test
-from test_table import test_table
+from magic_models import JoinRequest, PlayerAction, Table, SFCard, TableInfo
+from magic_room import MagicRoom
 from utils import logger
 
-tables: typing.Dict[str, MagicTable] = {}  # dict to track active tables
-table_locks: typing.Dict[str, Lock] = defaultdict(Lock)
+magic_rooms: typing.Dict[str, MagicRoom] = {}
 
 # note that flask logs to stderr by default
 if not persistence.GOOGLE_CLOUD_PROJECT:  # only log to file locally
@@ -68,124 +66,41 @@ def parse_deck_list():
         return str(e), 400
 
 
-@app.route('/api/tables', methods=['GET'])
-def get_tables_info():
-    # live tables
-    tables_info = [TableInfo(t.table.name, 'today', [p.color for p in t.table.game.players]) for t in tables.values()]
-
-    # storage tables
-    file_tables = MagicTable.list_table_files()
-    file_tables.sort(key=lambda ft: -ft[1])
-    for (table_name, updated) in file_tables:
-        if not any(t.table == table_name for t in tables_info):
-            tables_info.append(TableInfo(table_name, date.fromtimestamp(updated).strftime("%m/%d"), []))
-
+@app.route('/api/session/<path:session_id>/tables', methods=['GET'])
+def get_tables_info(session_id: str):
+    tables_info = magic_rooms.setdefault(session_id, MagicRoom(session_id)).get_tables_info()
     return TableInfo.schema().dumps(tables_info, many=True)
 
 
-@app.route('/api/tables/<path:table_name>', methods=['PUT'])
-def create_table(table_name: str):
-    table_name, magic_table = get_table(table_name=table_name)
-    if request.method == 'PUT':
-        with table_locks[table_name]:
-            if not magic_table:
-                d = json.loads(request.data)
-                table_request = TableRequest.schema().load(d)
-                magic_table = MagicTable(table_name, password=table_request.password)
-                logger.info("created table " + table_name)
-                tables[table_name] = magic_table
-                return "Created table", 201
-            else:
-                return f"{table_name} already exists.", 409
-    else:
-        return "Unrecognized method for this endpoint.", 400
-
-
-def get_table(table_name) -> typing.Tuple[str, MagicTable]:
+@app.route('/api/session/<path:session_id>/tables/<path:table_name>', methods=['PUT'])
+def create_table(table_name: str, session_id: str):
     table_name = table_name.lower()  # lower case table names since windows filesystem case insensitive
-    if table_name in tables:  # check memory
-        return table_name, tables[table_name]
-    elif is_test(table_name):
-        table = test_table(table_name)
-        tables[table_name] = table
-        return table_name, table
-    else:
-        table = MagicTable.load(table_name)  # check disk
-        logger.info("loaded table " + table_name)
-        if table:
-            tables[table_name] = table  # keep in memory
-        return table_name, table
+    return magic_rooms.setdefault(session_id, MagicRoom(session_id)).create_table(table_name)
 
 
-@app.route('/api/table/<path:table_name>', methods=['GET', 'PUT'])
-def join_table(table_name: str):
-    try:
-        found_table_name, magic_table = get_table(table_name=table_name)
-    except Exception as e:
-        logger.exception(e)
-        return "Error getting table " + table_name, 500
+@app.route('/api/session/<path:session_id>/table/<path:table_name>', methods=['GET', 'PUT'])
+def join_table(table_name: str, session_id: str):
+    table_name = table_name.lower()  # lower case table names since windows filesystem case insensitive
     if request.method == 'PUT':
         try:
             logger.info(request.data.decode('utf-8'))
-            # todo - this will work for single process dev server but not multi process prod
-            with table_locks[found_table_name]:
-                d = json.loads(request.data)
-                join_request = JoinRequest.schema().load(d)
-                if len(magic_table.table.password) > 0 and \
-                        join_request.password != magic_table.table.password:
-                    return "Wrong password", 401
-                if [p for p in magic_table.table.game.players if p.name == join_request.name]:
-                    msg = "Already at table"
-                    code = 200
-                elif magic_table.add_player(join_request):
-                    msg = "Joined table."
-                    code = 202
-                resp = make_response(msg, code)
-                if join_request.password:
-                    # todo use flask session rather than mess with cookie weirdness
-                    # resp.set_cookie('pw', join_request.password, path=f'/api/table/{table_name}', max_age=60 * 60 * 24, samesite='None')
-                    resp.set_cookie('pw', join_request.password)
-                return resp
+            d = json.loads(request.data)
+            join_request = JoinRequest.schema().load(d)
+            x = magic_rooms.setdefault(session_id, MagicRoom(session_id)).join_table(table_name, join_request)
+            return x
         except GameException as e:
             logger.warning(e)
             return "Error joining table: " + str(e), 400
-        except Exception as e:
-            logger.exception(e)
-            return "Error joining table: " + str(e), 500
     elif request.method == 'GET':
-        if magic_table:
-            password = request.cookies.get('pw')
-            if not password:
-                password = request.headers.get('X-My-App-Table-Password')
-            if len(magic_table.table.password) > 0 and \
-                    password != magic_table.table.password:
-                return "Wrong password", 401
-            table = magic_table.table
-            resp = make_response(Table(name=table.name, password='', game=table.game, sf_cards=[],
-                                       table_cards=table.table_cards, actions=[], log_lines=table.log_lines).to_dict())
-            if password:
-                # resp.set_cookie('pw', password, path=f'/api/table/{table_name}', max_age=60*60*24, samesite='None')
-                resp.set_cookie('pw', password)
-            return resp
-        return "Table not found.", 404
+        x = magic_rooms.setdefault(session_id, MagicRoom(session_id)).get_table(table_name)
+        if isinstance(x, Table):
+            return x.to_dict()
+        return x
 
 
-@app.route('/api/table/<path:table_name>/cards', methods=['GET'])
-def get_cards(table_name):
-    table_name, table = get_table(table_name)
-    if table:
-        return table.get_cards()
-    else:
-        return "Table not found.", 404
-
-
-@app.route('/api/table/<path:table_name>/actions', methods=['GET'])
-def get_actions(table_name):
-    table_name, table = get_table(table_name)
-    if table:
-        return jsonify(table.get_actions())
-    else:
-        return "Table not found.", 404
+@app.route('/api/session/<path:session_id>/table/<path:table_name>/cards', methods=['GET'])
+def get_cards(table_name, session_id):
+    return magic_rooms.setdefault(session_id, MagicRoom(session_id)).get_cards(table_name)
 
 
 @app.after_request
@@ -205,58 +120,47 @@ def test_disconnect():
 
 
 @socketio.on('player_action')
-def on_player_action(data):
+def on_player_action(data) -> bool:
     logger.info('player_action %s', data)
     table_name = data['table']
-    table_name, table = get_table(table_name=table_name)
-    if table:
-        # warning this will work for single process dev server but not multi process production setup
-        with table_locks[table_name]:
-            player_action = PlayerAction.schema().load(data)
-            # resolve action
-            game_update, log_lines, table_cards = table.resolve_action(player_action)
-            if game_update:
-                # send it out
-                table_update = Table(name=table_name, password='', game=game_update, sf_cards=[],
-                                     table_cards=table_cards, actions=[], log_lines=log_lines).to_dict()
-                emit('game_update', table_update, room=table_name, broadcast=True)  # on('game_update'
-            else:
-                emit('error', {'error': 'Action failed.'})
-    else:
-        emit('error', {'error': 'Unable to do action. Table does not exist.'})
+    session_id = data['session']
+    player_action: PlayerAction = PlayerAction.schema().load(data['action'])
+    try:
+        x = magic_rooms.setdefault(session_id, MagicRoom(session_id)).player_action(table_name, player_action)
+        if x:
+            emit('game_update', x.to_dict(),
+                 room=session_id+'/'+table_name, broadcast=True)  # on('game_update'
+        return True  # always ack, sometimes update
+    except Exception:
+        emit('error', {'error': 'Action failed.'})
+        logger.exception("Exception handling PlayerAction")
         return False
-    return True
 
 
 @socketio.on('player_draw')
-def on_player_draw(data):
-    on_info_event('player_draw', data)
+def on_player_draw(data) -> bool:
+    return on_info_event('player_draw', data)
 
 
 @socketio.on('next_turn')
-def on_player_draw(data):
-    on_info_event('next_turn', data)
+def on_player_draw(data) -> bool:
+    return on_info_event('next_turn', data)
 
 
-def on_info_event(event, data):
+def on_info_event(event, data) -> bool:
     logger.info('%s %s', event, data)
     table_name = data['table']
-    table_name, table = get_table(table_name=table_name)
-    if table:
-        # todo - this will work for single process server but not multi process
-        with table_locks[table_name]:
-            # send it out
-            emit(event, data, room=table_name, broadcast=True)
-            # don't need to store info events
-    else:
-        emit('error', {'error': 'Unable to do action. Table does not exist.'})
-        return False
+    session_id = data['session']
+    # send it out
+    emit(event, data, room=session_id+'/'+table_name, broadcast=True)  # on(event
+    # don't need to store info events
     return True
 
 
 @socketio.on('error_report')
-def on_error_report(data):
+def on_error_report(data) -> bool:
     logger.error(f'error_report via {request.referrer} from {request.remote_addr} %s', data)
+    return True
 
 
 @socketio.on('join')
@@ -264,16 +168,12 @@ def on_join(data):
     """Join a table, which has its own socket.io room."""
     logger.info("join %s", data)
     table_name = data['table']
-    table_name, table = get_table(table_name)
-    if table:
-        # todo - this will work for single process dev server but not multi process prod
-        with table_locks[table_name]:
-            # put client into socket.io room
-            join_room(table_name)
-            # send a message about it so other players reload table
-            emit('joined', data, room=table_name, broadcast=True)  # on('joined'
-    else:
-        emit('error', {'error': 'Unable to join table. Table does not exist.'})
+    session_id = data['session']
+
+    # put client into socket.io room
+    join_room(session_id+'/'+table_name)
+    # send a message about it so other players reload table
+    emit('joined', data, room=session_id+'/'+table_name, broadcast=True)  # on('joined'
 
 
 @app.route('/_ah/warmup')

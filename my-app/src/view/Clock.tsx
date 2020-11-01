@@ -5,6 +5,8 @@ import { OptionsDialog } from "./OptionsDialog";
 import { useConfirmation } from "./ConfirmationService";
 import { ConfirmationResult } from "./ConfirmationDialog";
 import { useHistory } from "react-router-dom";
+import { ClientState } from "../ClientState";
+import { useSelector } from "react-redux";
 
 
 const Clock: React.FC = () => {
@@ -30,20 +32,20 @@ const Clock: React.FC = () => {
   }
 
   const [optionsOpen, setOptionsOpen] = useState(false)
-
+  const sessionId = useSelector((state: ClientState) => state.sessionId)
   const history = useHistory()
   const confirmation = useConfirmation();
   const leaveDialog = () => {
-    const choices = ["Go to Login Screen"]
+    const choices = ["Leave Table"]
     confirmation({
         choices,
         catchOnCancel: true,
-        title: "Go back to Login Screen?",
-        description: "But your deck will remain at the table."
+        title: "Leave Table?",
+        description: "You'll go to the room screen, but your deck will remain at the table."
     }).then((s: ConfirmationResult) => {
         switch(s.choice) {
-            case "Go to Login Screen":
-                history.push('/login')
+            case "Leave Table":
+                history.push(`/room?sessionId=${sessionId}`)
             break;
         }
     }).catch(()=>null)

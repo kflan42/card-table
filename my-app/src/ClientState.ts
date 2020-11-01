@@ -8,7 +8,8 @@ export interface ClientState {
     drawing: Drawing,
     hiddenPlaymats: string[],
     whoseTurn: string,
-    gameId: string|null
+    gameId: string|null,
+    sessionId: string|null,
 }
 
 export interface Drawing {

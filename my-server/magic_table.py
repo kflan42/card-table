@@ -26,8 +26,8 @@ class MagicTable:
         return MagicTable._tables_path
 
     @staticmethod
-    def list_table_files():
-        table_files = persistence.ls_dir(MagicTable.get_tables_path()+os.path.sep)
+    def list_table_files(session: str):
+        table_files = persistence.ls_dir(f"{MagicTable.get_tables_path()}{os.path.sep}{session}{os.path.sep}")
         tables = []
         for (table_file, m_time) in table_files:
             if table_file.endswith(SAVE_GAME_JSON):
@@ -36,8 +36,8 @@ class MagicTable:
         return tables
 
     @staticmethod
-    def load(table_name):
-        file_path = os.path.join(MagicTable.get_tables_path(), table_name)
+    def load(table_name, session_id='test'):
+        file_path = os.path.join(MagicTable.get_tables_path(), session_id, table_name)
         sg = persistence.load(file_path + ".save_game.json",
                               decoder=lambda d: SaveGame.schema().loads(d))
         if not sg:
@@ -47,19 +47,21 @@ class MagicTable:
         table_cards = persistence.load(file_path + ".table_cards.json",
                                        decoder=lambda d: TableCard.schema().loads(d, many=True))
 
-        table = Table(name=table_name, password=sg.password, sf_cards=sf_cards, table_cards=table_cards,
+        table = Table(sf_cards=sf_cards, table_cards=table_cards,
                       game=sg.game, actions=sg.actions, log_lines=sg.log_lines)
-        return MagicTable(table_name, table)
+        return MagicTable(table_name, session_id=session_id, table=table)
 
-    def __init__(self, name, table: Table = None, password=''):
+    def __init__(self, name, session_id='test', table: Table = None):
         if table:
             self.table = table
         else:
-            self.table = Table(name=name, password=password, sf_cards=[], table_cards=[],
+            self.table = Table(sf_cards=[], table_cards=[],
                                game=Game(cards=[], players=[], zones=[], battlefield_cards=[]),
                                actions=[], log_lines=[])
         self.indexed_game = IndexedGame(self.table.game)
         self.last_save = time.time()
+        self.name = name
+        self.session_id = session_id
 
     def add_player(self, join_request: JoinRequest):
         if [p for p in self.table.game.players if p.name == join_request.name]:
@@ -71,7 +73,6 @@ class MagicTable:
 
         # skip 0, use block of 1000 per player
         cid = 1000 * (1 + len(self.table.game.players))
-        seed(self.table.name, version=2)  # seed with table name for consistency in testing/debugging
         table_cards = [TableCard(cid + i, sf_card.sf_id, owner=join_request.name) for i, sf_card in enumerate(sf_cards)]
         self.table.table_cards.extend(table_cards)
 
@@ -111,6 +112,7 @@ class MagicTable:
             commander_name = None
         library = next((z for z in zones if z.name == LIBRARY))
         library.cards.extend([c.card_id for c in library_cards])
+        seed(f"{self.name}{len(self.table.log_lines)}", version=2)  # seed for consistency in testing/debugging
         shuffle(library.cards)  # shuffle the library
         # extras into exile
         ex_cards = [Card(card_id=c.card_id) for c in extra_table_cards]
@@ -126,12 +128,12 @@ class MagicTable:
                                             line=f"joined the table with {len(table_cards)} cards" +
                                                  f" led by {commander_name}." if commander_name else "."))
         self.indexed_game = IndexedGame(self.table.game)
-        if not is_test(self.table.name):
+        if not is_test(self.name):
             self.save()
         return True
 
     def save(self, sf_cards=True, table_cards=True):
-        file_path = os.path.join(MagicTable.get_tables_path(), self.table.name)
+        file_path = os.path.join(MagicTable.get_tables_path(), self.session_id, self.name)
         logger.info(f"Saving table to {file_path}")
         t0 = time.time()
         if sf_cards:
@@ -143,7 +145,7 @@ class MagicTable:
         # actions are huge (~300b each) so only save last 100
         actions_to_save = self.table.actions[-100:]
         # log lines are usually <100b and aren't created for trivial actions like rearranging cards
-        sg = SaveGame(self.table.game, self.table.password, actions_to_save, self.table.log_lines)
+        sg = SaveGame(self.table.game, actions_to_save, self.table.log_lines)
         persistence.save(file_path + SAVE_GAME_JSON, SaveGame.schema().dumps(sg))
         t1 = time.time()
         logger.info(f"Saved in {t1 - t0:.3f}s")
@@ -166,7 +168,7 @@ class MagicTable:
         if game_updates_i.log_updates:
             self.table.log_lines.extend(game_updates_i.log_updates)
 
-        if not is_test(self.table.name):  # don't save test tables
+        if not is_test(self.name):  # don't save test tables
             # only save if it was an action worth adding to the log (e.g. not hand re-ordering or bf re-arranging)
             # only save at most every 10s
             now = time.time()

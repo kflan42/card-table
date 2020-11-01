@@ -10,7 +10,7 @@ import {
 import Backend from 'react-dnd-html5-backend'
 
 import './_style.css';
-import LoginForm from './Login'
+import RoomForm from './RoomForm'
 import {createStore} from 'redux'
 import {Provider} from 'react-redux';
 import Game from './Game';
@@ -18,6 +18,7 @@ import stateReducer from '../Reducers';
 import {ConfirmationServiceProvider} from './ConfirmationService';
 import ErrorBoundary from "./ErrorBoundary";
 import Sidebar from './Sidebar';
+import { SessionForm } from './SessionForm';
 
 const App: React.FC = () => {
 
@@ -34,13 +35,16 @@ const App: React.FC = () => {
                             <Route path="/table">
                                 <ConfirmationServiceProvider>
                                     <DndProvider backend={Backend}>
-                                        <Game gameId={query.get("name")}/>
+                                        <Game sessionId={query.get("sessionId")} gameId={query.get("name")}/>
                                     </DndProvider>
                                     <Sidebar/>
                                 </ConfirmationServiceProvider>
                             </Route>
-                            <Route path="/login">
-                                <LoginForm/>
+                            <Route path="/room">
+                                <RoomForm sessionId={query.get("sessionId")}/>
+                            </Route>
+                            <Route path="/">
+                                <SessionForm/>
                             </Route>
                         </Switch>
                 </Provider>

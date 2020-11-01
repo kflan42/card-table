@@ -35,13 +35,11 @@ class TableInfo(Interface, DataClassJsonMixin):
 @dataclass
 class TableRequest(Interface, DataClassJsonMixin):
     table: str
-    password: str
 
 
 @dataclass
 class JoinRequest(Interface, DataClassJsonMixin):
     table: str
-    password: str
     name: str
     color: str
     deck: List[SFCard]
@@ -155,7 +153,6 @@ class CreateToken(Interface, DataClassJsonMixin):
 @dataclass
 class PlayerAction(Interface, DataClassJsonMixin):
     """Should be idempotent."""
-    table: str
     kind: str
     who: str
     when: int
@@ -168,8 +165,6 @@ class PlayerAction(Interface, DataClassJsonMixin):
 
 @dataclass
 class Table(Interface, DataClassJsonMixin):
-    name: str
-    password: str
     game: Game
     sf_cards: List[SFCard]
     table_cards: List[TableCard]
@@ -181,6 +176,5 @@ class Table(Interface, DataClassJsonMixin):
 class SaveGame(Interface, DataClassJsonMixin):
     """Just what we have to save often."""
     game: Game
-    password: str
     actions: List[PlayerAction]
     log_lines: List[LogLine]

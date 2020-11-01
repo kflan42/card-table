@@ -2,7 +2,7 @@ import {combineReducers} from 'redux'
 import update from 'immutability-helper'
 
 
-import { CLEAR_LINES, DRAWING, DRAWLINE, HOVERED_BFCARD, HOVERED_CARD, SET_USER_PREFS, TOGGLE_PLAYMAT, HOVERED_BATTLEFIELD, SET_GAME_ID, NEXT_TURN } from './Actions'
+import { CLEAR_LINES, DRAWING, DRAWLINE, HOVERED_BFCARD, HOVERED_CARD, SET_USER_PREFS, TOGGLE_PLAYMAT, HOVERED_BATTLEFIELD, SET_GAME_ID, NEXT_TURN, SET_SESSION_ID } from './Actions'
 import {Drawing, HoveredCard, PlayerPrefs} from './ClientState'
 import {gameReducer} from "./GameReducer";
 
@@ -65,6 +65,14 @@ const stateReducer = combineReducers({
                 return x.includes(y.player) ? x.filter(s => s !== y.player) : x.concat([y.player])
             default:
                 return x
+        }
+    },
+    sessionId: (x: string|null = null, y) => {
+        switch (y.type) {
+            case SET_SESSION_ID:
+                return y.sessionId;
+            default:
+                return x;
         }
     },
     gameId: (x: string|null = null, y) => {

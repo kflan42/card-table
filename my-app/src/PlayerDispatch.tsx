@@ -33,11 +33,17 @@ class QueuedActions {
 export function usePlayerActions() {
 
     const playerName = useSelector((state: ClientState) => state.playerPrefs.name)
-    const gameId = useSelector((state: ClientState) => state.gameId)
+    const [gameId, sessionId] = useSelector((state: ClientState) => [state.gameId, state.sessionId])
 
     const [outstanding, setOutstanding] = useState(0)
 
     function sendOverSocket(playerAction: PlayerAction, eventName: string) {
+
+        const d = {
+            session: sessionId as string,    
+            table: gameId as string, 
+            action: playerAction
+        }
 
         // browsers limit http calls per domain to 6, and we've got 1 socket open for updates
         if (outstanding >= 5) {
@@ -46,8 +52,8 @@ export function usePlayerActions() {
             return
         }
         setOutstanding(outstanding + 1)
-        console.log(`sending`, playerAction)
-        MySocket.get_socket().emit(eventName, { ...playerAction, table: gameId }, (ack: boolean) => {
+        console.log(`sending`, d)
+        MySocket.get_socket().emit(eventName, d, (ack: boolean) => {
             console.log('got ack for action at', playerAction.when, ack)
             setOutstanding(outstanding - 1)
         })
@@ -56,31 +62,32 @@ export function usePlayerActions() {
 
     function baseAction(): PlayerAction {
         return {
-            table: gameId as string, kind: "", who: playerName, when: Date.now(),
+            kind: "", who: playerName, when: Date.now(),
             message: "", card_moves: [], card_changes: [], counter_changes: [], create_tokens: []
         }
     }
 
-    function send(action: PlayerAction) {
+    function sendAction(action: PlayerAction) {
         const queuedAction = QueuedActions.takeMoves()
         if (queuedAction) {
-            sendOverSocket({ ...queuedAction, table: gameId as string, who: playerName, when: Date.now() }, 'player_action');
+            sendOverSocket({ ...queuedAction, who: playerName, when: Date.now() }, 'player_action');
         }
         // then send this action
-        sendOverSocket({ ...action, table: gameId as string, who: playerName, when: Date.now() }, 'player_action');
+        sendOverSocket({ ...action, who: playerName, when: Date.now() }, 'player_action');
     }
 
     function queue(moveAction: PlayerAction) {
         QueuedActions.queueMove(moveAction)
     }
 
-    function send_action(event: string, action: { type: string }) {
-        const playerDraw = { ...action, who: playerName, when: Date.now() }
-        console.log(`sending to ${gameId}`, playerDraw, new Date(playerDraw.when).toLocaleTimeString())
-        MySocket.get_socket().emit(event, { ...playerDraw, table: gameId }, (ack: boolean) => {
-            console.log('got ack for ', playerDraw, ack)
+    function sendInfo(event: string, infoAction: { type: string }) {
+        const playerInfo = { ...infoAction, who: playerName, when: Date.now() }
+        console.log(`sending to ${gameId}`, playerInfo, new Date(playerInfo.when).toLocaleTimeString())
+        const d = { ...playerInfo, session: sessionId, table: gameId };
+        MySocket.get_socket().emit(event, d, (ack: boolean) => {
+            console.log('got ack for ', playerInfo, ack)
         })
     }
 
-    return { action: send, queue: queue, info: send_action, baseAction }
+    return { action: sendAction, queue: queue, info: sendInfo, baseAction }
 }

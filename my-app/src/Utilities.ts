@@ -23,3 +23,8 @@ export function shuffleArray(array: any[], seed: number) {
         [array[i], array[j]] = [array[j], array[i]];
     }
 }
+
+/** safe for url path, local directory path, bucket path */
+export function safeString(s: string) {
+    return s.replace(/[^A-Za-z0-9-_]/, '')
+}

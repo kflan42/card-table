@@ -99,3 +99,8 @@ export const SET_GAME_ID = 'SET_GAME_ID'
 export function setGameId(gameId: string) {
     return { type: SET_GAME_ID, gameId }
 }
+
+export const SET_SESSION_ID = 'SET_SESSION_ID'
+export function setSessionId(sessionId: string) {
+    return { type: SET_SESSION_ID, sessionId }
+}

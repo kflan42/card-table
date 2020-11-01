@@ -267,7 +267,7 @@
   align-self: center;
   justify-self: center;
   padding: 0.25em;
-  margin: 0.5em;
+  margin: 0.25em 1em 0.25em 1em;
   border-radius: 0.25em;
   cursor: pointer;
 }

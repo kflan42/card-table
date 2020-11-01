@@ -1,21 +1,24 @@
 import React, { ChangeEvent, useEffect, useState } from 'react'
 import { useHistory } from 'react-router-dom';
 import { JoinRequest, SFCard, TableInfo, TableRequest } from "../magic_models";
-import { setUserPrefs, setGame } from "../Actions";
+import { setUserPrefs, setGame, setSessionId } from "../Actions";
 import { useDispatch } from "react-redux";
 import MySocket from '../MySocket';
+import { safeString } from '../Utilities';
 
+interface RoomViewProps {
+    sessionId: string|null
+}
 
-export const LoginForm: React.FC = () => {
+export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
     const history = useHistory()
     const dispatch = useDispatch()
     const routeChange = (r: string) => history.push(r)
 
     const [deckList, setDeckList] = useState('')
-    const [tableRequest, setTableRequest] = useState<TableRequest>({ table: '', password: '' })
+    const [tableRequest, setTableRequest] = useState<TableRequest>({ table: '' })
     const [joinRequest, setJoinRequest] = useState<JoinRequest>({
         table: '',
-        password: '',
         name: '',
         color: '',
         deck: []
@@ -30,7 +33,6 @@ export const LoginForm: React.FC = () => {
         }
         dispatch(setGame(
             {
-                name: "",
                 game: {
                     players: [],
                     cards: [],
@@ -43,7 +45,8 @@ export const LoginForm: React.FC = () => {
                 table_cards: []
             }
         ))
-    }, [loaded, dispatch])
+        dispatch(setSessionId(sessionId as string))
+    }, [loaded, dispatch, sessionId])
 
     useEffect(() => {
         if (loaded) {
@@ -75,19 +78,13 @@ export const LoginForm: React.FC = () => {
 
     const handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
         setJoinRequest({ ...joinRequest, name: event.target.value.replace(/[^A-Za-z0-9 .,_]/, '') });
-        // '-' used for indexed zone names
-    }
-
-    const handlePasswordChange = (event: ChangeEvent<HTMLInputElement>) => {
-        setJoinRequest({ ...joinRequest, password: event.target.value });
-        setTableRequest({ ...tableRequest, password: event.target.value });
     }
 
     const handleTableChange = (event: ChangeEvent<HTMLInputElement>) => {
-        const newTableName = event.target.value.replace(/[^A-Za-z0-9-_]/, '');
+        const newTableName = safeString(event.target.value);
         setTableRequest({ ...tableRequest, table: newTableName });
         if (newTableName.startsWith("test")) {
-            setErrorMsg("Warning! Tables starting with 'test' have random games and are not saved!")
+            setErrorMsg("Warning! Tables starting with 'test' have pre-populated games and are not saved!")
         } else {
             setErrorMsg("");
         }
@@ -170,10 +167,7 @@ export const LoginForm: React.FC = () => {
             return;
         }
         console.log("watching table...", joinRequest.table)
-        const requestOptions = {
-            headers: { 'X-My-App-Table-Password': joinRequest.password }
-        };
-        fetch(`${process.env.REACT_APP_API_URL || ""}/api/table/${joinRequest.table}`, requestOptions)
+        fetch(`${process.env.REACT_APP_API_URL || ""}/api/session/${sessionId}/table/${joinRequest.table}`)
             .then(async response => {
                 console.log(response)
                 // check for error response
@@ -183,7 +177,7 @@ export const LoginForm: React.FC = () => {
                     const error = data || response.status;
                     return Promise.reject(error);
                 }
-                routeChange('/table?name=' + joinRequest.table)
+                routeChange(`/table?sessionId=${sessionId}&name=${joinRequest.table}`)
             })
             .catch(error => {
                 console.error('There was an error!', error);
@@ -257,7 +251,7 @@ export const LoginForm: React.FC = () => {
                 // set user name in app memory
                 dispatch(setUserPrefs({ name: joinRequest.name }))
                 // route over to table
-                routeChange('/table?name=' + joinRequest.table)
+                routeChange(`/table?sessionId=${sessionId}&name=${joinRequest.table}`)
             })
             .catch(error => {
                 console.error('submission error', error);
@@ -276,7 +270,7 @@ export const LoginForm: React.FC = () => {
         }
         console.log("loading tables")
         setLastLoad(new Date().getTime())
-        fetch(`${process.env.REACT_APP_API_URL || ""}/api/tables`).then(
+        fetch(`${process.env.REACT_APP_API_URL || ""}/api/session/${sessionId}/tables`).then(
             async response => {
                 // check for error response
                 if (!response.ok) {
@@ -317,7 +311,7 @@ export const LoginForm: React.FC = () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(tableRequest)
         };
-        return fetch(`${process.env.REACT_APP_API_URL || ""}/api/tables/${tableRequest.table}`, requestOptions)
+        return fetch(`${process.env.REACT_APP_API_URL || ""}/api/session/${sessionId}/tables/${tableRequest.table}`, requestOptions)
     }
 
     const sendJoin = () => {
@@ -326,7 +320,7 @@ export const LoginForm: React.FC = () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(joinRequest)
         };
-        return fetch(`${process.env.REACT_APP_API_URL || ""}/api/table/${joinRequest.table}`, requestOptions)
+        return fetch(`${process.env.REACT_APP_API_URL || ""}/api/session/${sessionId}/table/${joinRequest.table}`, requestOptions)
     }
 
     const sendDecklist = () => {
@@ -364,7 +358,7 @@ export const LoginForm: React.FC = () => {
 
     return (
         <div className="myform" style={{ width: "100%", overflowY: "auto", overflowX: "auto" }}>
-            <h3 style={{ textAlign: "center" }}>Welcome to my "Card Table"</h3>
+            <h3 style={{ textAlign: "center" }}>Welcome to Room {sessionId}</h3>
             <div style={{
                 width: "100%", height: "100%",
                 display: "inline-grid", gridTemplateColumns: "auto auto",
@@ -423,8 +417,6 @@ export const LoginForm: React.FC = () => {
                         <span style={{ display: "block" }}>Players</span>
                         <span>{playerItems[selectedTableIdx]}</span>
                     </div> : null}
-                    <span className="SmallSpan">Password:</span>
-                    <input type="text" value={joinRequest.password} onChange={handlePasswordChange} style={{ width: "10em" }} />
                     <button className="DivButton" onClick={handleJoinTable}>Join with Deck</button>
                     <button className="DivButton" onClick={handleWatchTable}>Watch or Rejoin</button>
                 </div>
@@ -433,9 +425,7 @@ export const LoginForm: React.FC = () => {
                     <span style={{ textAlign: "center", gridColumn: "1/3" }}><b>Table Creator</b></span>
                     <span style={{ gridRow: 2 }} >Table Name: </span>
                     <input style={{ gridRow: 2 }} type="text" value={tableRequest.table} onChange={handleTableChange} />
-                    <span style={{ gridRow: 3 }} className="SmallSpan">Password: </span>
-                    <input style={{ gridRow: 3 }} type="text" value={joinRequest.password} onChange={handlePasswordChange} />
-                    <button style={{ gridRow: 4, gridColumn: "1/3" }} className="DivButton" onClick={handleCreateTable}>Create Table</button>
+                    <button style={{ gridColumn: "1/3" }} className="DivButton" onClick={handleCreateTable}>Create Table</button>
                     <span style={{ color: "red", gridColumn: "1/3" }}> {errorMsg ? errorMsg : null} </span>
                 </div>
             </div>
@@ -445,7 +435,7 @@ export const LoginForm: React.FC = () => {
 }
 
 
-export default LoginForm
+export default RoomForm
 
 export function analyzeColor(color: string) {
     const v = colors[color]
