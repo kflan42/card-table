@@ -45,11 +45,9 @@ const GameView: React.FC<GameViewProps> = ({sessionId, gameId}) => {
 
     const [cardPopupShown, setCardPopupShown] = useState<number | null>(null)
     const [cardPopupTransformed, setCardPopupTransformed] = useState(false)
-    const [hasSockets, setHasSockets] = useState(false)
 
     const dispatch = useDispatch()
     const { action: playerDispatch, baseAction, info: infoDispatch } = usePlayerActions()
-    const [loadedId, setLoadedId] = useState('')
     const [optionsOpen, setOptionsOpen] = useState(false)
 
     const confirmation = useConfirmation();
@@ -94,22 +92,18 @@ const GameView: React.FC<GameViewProps> = ({sessionId, gameId}) => {
                     return Promise.reject(error);
                 }
                 onGameLoaded(response)
-                setLoadedId(gameId as string)
+                document.title = 'Magic Table ' + gameId
             }
             ).catch(r => console.error("exception loading game", r))
         },
-        // since it wants confirmation but that changes every render and infinite loops
-        // eslint-disable-next-line
-        [gameId, dispatch],
+        [dispatch, sessionId, gameId],
     );
 
 
     useEffect(() => {
-        if (loadedId !== gameId) {
-            loadOptions()
-            loadGame()
-        }
-    }, [loadGame, loadOptions, gameId, loadedId]);
+        loadOptions()
+        loadGame()
+    }, [loadGame, loadOptions]);
 
     useEffect(() => {
         const playerNames = Object.keys(players)
@@ -133,20 +127,18 @@ const GameView: React.FC<GameViewProps> = ({sessionId, gameId}) => {
     },
         // since it wants confirmation but that changes every render and infinite loops
         // eslint-disable-next-line
-        [userName, players, dispatch, gameId, loadedId])
+        [userName, players, dispatch, gameId])
 
     useEffect(() => {
-        if (userName && Object.keys(players).length > 0 && !hasSockets) {
+        if (userName) {
             // if we have already loaded a real game object, now it is socket time
-            connectSockets();
-            setHasSockets(true);
-        }
 
-        function connectSockets() {
             try {
-                console.log('Connecting sockets...')
+                MySocket.close_socket() // in case open from earlier
+
+                console.log('Connecting game table sockets...')
                 // now that game is loaded, register for updates to it
-                MySocket.get_socket().emit('join', { session: sessionId, table: gameId, username: userName })
+                MySocket.get_socket().emit('join_table', { session: sessionId, table: gameId, username: userName })
                 MySocket.get_socket().on('game_update', function (msg: object) {
                     const game_update = msg as TableU
                     console.log('received game_update', game_update)
@@ -160,18 +152,19 @@ const GameView: React.FC<GameViewProps> = ({sessionId, gameId}) => {
                     console.log('received next_turn', msg)
                     return dispatch(msg);
                 })
-                MySocket.get_socket().on('joined', function (msg: { table: string, username: string }) {
-                    if (!msg.username.startsWith('(') && !players.hasOwnProperty(msg.username)) {
+                MySocket.get_socket().on('joined_table', function (msg: { name: string }) {
+                    if (!msg.name.startsWith('(')) {
                         // new player joined table since we loaded it, need to reload table data
-                        console.log(`reloading since ${msg.username} joined ${Object.keys(players)}`)
+                        console.log(`reloading since ${msg.name} joined`)
                         loadGame()
                     }
                 })
-                MySocket.get_socket().on('error', function (msg: any) {
+                MySocket.get_socket().on('table_error', function (msg: any) {
                     console.log('received error', msg)
                 })
                 MySocket.get_socket().on('disconnect', function () {
-                    if(window.location.pathname === '/table' && window.location.search.endsWith(gameId as string)) {
+                    // socket corrupt after server restart
+                    if (window.location.pathname === '/table' && window.location.search.endsWith(gameId as string)) {
                         // only reload if still on the game page
                         console.log('reloading page...')
                         window.location.reload()
@@ -180,8 +173,18 @@ const GameView: React.FC<GameViewProps> = ({sessionId, gameId}) => {
             } catch (e) {
                 console.error(e)
             }
+
+            return function cleanup() {
+                console.log('disconnecting socket handlers for table')
+                MySocket.get_socket().off('game_update')
+                MySocket.get_socket().off('player_draw')
+                MySocket.get_socket().off('next_turn')
+                MySocket.get_socket().off('joined_table')
+                MySocket.get_socket().off('table_error')
+                MySocket.get_socket().off('disconnect')
+            }
         }
-    }, [gameId, sessionId, userName, players, hasSockets, dispatch, loadGame])
+    }, [sessionId, gameId, dispatch, userName, loadGame])
 
     const drawArrow = () => {
         dispatch(drawing(''))

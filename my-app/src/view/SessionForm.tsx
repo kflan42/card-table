@@ -1,16 +1,15 @@
 import React, { ChangeEvent, useEffect, useState } from 'react'
-import { useHistory } from 'react-router-dom';
 import MySocket from '../MySocket';
 import { safeString } from '../Utilities';
+import { useRouteChanger } from './MyRouting';
 
 
 export const SessionForm: React.FC = () => {
-    const history = useHistory()
     const [sessionId, setSessionId] = useState('')
     const [errorMsg, setErrorMsg] = useState('')
 
     useEffect(() => {
-        MySocket.close_socket() // disconnect handlers or connections if we left a game
+        MySocket.close_socket() // in case open from a room or game
         const savedSessionId = localStorage.getItem('sessionId')
         if (savedSessionId) {
             setSessionId(savedSessionId)
@@ -25,6 +24,8 @@ export const SessionForm: React.FC = () => {
         }
     }
 
+    const routeChanger = useRouteChanger()
+
     const onEnter = (event: React.FormEvent) => {
         event.preventDefault();
         if (sessionId.length < 5) {
@@ -32,7 +33,7 @@ export const SessionForm: React.FC = () => {
             return
         }
         localStorage.setItem('sessionId', sessionId)
-        history.push('/room?sessionId=' + sessionId)
+        routeChanger('/room?sessionId=' + sessionId)
     }
 
     return (

@@ -13,6 +13,7 @@ import os
 import typing
 from collections import defaultdict
 from datetime import datetime
+from http import HTTPStatus
 from threading import Thread
 
 from flask import Flask
@@ -28,6 +29,7 @@ from magic_room import MagicRoom
 from utils import logger
 
 magic_rooms: typing.Dict[str, MagicRoom] = {}
+active_players: typing.Dict[str, typing.List[str]] = defaultdict(list)
 
 # note that flask logs to stderr by default
 if not persistence.GOOGLE_CLOUD_PROJECT:  # only log to file locally
@@ -69,13 +71,25 @@ def parse_deck_list():
 @app.route('/api/session/<path:session_id>/tables', methods=['GET'])
 def get_tables_info(session_id: str):
     tables_info = magic_rooms.setdefault(session_id, MagicRoom(session_id)).get_tables_info()
+    # for ti in tables_info:
+    #     if ti.date == 'today':
+    #         k = session_id+'/'+ti.table
+    #         if k in active_players:
+    #             ti.active = len(active_players[k])
     return TableInfo.schema().dumps(tables_info, many=True)
 
 
 @app.route('/api/session/<path:session_id>/tables/<path:table_name>', methods=['PUT'])
 def create_table(table_name: str, session_id: str):
     table_name = table_name.lower()  # lower case table names since windows filesystem case insensitive
-    return magic_rooms.setdefault(session_id, MagicRoom(session_id)).create_table(table_name)
+    r = magic_rooms.setdefault(session_id, MagicRoom(session_id)).create_table(table_name)
+    _emit_tables_update(session_id)
+    return r
+
+
+def _emit_tables_update(session_id):
+    tables_info = magic_rooms[session_id].get_tables_info()
+    socketio.emit('room_update', [ti.to_dict() for ti in tables_info], room=session_id)
 
 
 @app.route('/api/session/<path:session_id>/table/<path:table_name>', methods=['GET', 'PUT'])
@@ -85,8 +99,13 @@ def join_table(table_name: str, session_id: str):
         try:
             logger.info(request.data.decode('utf-8'))
             d = json.loads(request.data)
-            join_request = JoinRequest.schema().load(d)
+            join_request: JoinRequest = JoinRequest.schema().load(d)
             x = magic_rooms.setdefault(session_id, MagicRoom(session_id)).join_table(table_name, join_request)
+            if x[1] == HTTPStatus.ACCEPTED:
+                # send a message about it so other players reload table and cards needed
+                socketio.emit('joined_table', {'name': join_request.name},
+                              room=session_id + '/' + table_name)  # on('joined_table'
+                _emit_tables_update(session_id)
             return x
         except GameException as e:
             logger.warning(e)
@@ -109,6 +128,15 @@ def add_header(response):
     return response
 
 
+def _add_player(where, sid):
+    active_players[where].append(sid)
+
+
+def _remove_player(sid):
+    for _list in active_players.values():
+        _list.remove(sid)
+
+
 @socketio.on('connect')
 def test_connect():
     logger.info(f'Client connected via {request.referrer} from {request.remote_addr}')
@@ -117,6 +145,7 @@ def test_connect():
 @socketio.on('disconnect')
 def test_disconnect():
     logger.info(f'Client disconnected via {request.referrer} from {request.remote_addr}')
+    _remove_player(request.sid)
 
 
 @socketio.on('player_action')
@@ -132,7 +161,7 @@ def on_player_action(data) -> bool:
                  room=session_id+'/'+table_name, broadcast=True)  # on('game_update'
         return True  # always ack, sometimes update
     except Exception:
-        emit('error', {'error': 'Action failed.'})
+        emit('table_error', {'error': 'Action failed.'})
         logger.exception("Exception handling PlayerAction")
         return False
 
@@ -163,17 +192,27 @@ def on_error_report(data) -> bool:
     return True
 
 
-@socketio.on('join')
-def on_join(data):
+@socketio.on('join_room')
+def on_join_room(data):
+    """Join a table, which has its own socket.io room."""
+    logger.info("join %s", data)
+    session_id = data['session']
+
+    # put client into socket.io room
+    join_room(session_id)
+    _add_player(session_id, request.sid)
+
+
+@socketio.on('join_table')
+def on_join_table(data):
     """Join a table, which has its own socket.io room."""
     logger.info("join %s", data)
     table_name = data['table']
     session_id = data['session']
-
     # put client into socket.io room
     join_room(session_id+'/'+table_name)
-    # send a message about it so other players reload table
-    emit('joined', data, room=session_id+'/'+table_name, broadcast=True)  # on('joined'
+    _add_player(session_id+'/'+table_name, request.sid)
+    _emit_tables_update(session_id)
 
 
 @app.route('/_ah/warmup')

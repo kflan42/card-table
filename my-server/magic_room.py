@@ -15,9 +15,10 @@ class MagicRoom:
         self.tables: typing.Dict[str, MagicTable] = {}
 
     def get_tables_info(self):
-        # live tables
+        # live tables, most recently active first
         tables_info = [TableInfo(t, 'today', [p.color for p in self.tables[t].table.game.players]) for t in
                        self.tables.keys()]
+        tables_info.sort(key=lambda ti: self.tables[ti.table].last_save, reverse=True)
 
         # storage tables
         file_tables = MagicTable.list_table_files(self.session_id)
@@ -59,7 +60,7 @@ class MagicRoom:
             return False
 
     def join_table(self, table_name, join_request: JoinRequest):
-        if table_name not in self.tables:
+        if table_name not in self.tables and not self._try_load_table(table_name):
             return "Table not found.", HTTPStatus.NOT_FOUND
         magic_table = self.tables[table_name]
         if [p for p in magic_table.table.game.players if p.name == join_request.name]:

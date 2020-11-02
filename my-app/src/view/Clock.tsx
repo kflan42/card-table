@@ -4,9 +4,9 @@ import Help from "./Help";
 import { OptionsDialog } from "./OptionsDialog";
 import { useConfirmation } from "./ConfirmationService";
 import { ConfirmationResult } from "./ConfirmationDialog";
-import { useHistory } from "react-router-dom";
 import { ClientState } from "../ClientState";
 import { useSelector } from "react-redux";
+import { useRouteChanger } from './MyRouting'
 
 
 const Clock: React.FC = () => {
@@ -33,7 +33,7 @@ const Clock: React.FC = () => {
 
   const [optionsOpen, setOptionsOpen] = useState(false)
   const sessionId = useSelector((state: ClientState) => state.sessionId)
-  const history = useHistory()
+  const routeChanger = useRouteChanger()
   const confirmation = useConfirmation();
   const leaveDialog = () => {
     const choices = ["Leave Table"]
@@ -45,7 +45,7 @@ const Clock: React.FC = () => {
     }).then((s: ConfirmationResult) => {
         switch(s.choice) {
             case "Leave Table":
-                history.push(`/room?sessionId=${sessionId}`)
+                routeChanger(`/room?sessionId=${sessionId}`)
             break;
         }
     }).catch(()=>null)

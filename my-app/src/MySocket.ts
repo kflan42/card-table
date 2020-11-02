@@ -25,6 +25,7 @@ export default class MySocket {
 
     static close_socket() {
         if (this.socket !== null) {
+            console.log('Closing socket.')
             this.socket.close()
             this.socket = null
         }

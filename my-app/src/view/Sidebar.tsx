@@ -5,11 +5,13 @@ import Clock from './Clock';
 import Log from './Log';
 import { useSelector } from 'react-redux';
 import { ClientState } from '../ClientState';
-import { useHistory } from 'react-router-dom';
+import { useRouteChanger } from './MyRouting';
 
 
 
 const Sidebar: React.FC = () => {
+
+    const routeChanger = useRouteChanger()
 
     const timerID = setInterval(
         () => tick(),
@@ -33,7 +35,6 @@ const Sidebar: React.FC = () => {
         }
     }, [loadTime]);
 
-    const history = useHistory()
     const logLines = useSelector((state: ClientState) => state.game.actionLog)
     const elapsedS = logLines.length > 0 
         ? Math.floor((state.date.getTime() - logLines[logLines.length - 1].when) / 1000)
@@ -45,7 +46,7 @@ const Sidebar: React.FC = () => {
         });
         const ageS = new Date().getTime() / 1000 - loadTime
         if(elapsedS > 900 &&  ageS > 180) {
-            history.push('/')  // leave game and close socket so api server will spin down
+            routeChanger('/')  // leave game and close socket so api server will spin down
         }
     }
 

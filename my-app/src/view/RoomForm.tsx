@@ -1,19 +1,18 @@
 import React, { ChangeEvent, useEffect, useState } from 'react'
-import { useHistory } from 'react-router-dom';
 import { JoinRequest, SFCard, TableInfo, TableRequest } from "../magic_models";
 import { setUserPrefs, setGame, setSessionId } from "../Actions";
 import { useDispatch } from "react-redux";
 import MySocket from '../MySocket';
 import { safeString } from '../Utilities';
+import { useRouteChanger } from './MyRouting';
 
 interface RoomViewProps {
     sessionId: string|null
 }
 
 export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
-    const history = useHistory()
+    const routeChanger = useRouteChanger()
     const dispatch = useDispatch()
-    const routeChange = (r: string) => history.push(r)
 
     const [deckList, setDeckList] = useState('')
     const [tableRequest, setTableRequest] = useState<TableRequest>({ table: '' })
@@ -26,11 +25,7 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
     const [errorMsg, setErrorMsg] = useState('')
     const [deckMsg, setDeckMsg] = useState('Upload Result:')
 
-    const [loaded, setLoaded] = useState(false)
     useEffect(() => {
-        if (loaded) {
-            return;
-        }
         dispatch(setGame(
             {
                 game: {
@@ -46,15 +41,13 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
             }
         ))
         dispatch(setSessionId(sessionId as string))
-    }, [loaded, dispatch, sessionId])
+    }, [dispatch, sessionId])
 
     useEffect(() => {
-        if (loaded) {
-            return;
-        }
         const name = localStorage.getItem('userName')
         const color = localStorage.getItem('userColor')
         const deckList = localStorage.getItem('deckList')
+        const deck = localStorage.getItem('deck')
 
         let jr = { ...joinRequest }
         if (name !== null) {
@@ -63,18 +56,51 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
         if (color !== null) {
             jr = { ...jr, color }
         }
+        if (deck !== null) {
+            const card_array = JSON.parse(deck) as SFCard[]
+            setCardsList(card_array.map(sfcard => `1 ${sfcard.name} (${sfcard.set_name.toUpperCase()}) ${sfcard.number}`).join("\n"))
+            jr = {...jr, deck:card_array}
+        }
         setJoinRequest(jr)
         if (deckList !== null) {
             setDeckList(deckList)
         }
-
-        MySocket.close_socket()  // in case it's open from an earlier game, remove event handlers
         loadTables()
-        setLoaded(true)
-    },
-        // since it wants joinRequest but that changes every render and infinite loops
-        // eslint-disable-next-line 
-        [loaded])
+        document.title = 'Magic Room ' + sessionId
+
+        // wants to depend on joinRequest leads to infinite loop
+        // eslint-disable-next-line
+    }, [])
+
+    useEffect(() => {
+        try {
+            MySocket.close_socket() // in case open from earlier
+            console.log('Connecting room sockets...')
+            // now that game is loaded, register for updates to it
+            MySocket.get_socket().emit('join_room', { session: sessionId })
+            MySocket.get_socket().on('room_update', function (msg: object) {
+                const tableInfos = msg as TableInfo[]
+                console.log('received room_update', tableInfos)
+                handleTableInfos(tableInfos)
+            })
+            MySocket.get_socket().on('disconnect', function () {
+                // socket corrupt after server restart
+                if (window.location.pathname === '/room' && window.location.search.endsWith(sessionId as string)) {
+                    // only reload if still on the game page
+                    console.log('reloading page...')
+                    window.location.reload()
+                }
+            })
+        } catch (e) {
+            console.error(e)
+        }
+
+        return function cleanup() {
+            console.log('disconnecting socket handlers for table')
+            MySocket.get_socket().off('room_update')
+            MySocket.get_socket().off('disconnect')
+        }
+    }, [sessionId])
 
     const handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
         setJoinRequest({ ...joinRequest, name: event.target.value.replace(/[^A-Za-z0-9 .,_]/, '') });
@@ -177,7 +203,7 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
                     const error = data || response.status;
                     return Promise.reject(error);
                 }
-                routeChange(`/table?sessionId=${sessionId}&name=${joinRequest.table}`)
+                routeChanger(`/table?sessionId=${sessionId}&name=${joinRequest.table}`)
             })
             .catch(error => {
                 console.error('There was an error!', error);
@@ -206,7 +232,6 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
                     return Promise.reject(error);
                 }
                 setErrorMsg('');
-                loadTables();
             })
             .catch(error => {
                 console.error('submission error', error);
@@ -229,11 +254,16 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
             setErrorMsg("Please load your cards before joining.");
             return;
         }
+        if (joinRequest.table === '') {
+            setErrorMsg("Please select a table.")
+            return
+        }
         setErrorMsg('...');
 
         localStorage.setItem('userName', joinRequest.name)
         localStorage.setItem('userColor', joinRequest.color)
         localStorage.setItem('deckList', deckList)
+        localStorage.setItem('deck', JSON.stringify(joinRequest.deck))
 
         console.log("joining table...", joinRequest)
         sendJoin()
@@ -251,7 +281,7 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
                 // set user name in app memory
                 dispatch(setUserPrefs({ name: joinRequest.name }))
                 // route over to table
-                routeChange(`/table?sessionId=${sessionId}&name=${joinRequest.table}`)
+                routeChanger(`/table?sessionId=${sessionId}&name=${joinRequest.table}`)
             })
             .catch(error => {
                 console.error('submission error', error);
@@ -281,29 +311,32 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
                 }
                 const tables = await response.json() as TableInfo[]
 
-                const tableList = []
-                const playersList = []
-                for (const table of tables) {
-                    const label = `${table.table} ` + (table.date === 'today' ? `(${table.colors.length} players)` : `[from ${table.date}]`)
-                    tableList.push(<option key={table.table} value={table.table}>{label}</option>)
-
-                    const players = []
-                    let i = 0
-                    for (const color of table.colors) {
-                        /* eslint-disable jsx-a11y/accessible-emoji */
-                        players.push(<span key={i++} style={{ backgroundColor: color }}>🧙</span>)
-                    }
-                    playersList.push(players)
-                }
-                setTableItems(tableList)
-                setPlayerItems(playersList)
+                handleTableInfos(tables);
             }
         ).catch(error => {
             console.error('loadTables error', error);
             setTableItems([<option key={-1} value={''}>Error Loading Tables</option>])
         });
     }
-    loadTables() // try a refresh on any page render due to some other prop being edited by player
+
+    function handleTableInfos(tables: TableInfo[]) {
+        const tableList = [];
+        const playersList = [];
+        for (const table of tables) {
+            const label = `${table.table} ` + (table.date === 'today' ? `(${table.colors.length} players)` : `[from ${table.date}]`)
+            tableList.push(<option key={table.table} value={table.table}>{label}</option>)
+    
+            const players = [];
+            let i = 0;
+            for (const color of table.colors) {
+                /* eslint-disable jsx-a11y/accessible-emoji */
+                players.push(<span key={i++} style={{ backgroundColor: color }}>🧙</span>);
+            }
+            playersList.push(players);
+        }
+        setTableItems(tableList);
+        setPlayerItems(playersList);
+    }
 
     const sendCreate = () => {
         const requestOptions = {
