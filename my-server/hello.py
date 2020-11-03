@@ -134,7 +134,7 @@ def _add_player(where, sid):
 
 def _remove_player(sid):
     for _list in active_players.values():
-        _list.remove(sid)
+        _list.remove(sid)  # todo sometimes not found
 
 
 @socketio.on('connect')
@@ -145,7 +145,7 @@ def test_connect():
 @socketio.on('disconnect')
 def test_disconnect():
     logger.info(f'Client disconnected via {request.referrer} from {request.remote_addr}')
-    _remove_player(request.sid)
+    # todo not consistently fired _remove_player(request.sid)
 
 
 @socketio.on('player_action')

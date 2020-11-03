@@ -10,7 +10,7 @@ import {
     setUserPrefs,
     setGame,
     TOGGLE_FACEDOWN_CARD,
-    TOGGLE_TRANSFORM_CARD, togglePlaymat, updateGame, UNTAP_ALL, SET_CARD_COUNTER, CREATE_TOKEN, MULLIGAN, setGameId, nextTurn, TOGGLE_FLIP_CARD, setSessionId
+    TOGGLE_TRANSFORM_CARD, togglePlaymat, updateGame, UNTAP_ALL, SET_CARD_COUNTER, CREATE_TOKEN, MULLIGAN, setGameId, nextTurn, TOGGLE_FLIP_CARD, setSessionId, RESET
 } from '../Actions';
 import CardPopup from './CardPopup';
 import CustomDragLayer from './CustomDragLayer';
@@ -63,8 +63,10 @@ const GameView: React.FC<GameViewProps> = ({sessionId, gameId}) => {
             let rightClickPopupStr = localStorage.getItem('rightClickPopup')
             const rightClickPopup = rightClickPopupStr === 'false' ? false : true;
             dispatch(setUserPrefs({ bfImageSize, bfCardSize, handCardSize, rightClickPopup }))
+            dispatch(setSessionId(sessionId as string))
+            dispatch(setGameId(gameId as string))
         },
-        [dispatch])
+        [dispatch, sessionId, gameId])
 
 
     const loadGame = useCallback(
@@ -78,8 +80,6 @@ const GameView: React.FC<GameViewProps> = ({sessionId, gameId}) => {
                 const data = r.json()
                 const table_update = await data as TableU
                 dispatch(setGame(table_update))
-                dispatch(setSessionId(sessionId as string))
-                dispatch(setGameId(gameId as string))
             }
 
             console.log(`loading game from ${gameUrl}`)
@@ -106,13 +106,16 @@ const GameView: React.FC<GameViewProps> = ({sessionId, gameId}) => {
     }, [loadGame, loadOptions]);
 
     useEffect(() => {
-        const playerNames = Object.keys(players)
-        if (!userName && playerNames.length > 0) {
-            playerNames.push('Spectator *')
+        if (!userName && Object.keys(players).length > 0) {
+            let storedName = localStorage.getItem('userName')
+            const names = Object.keys(players).filter(v => v === storedName)
+            // either name stored from login or a spectator
+            names.push('Spectator *')
             confirmation({
                 title: "Who are you?",
-                description: "Please select from existing players, else use /login to join the game.",
-                choices: playerNames,
+                description: "Player or spectator? Please join from room if playing.",
+                choices: names,
+                initialString: storedName ? storedName : undefined,
                 catchOnCancel: true
             })
                 .then((s: ConfirmationResult) => {
@@ -164,8 +167,8 @@ const GameView: React.FC<GameViewProps> = ({sessionId, gameId}) => {
                 })
                 MySocket.get_socket().on('disconnect', function () {
                     // socket corrupt after server restart
-                    if (window.location.pathname === '/table' && window.location.search.endsWith(gameId as string)) {
-                        // only reload if still on the game page
+                    const choice = window.confirm("Uh oh! The socket disconnected. Shall we reload the page to reconnect?")
+                    if (choice) {
                         console.log('reloading page...')
                         window.location.reload()
                     }
@@ -184,7 +187,7 @@ const GameView: React.FC<GameViewProps> = ({sessionId, gameId}) => {
                 MySocket.get_socket().off('disconnect')
             }
         }
-    }, [sessionId, gameId, dispatch, userName, loadGame])
+    }, [sessionId, gameId, dispatch, userName, loadGame, confirmation])
 
     const drawArrow = () => {
         dispatch(drawing(''))
@@ -254,6 +257,13 @@ const GameView: React.FC<GameViewProps> = ({sessionId, gameId}) => {
             to_idx
         }
         playerDispatch({ ...baseAction(), card_moves: [cardMove] })
+    }
+
+    const voteToReset = () => {
+        playerDispatch({
+            ...baseAction(),
+            kind: RESET,
+        })
     }
 
     const mulliganDialog = () => {
@@ -468,6 +478,10 @@ const GameView: React.FC<GameViewProps> = ({sessionId, gameId}) => {
             case 'n':
                 nextPlayerTurn()
                 event.preventDefault()
+                break;
+            case '^':
+                voteToReset();
+                event.preventDefault();
                 break;
             case 'H':
                 hidePlayerPrompt()

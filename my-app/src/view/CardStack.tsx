@@ -39,7 +39,7 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
         if (!shown) {
             if (zoneState.name === LIBRARY) {
                 confirmation({
-                    choices: ["Search", "Look at Top _"].concat(zoneState.owner === playerName ? ["Draw _"] : []),
+                    choices: ["Search", "Look at Top _", ].concat(zoneState.owner === playerName ? ["Draw _"] : []).concat(["Shuffle"]),
                     catchOnCancel: true,
                     title: `${zoneState.name} Action?`,
                     description: "",
@@ -62,6 +62,9 @@ const CardStack: React.FC<CardStackP> = ({name, icon = null, owner}) => {
                                     draws.push(cardMove)
                                 }
                                 playerDispatch({...baseAction(), card_moves:draws, kind:s.choice})
+                                return; // don't need a message for this, server generates one
+                            case "Shuffle":
+                                playerDispatch({...baseAction(), kind:`${SHUFFLE_LIBRARY}_${owner}`})
                                 return; // don't need a message for this, server generates one
                             case "Search":
                                 setTopN([]);

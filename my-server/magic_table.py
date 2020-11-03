@@ -10,6 +10,8 @@ from magic_game import IndexedGame
 from magic_models import *
 from utils import logger
 
+CLEARING___ = "Clearing..."
+
 SAVE_GAME_JSON = '.save_game.json'
 
 
@@ -62,9 +64,11 @@ class MagicTable:
         self.last_save = time.time()
         self.name = name
         self.session_id = session_id
+        self.reset_votes = set()
 
     def add_player(self, join_request: JoinRequest):
-        if [p for p in self.table.game.players if p.name == join_request.name]:
+        game = self.table.game
+        if [p for p in game.players if p.name == join_request.name]:
             return False  # already present
 
         # load cards into table
@@ -72,14 +76,32 @@ class MagicTable:
         self.table.sf_cards.extend(sf_cards)
 
         # skip 0, use block of 1000 per player
-        cid = 1000 * (1 + len(self.table.game.players))
+        cid = 1000 * (1 + len(game.players))
         table_cards = [TableCard(cid + i, sf_card.sf_id, owner=join_request.name) for i, sf_card in enumerate(sf_cards)]
         self.table.table_cards.extend(table_cards)
 
-        zid = len(self.table.game.zones)
-        zones = [Zone(name=z, z_id=zid + i, owner=join_request.name, cards=[]) for i, z in enumerate(ZONES)]
-        self.table.game.zones.extend(zones)
+        seed_str = f"{self.name}{len(self.table.log_lines)}"  # seed for consistency in testing/debugging
+        commander_card_id = MagicTable.add_player_to_game(game, join_request.name, join_request.color, table_cards,
+                                                          seed_str)
+        if commander_card_id:
+            commander_sfid = next((tc.sf_id for tc in table_cards if tc.card_id == commander_card_id))
+            commander_name = next((sfc.name for sfc in sf_cards if sfc.sf_id == commander_sfid))
+        else:
+            commander_name = None
+        self.table.log_lines.append(LogLine(who=join_request.name, when=round(time.time()*1000),
+                                            line=f"joined the table with {len(table_cards)} cards" +
+                                                 f" led by {commander_name}." if commander_name else "."))
+        self.indexed_game = IndexedGame(game)
+        if not is_test(self.name):
+            self.save()
+        return True
 
+    @staticmethod
+    def add_player_to_game(game, name, color, table_cards, seed_str):
+        """Adds game cards, player, and zones for the inputs."""
+        zid = len(game.zones)
+        zones = [Zone(name=z, z_id=zid + i, owner=name, cards=[]) for i, z in enumerate(ZONES)]
+        game.zones.extend(zones)
         # setup player fields
         commander_card_id = None
         if len(table_cards) >= 100:
@@ -96,41 +118,28 @@ class MagicTable:
             library_size = 30
         else:
             library_size = len(table_cards)  # something else
-
         library_table_cards, extra_table_cards = table_cards[:library_size], table_cards[library_size:]
-
         # start with cards in library
         library_cards = [Card(card_id=c.card_id) for c in library_table_cards]
         if commander_card_id:
             commander_card = library_cards.pop(0)
             # commander format - put commander into command zone
             next((z for z in zones if z.name == COMMAND_ZONE)).cards.append(commander_card.card_id)
-            self.table.game.cards.append(commander_card)
-            commander_sfid = next((tc.sf_id for tc in table_cards if tc.card_id == commander_card_id))
-            commander_name = next((sfc.name for sfc in sf_cards if sfc.sf_id == commander_sfid))
-        else:
-            commander_name = None
+            game.cards.append(commander_card)
         library = next((z for z in zones if z.name == LIBRARY))
         library.cards.extend([c.card_id for c in library_cards])
-        seed(f"{self.name}{len(self.table.log_lines)}", version=2)  # seed for consistency in testing/debugging
+        seed(seed_str, version=2)
         shuffle(library.cards)  # shuffle the library
         # extras into exile
         ex_cards = [Card(card_id=c.card_id) for c in extra_table_cards]
         next((z for z in zones if z.name == SIDEBOARD)).cards.extend([c.card_id for c in ex_cards])
-        self.table.game.cards.extend(library_cards + ex_cards)
-
+        game.cards.extend(library_cards + ex_cards)
         # setup player
         z_ids = [z.z_id for z in zones]
-        player = Player(name=join_request.name, color=join_request.color, counters=[], zones=z_ids)
+        player = Player(name=name, color=color, counters=[], zones=z_ids)
         player.counters.append(Counter(name="Life", value=40 if commander_card_id is not None else 20))
-        self.table.game.players.append(player)
-        self.table.log_lines.append(LogLine(who=player.name, when=round(time.time()*1000),
-                                            line=f"joined the table with {len(table_cards)} cards" +
-                                                 f" led by {commander_name}." if commander_name else "."))
-        self.indexed_game = IndexedGame(self.table.game)
-        if not is_test(self.name):
-            self.save()
-        return True
+        game.players.append(player)
+        return commander_card_id
 
     def save(self, sf_cards=True, table_cards=True):
         file_path = os.path.join(MagicTable.get_tables_path(), self.session_id, self.name)
@@ -182,6 +191,13 @@ class MagicTable:
 
     # ---------------- Game state logic below ----------------
 
+    def reset_game(self) -> IndexedGame:
+        g = Game(cards=[], players=[], zones=[], battlefield_cards=[])
+        for p in self.table.game.players:
+            table_cards = [tc for tc in self.table.table_cards if tc.owner == p.name]
+            MagicTable.add_player_to_game(g, p.name, p.color, table_cards, f"{self.name}{len(self.table.log_lines)}")
+        return IndexedGame(g)
+
     def apply(self, action: PlayerAction) -> IndexedGame:
         """returns updated portions of a game or None"""
         logger.info(f"applying {action}")
@@ -203,9 +219,24 @@ class MagicTable:
             game_updates_i.log_updates.append(LogLine(who=action.who, when=action.when, line=line))
         elif action.kind == MESSAGE and action.message:
             game_updates_i.log_updates.append(LogLine(who=action.who, when=action.when, line=action.message))
+        elif action.kind == RESET:
+            msg, fresh_game = self.vote_to_reset(action)
+            if fresh_game:
+                game_updates_i = fresh_game
+            game_updates_i.log_updates.append(LogLine(who=action.who, when=action.when, line=msg))
 
         logger.info(f"resulted in {game_updates_i}")
         return game_updates_i
+
+    def vote_to_reset(self, action):
+        self.reset_votes.add(action.who)
+        majority = len(self.indexed_game.players) // 2 + 1
+        need = majority - len(self.reset_votes)
+        if need:
+            return f"voted to reset the game. {need} more votes will clear the game!", None
+        else:
+            self.reset_votes.clear()
+            return f"voted to reset the game. " + CLEARING___, self.reset_game()
 
     def handle_create_token(self, action: PlayerAction) -> IndexedGame:
         game_updates = IndexedGame()
@@ -370,7 +401,13 @@ class MagicTable:
             line = "shuffled " + ("their" if action.who == tgt_owner else f"{tgt_owner}'s") + " Library"
             game_updates.log_updates.append(LogLine(who=action.who, when=action.when, line=line))
         elif action.kind == MULLIGAN:
-            mulls_so_far = len([a for a in self.table.actions if a.who == action.who and a.kind == MULLIGAN])
+            mulls_so_far = 0
+            for log_line in self.table.log_lines:
+                if log_line.who == action.who and "mulligan" in log_line.line:
+                    mulls_so_far += 1
+                if CLEARING___ in log_line.line:
+                    mulls_so_far = 0
+
             if not [c for c in self.indexed_game.players[action.who].counters if c.name == 'Life' and c.value == 40]:
                 # mulligans reduce your hand size by one, but commander has 1 free mulligan
                 mulls_so_far += 1

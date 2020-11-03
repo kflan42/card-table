@@ -77,6 +77,7 @@ export const CREATE_TOKEN = 'CREATE_TOKEN'
 export const MESSAGE = 'MESSAGE'
 export const RANDOMNESS = 'RANDOMNESS'
 export const MULLIGAN = 'MULLIGAN'
+export const RESET = 'RESET'
 
 export interface GameUpdate {
     type: string

@@ -74,6 +74,7 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
 
     useEffect(() => {
         try {
+
             MySocket.close_socket() // in case open from earlier
             console.log('Connecting room sockets...')
             // now that game is loaded, register for updates to it
@@ -83,10 +84,10 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
                 console.log('received room_update', tableInfos)
                 handleTableInfos(tableInfos)
             })
-            MySocket.get_socket().on('disconnect', function () {
+            MySocket.get_socket().on('disconnect', () => {
                 // socket corrupt after server restart
-                if (window.location.pathname === '/room' && window.location.search.endsWith(sessionId as string)) {
-                    // only reload if still on the game page
+                const choice = window.confirm("Uh oh! The socket disconnected. Shall we reload the page to reconnect?")
+                if (choice) {
                     console.log('reloading page...')
                     window.location.reload()
                 }
@@ -193,6 +194,7 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
             return;
         }
         console.log("watching table...", joinRequest.table)
+        localStorage.setItem('userName', joinRequest.name)
         fetch(`${process.env.REACT_APP_API_URL || ""}/api/session/${sessionId}/table/${joinRequest.table}`)
             .then(async response => {
                 console.log(response)
