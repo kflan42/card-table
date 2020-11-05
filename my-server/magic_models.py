@@ -43,6 +43,7 @@ class JoinRequest(Interface, DataClassJsonMixin):
     name: str
     color: str
     deck: List[SFCard]
+    sideboard: List[SFCard]
 
 
 @dataclass

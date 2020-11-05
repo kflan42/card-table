@@ -61,8 +61,9 @@ socketio = SocketIO(app,
 @app.route('/api/deckList', methods=['PUT'])
 def parse_deck_list():
     try:
-        cards = MagicCards.resolve_deck(request.json)
-        return SFCard.schema().dumps(cards, many=True)
+        deck, sideboard = MagicCards.resolve_decklist(request.json)
+        return {"deck": SFCard.schema().dump(deck, many=True),
+                "sideboard": SFCard.schema().dump(sideboard, many=True)}
     except Exception as e:
         logger.warning(e)
         return str(e), 400
@@ -134,7 +135,8 @@ def _add_player(where, sid):
 
 def _remove_player(sid):
     for _list in active_players.values():
-        _list.remove(sid)  # todo sometimes not found
+        if sid in _list:
+            _list.remove(sid)
 
 
 @socketio.on('connect')
@@ -145,7 +147,7 @@ def test_connect():
 @socketio.on('disconnect')
 def test_disconnect():
     logger.info(f'Client disconnected via {request.referrer} from {request.remote_addr}')
-    # todo not consistently fired _remove_player(request.sid)
+    _remove_player(request.sid)
 
 
 @socketio.on('player_action')

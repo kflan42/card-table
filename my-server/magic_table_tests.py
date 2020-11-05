@@ -14,14 +14,14 @@ logging.basicConfig(format='%(asctime)s %(message)s', stream=sys.stdout, level=l
 class MyTestCase(unittest.TestCase):
 
     def test_deck_parsing(self):
-        deck0 = parse_deck(arena_deck)
-        deck1 = parse_deck(txt_deck)
-        deck2 = parse_deck(xmage_deck)
-        deck3 = parse_deck(tcgplayer_deck)
-        print(deck0)
-        print(deck1)
-        print(deck2)
-        print(deck3)
+        deck0, side0 = parse_deck(arena_deck)
+        deck1, side1 = parse_deck(txt_deck)
+        deck2, side2 = parse_deck(xmage_deck)
+        deck3, side3 = parse_deck(tcgplayer_deck)
+        print(deck0, side0)
+        print(deck1, side1)
+        print(deck2, side2)
+        print(deck3, side3)
         self.assertEqual(len(deck0), len(deck1))
         self.assertEqual(len(deck0), len(deck2))
         self.assertEqual(len(deck0), len(deck3))
@@ -48,8 +48,8 @@ class MyTestCase(unittest.TestCase):
         print(lim_duls_vault)
 
     def test_add_player(self):
-        arena_deck_cards = MagicCards.resolve_deck(arena_deck)
-        player = JoinRequest(name='kerran', table='test1', deck=arena_deck_cards, color='OliveDrab')
+        arena_deck_cards, side = MagicCards.resolve_decklist(arena_deck)
+        player = JoinRequest(name='kerran', table='test1', deck=arena_deck_cards, sideboard=side, color='OliveDrab')
         table = MagicTable(player.table)
         table.add_player(player)
         print(table.table.to_json())

@@ -1,3 +1,4 @@
+import cardBack from '../images/Magic_card_back.jpg'
 import React, { ChangeEvent, useEffect, useState } from 'react'
 import { JoinRequest, SFCard, TableInfo, TableRequest } from "../magic_models";
 import { setUserPrefs, setGame, setSessionId } from "../Actions";
@@ -20,7 +21,8 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
         table: '',
         name: '',
         color: '',
-        deck: []
+        deck: [],
+        sideboard: []
     })
     const [errorMsg, setErrorMsg] = useState('')
     const [deckMsg, setDeckMsg] = useState('Upload Result:')
@@ -47,7 +49,7 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
         const name = localStorage.getItem('userName')
         const color = localStorage.getItem('userColor')
         const deckList = localStorage.getItem('deckList')
-        const deck = localStorage.getItem('deck')
+        const deckAndSide = localStorage.getItem('deckAndSide')
 
         let jr = { ...joinRequest }
         if (name !== null) {
@@ -56,10 +58,10 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
         if (color !== null) {
             jr = { ...jr, color }
         }
-        if (deck !== null) {
-            const card_array = JSON.parse(deck) as SFCard[]
-            setCardsList(card_array.map(sfcard => `1 ${sfcard.name} (${sfcard.set_name.toUpperCase()}) ${sfcard.number}`).join("\n"))
-            jr = {...jr, deck:card_array}
+        if (deckAndSide !== null) {
+            const deckAndSideObj = JSON.parse(deckAndSide)
+            setCardsList(cardsListToText(deckAndSideObj))
+            jr = {...jr, deck: deckAndSideObj['deck'], sideboard: deckAndSideObj["sideboard"] }
         }
         setJoinRequest(jr)
         if (deckList !== null) {
@@ -173,13 +175,14 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
                     const error = data || response.status;
                     return Promise.reject(error);
                 }
-                const data: SFCard[] = await response.json()
-                setJoinRequest({ ...joinRequest, deck: data })
-                const cardCount = data.length
-                const firstCard = data ? data[0].name : "none"
-                const cmdrMsg = cardCount < 100 ? '' : `"${firstCard}" will be your commander.`
-                setDeckMsg(`${cardCount} cards found. ` + cmdrMsg)
-                setCardsList(data.map(sfcard => `1 ${sfcard.name} (${sfcard.set_name.toUpperCase()}) ${sfcard.number}`).join("\n"))
+                const responseObj = await response.json()
+                const deck = responseObj["deck"] as SFCard[];
+                const sideboard = responseObj["sideboard"] as SFCard[];
+                setJoinRequest({ ...joinRequest, deck: deck, sideboard: sideboard })
+                const firstCard = deck ? deck[0].name : "none"
+                const cmdrMsg = deck.length < 100 ? '' : `"${firstCard}" will be your commander.`
+                setDeckMsg(`${deck.length} cards in deck and ${sideboard.length} cards in sideboard. ` + cmdrMsg)
+                setCardsList(cardsListToText(responseObj))
             })
             .catch(error => {
                 console.error('deck error', error);
@@ -265,7 +268,7 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
         localStorage.setItem('userName', joinRequest.name)
         localStorage.setItem('userColor', joinRequest.color)
         localStorage.setItem('deckList', deckList)
-        localStorage.setItem('deck', JSON.stringify(joinRequest.deck))
+        localStorage.setItem('deckAndSide', JSON.stringify({"deck": joinRequest.deck, "sideboard": joinRequest.sideboard}))
 
         console.log("joining table...", joinRequest)
         sendJoin()
@@ -332,7 +335,7 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
             let i = 0;
             for (const color of table.colors) {
                 /* eslint-disable jsx-a11y/accessible-emoji */
-                players.push(<span key={i++} style={{ backgroundColor: color }}>🧙</span>);
+                players.push(<span key={i++} style={{ backgroundColor: color, margin:'0.25em' }}>🧙</span>);
             }
             playersList.push(players);
         }
@@ -392,8 +395,29 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
     }
 
     return (
+        /* eslint-disable jsx-a11y/accessible-emoji */
         <div className="myform" style={{ width: "100%", overflowY: "auto", overflowX: "auto" }}>
-            <h3 style={{ textAlign: "center" }}>Welcome to Room {sessionId}</h3>
+            <h3 style={{ display:"flex", alignItems:"center", justifyContent:"center", textAlign: "center" }}><img style={{ 
+                            borderColor: joinRequest.color, 
+                            background: joinRequest.color,
+                            borderWidth: '0.01em',
+                            borderStyle: 'solid',
+                            objectFit: 'scale-down',
+                            height: '2em',
+                            borderRadius: '5%',
+                            marginRight:'1em'
+                             }} src={cardBack} alt="Magic Card Back" />
+                             Welcome to Room {sessionId} 
+                             <img style={{ 
+                                borderColor: joinRequest.color, 
+                                background: joinRequest.color,
+                                borderWidth: '0.01em',
+                                borderStyle: 'solid',
+                                objectFit: 'scale-down',
+                                height: '2em',
+                                borderRadius: '5%',
+                                marginLeft:'1em'
+                                 }} src={cardBack} alt="Magic Card Back" /></h3>
             <div style={{
                 width: "100%", height: "100%",
                 display: "inline-grid", gridTemplateColumns: "auto auto",
@@ -401,20 +425,25 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
             }}>
 
                 <div className="FormBox" style={{ gridArea: "1/2/4/3" }}>
-                    <span style={{ gridColumn: "1/5", textAlign: "center" }}><b>Deck Loader</b></span>
+                    <span style={{ gridColumn: "1/5", textAlign: "center" }}><b>📚 Deck Loader</b></span>
                     <button style={{ gridColumn: "2/4", alignSelf: "center" }} className="DivButton" onClick={handeLoadCards}>Upload Deck List</button>
                     <input style={{ gridColumn: "1/3", alignSelf: "center" }} className="DivButton" accept=".txt,.dek,.dec,*" type="file" onChange={handleFileChange} />
                     <span style={{ gridColumn: "3/5", textAlign: 'center', color: 'blue' }}> {deckMsg} </span>
                     <textarea style={{ gridColumn: "1/3", backgroundColor: "white", border: "0.125em solid #ccc" }}
                         value={deckList} required={true} onChange={handleDeckChange} cols={25} rows={25} />
-                    <textarea style={{ gridColumn: "3/5", backgroundColor: "beige", borderColor: joinRequest.color }}
+                    <textarea style={{ gridColumn: "3/5", backgroundColor: "beige", border: "0.125em solid darkblue" }}
                         value={cardsList} readOnly={true} cols={25} rows={25} />
                     <ul style={{ gridColumn: "1/5" }}>
-                        <li>This understands formats used by Arena, TappedOut, TCGPlayer, XMage, and others. <br />
-                         e.g. Card Name (set) number, Card Name (num) [set], or Card Name [set:number] </li>
-                        <li>Deck and Sideboard will be auto-split based on number of cards. <br />
-                         Deck size cutoffs are 30, 40, 60, and 100.</li>
-                        <li><i>If playing commander,</i> please put your commander first or append *CMDR* to its line.</li>
+                        <li>This understands formats used by Arena, TappedOut, TCGPlayer, XMage, and others. </li > 
+                        <ul>
+                            <li style={{fontFamily:"monospace"}}>quantity Card Name</li>
+                            <li style={{fontFamily:"monospace"}}>quantity Card Name (set) number</li>
+                            <li style={{fontFamily:"monospace"}}>quantity Card Name (number) [set]</li>
+                            <li style={{fontFamily:"monospace"}}>quantity Card Name [set:number]</li>
+                            <li>Set and collector number will be randomly selected if not provided.</li>
+                        </ul>
+                        <li>Any cards below a blank line will be put in your Sideboard. 📒</li>
+                        <li>👑 If playing commander, please put your commander first or append <span style={{fontFamily:"monospace"}}>*CMDR*</span> to its line.</li>
                     </ul>
                 </div>
 
@@ -457,7 +486,7 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
                 </div>
 
                 <div className="FormBox" style={{ gridArea: "3/1/4/2" }}>
-                    <span style={{ textAlign: "center", gridColumn: "1/3" }}><b>Table Creator</b></span>
+                    <span style={{ textAlign: "center", gridColumn: "1/3" }}><b>Make a new table?</b></span>
                     <span style={{ gridRow: 2 }} >Table Name: </span>
                     <input style={{ gridRow: 2 }} type="text" value={tableRequest.table} onChange={handleTableChange} />
                     <button style={{ gridColumn: "1/3" }} className="DivButton" onClick={handleCreateTable}>Create Table</button>
@@ -471,6 +500,33 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
 
 
 export default RoomForm
+
+function cardsListToText(d: any) {
+    const loadedCardsList = []
+    function processList(sfcards: SFCard[]) {
+        let last = "";
+        let count = 1;
+        for (const sfcard of sfcards) {
+            const cardLine = `${sfcard.name} (${sfcard.set_name.toUpperCase()}) ${sfcard.number}`;
+            if (cardLine === last) {
+                count++;
+            } else {
+                if (last) {
+                    loadedCardsList.push(`${count} ${last}`);
+                }
+                last = cardLine;
+                count = 1;
+            }
+        }
+        if (last) {
+            loadedCardsList.push(`${count} ${last}`);
+        }
+    }
+    processList(d["deck"]);
+    loadedCardsList.push("\n")
+    processList(d["sideboard"]);
+    return loadedCardsList.join("\n");
+}
 
 export function analyzeColor(color: string) {
     const v = colors[color]

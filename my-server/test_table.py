@@ -1,3 +1,4 @@
+import random
 import time
 
 from magic_cards import MagicCards
@@ -24,16 +25,15 @@ def get_zone(game: Game, player: str, zone: str) -> Zone:
 def test_table(name: str) -> MagicTable:
     table = MagicTable(name)
     # add players
-    table.add_player(JoinRequest(name='Arena 1', table='test',
-                                 deck=MagicCards.resolve_deck(arena_deck), color='Green'))
-    table.add_player(JoinRequest(name='Text 2', table='test',
-                                 deck=MagicCards.resolve_deck(txt_deck), color='Red'))
-    table.add_player(JoinRequest(name='Side 3', table='test',
-                                 deck=MagicCards.resolve_deck(deck_w_side), color='Blue'))
-    table.add_player(JoinRequest(name='T Out 4', table='test',
-                                 deck=MagicCards.resolve_deck(tapped_out), color='White'))
-    table.add_player(JoinRequest(name='Std 5', table='test',
-                                 deck=MagicCards.resolve_deck(pioneer_60), color='Black'))
+    for player, deck, color in [
+        ('Arena 1', arena_deck, 'Green'),
+        ('Text 2', txt_deck, 'Red'),
+        ('Side 3', deck_w_side, 'Blue'),
+        ('T Out 4', tapped_out, 'White'),
+        ('Std 5', pioneer_60, 'Black'),
+    ]:
+        d, s = MagicCards.resolve_decklist(deck)
+        table.add_player(JoinRequest(name=player, table='test', deck=d, sideboard=s, color=color))
 
     # make it busy
     game = table.table.game
@@ -76,7 +76,7 @@ def test_table(name: str) -> MagicTable:
             CounterChange(name="+1/+1", value=1, card_id=zs[BATTLEFIELD].cards[3])
         ]
         ce.create_tokens = [
-            CreateToken(owner=player.name, sf_id=[t for t in MagicCards.get_all_tokens() if t.name == 'Cat'][0].sf_id)
+            CreateToken(owner=player.name, sf_id=random.choice(MagicCards.get_all_tokens()).sf_id)
         ]
         table.resolve_action(ce)
 

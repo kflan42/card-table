@@ -245,18 +245,19 @@
 .myform .FormBox {
   border: 0.2em solid black;
   margin: 1em;
+  padding: 0.5em;
   display: inline-grid;
   grid-template-columns:auto auto;
+  border-radius:1em;
 }
 
 .myform input[type=text] {
   margin: 0.25em 1em 0.25em 1em;
   display: inline-block;
   border: 0.25em solid #ccc;
-  border-radius: 0.25em;
 }
 
-.myform span {
+.myform div > span {
   margin: 0.25em 1em 0.25em 1em;
   display: inline-block;
   align-self: center;

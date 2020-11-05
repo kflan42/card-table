@@ -72,20 +72,21 @@ class MagicTable:
             return False  # already present
 
         # load cards into table
-        sf_cards = join_request.deck
-        self.table.sf_cards.extend(sf_cards)
+        self.table.sf_cards.extend(join_request.deck + join_request.sideboard)
 
         # skip 0, use block of 1000 per player
         cid = 1000 * (1 + len(game.players))
-        table_cards = [TableCard(cid + i, sf_card.sf_id, owner=join_request.name) for i, sf_card in enumerate(sf_cards)]
+        table_cards = [TableCard(cid + i, sf_card.sf_id, owner=join_request.name)
+                       for i, sf_card in enumerate(join_request.deck + join_request.sideboard)]
         self.table.table_cards.extend(table_cards)
+        deck_size = len(join_request.deck)
 
         seed_str = f"{self.name}{len(self.table.log_lines)}"  # seed for consistency in testing/debugging
-        commander_card_id = MagicTable.add_player_to_game(game, join_request.name, join_request.color, table_cards,
-                                                          seed_str)
+        commander_card_id = MagicTable.add_player_to_game(game, join_request.name, join_request.color,
+                                                          table_cards[:deck_size], table_cards[deck_size:], seed_str)
         if commander_card_id:
             commander_sfid = next((tc.sf_id for tc in table_cards if tc.card_id == commander_card_id))
-            commander_name = next((sfc.name for sfc in sf_cards if sfc.sf_id == commander_sfid))
+            commander_name = next((sfc.name for sfc in join_request.deck if sfc.sf_id == commander_sfid))
         else:
             commander_name = None
         self.table.log_lines.append(LogLine(who=join_request.name, when=round(time.time()*1000),
@@ -97,49 +98,35 @@ class MagicTable:
         return True
 
     @staticmethod
-    def add_player_to_game(game, name, color, table_cards, seed_str):
+    def add_player_to_game(game, name, color, deck_cards: List[TableCard], sideboard: List[TableCard], seed_str):
         """Adds game cards, player, and zones for the inputs."""
         zid = len(game.zones)
         zones = [Zone(name=z, z_id=zid + i, owner=name, cards=[]) for i, z in enumerate(ZONES)]
         game.zones.extend(zones)
-        # setup player fields
-        commander_card_id = None
-        if len(table_cards) >= 100:
-            commander_card_id = table_cards[0].card_id  # we'll pull this card into cmd zone later
-            library_size = 100
-        elif len(table_cards) >= 60:
-            # standard
-            library_size = 60
-        elif len(table_cards) >= 40:
-            # limited
-            library_size = 40
-        elif len(table_cards) >= 30:
-            # sealed league round 1
-            library_size = 30
-        else:
-            library_size = len(table_cards)  # something else
-        library_table_cards, extra_table_cards = table_cards[:library_size], table_cards[library_size:]
+
         # start with cards in library
-        library_cards = [Card(card_id=c.card_id) for c in library_table_cards]
-        if commander_card_id:
-            commander_card = library_cards.pop(0)
+        library_cards = [Card(card_id=c.card_id) for c in deck_cards]
+        commander_card = None
+        if len(library_cards) == 100:
             # commander format - put commander into command zone
+            commander_card = library_cards.pop(0)
             next((z for z in zones if z.name == COMMAND_ZONE)).cards.append(commander_card.card_id)
             game.cards.append(commander_card)
         library = next((z for z in zones if z.name == LIBRARY))
         library.cards.extend([c.card_id for c in library_cards])
         seed(seed_str, version=2)
         shuffle(library.cards)  # shuffle the library
-        # extras into exile
-        ex_cards = [Card(card_id=c.card_id) for c in extra_table_cards]
-        next((z for z in zones if z.name == SIDEBOARD)).cards.extend([c.card_id for c in ex_cards])
-        game.cards.extend(library_cards + ex_cards)
+
+        # sideboard
+        sideboard_cards = [Card(card_id=c.card_id) for c in sideboard]
+        next((z for z in zones if z.name == SIDEBOARD)).cards.extend([c.card_id for c in sideboard])
+        game.cards.extend(library_cards + sideboard_cards)
         # setup player
         z_ids = [z.z_id for z in zones]
         player = Player(name=name, color=color, counters=[], zones=z_ids)
-        player.counters.append(Counter(name="Life", value=40 if commander_card_id is not None else 20))
+        player.counters.append(Counter(name="Life", value=40 if commander_card else 20))
         game.players.append(player)
-        return commander_card_id
+        return commander_card.card_id if commander_card else None
 
     def save(self, sf_cards=True, table_cards=True):
         file_path = os.path.join(MagicTable.get_tables_path(), self.session_id, self.name)
@@ -195,7 +182,11 @@ class MagicTable:
         g = Game(cards=[], players=[], zones=[], battlefield_cards=[])
         for p in self.table.game.players:
             table_cards = [tc for tc in self.table.table_cards if tc.owner == p.name]
-            MagicTable.add_player_to_game(g, p.name, p.color, table_cards, f"{self.name}{len(self.table.log_lines)}")
+            sideboard_ids = set([c for c in self.indexed_game.zones[f"{p.name}-{SIDEBOARD}"].cards])
+            new_deck = [tc for tc in table_cards if tc.card_id not in sideboard_ids]
+            sideboard_cards = [tc for tc in table_cards if tc.card_id in sideboard_ids]
+            MagicTable.add_player_to_game(g, p.name, p.color, new_deck, sideboard_cards,
+                                          f"{self.name}{len(self.table.log_lines)}")
         return IndexedGame(g)
 
     def apply(self, action: PlayerAction) -> IndexedGame:
@@ -203,6 +194,11 @@ class MagicTable:
         logger.info(f"applying {action}")
 
         game_updates_i: IndexedGame = IndexedGame()
+
+        # whitelist what observers can do, so far just message as an anti-cheat mechanism
+        if action.who not in self.indexed_game.players:
+            if action.kind != MESSAGE:
+                return game_updates_i
 
         if action.card_moves:
             game_updates_i.merge(self.handle_move_cards(action))
@@ -233,7 +229,8 @@ class MagicTable:
         majority = len(self.indexed_game.players) // 2 + 1
         need = majority - len(self.reset_votes)
         if need:
-            return f"voted to reset the game. {need} more votes will clear the game!", None
+            return f"voted to reset the game. {need} more votes will clear the game," \
+                   f" resetting all zones! Tokens will vanish and cards not in sideboard will go to library.", None
         else:
             self.reset_votes.clear()
             return f"voted to reset the game. " + CLEARING___, self.reset_game()

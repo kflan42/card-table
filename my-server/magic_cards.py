@@ -2,6 +2,7 @@ import os
 import random
 import re
 import time
+from dataclasses import dataclass
 from threading import Lock
 from typing import List, Tuple, Optional, Dict, Set
 
@@ -48,6 +49,13 @@ def load_cards(what="cards", file_path=None) -> List[SFCard]:
 def _sanitize(word: str) -> str:
     """Lim-Dûl's Vault --> Lim-Dul's Vault --> lim-dul's vault"""
     return unicodedata.normalize('NFD', word).encode('ascii', 'ignore').decode().lower()
+
+
+@dataclass
+class DeckListCard:
+    name: str
+    set_name: Optional[str] = None
+    number: Optional[str] = None
 
 
 class MagicCards:
@@ -128,52 +136,60 @@ class MagicCards:
             return random.choice(card_list)
 
     @classmethod
-    def resolve_cards(cls, deck: List[Tuple[str, Optional[str], Optional[str]]]) -> List[SFCard]:
+    def resolve_cards(cls, deck: List[DeckListCard]) -> Tuple[List[SFCard], List[Exception]]:
         sf_cards = []
         errors = []
         for c in deck[:1000]:  # limit deck to 1000 cards
             try:
-                sf_cards.append(cls.find_card(*c))
+                sf_cards.append(cls.find_card(c.name, c.set_name, c.number))
             except Exception as e:
                 errors.append(e)
-        if errors:
-            raise GameException("Deck Error(s): " + " ".join(str(e) for e in errors))
-        return sf_cards
+        return sf_cards, errors
 
     @classmethod
-    def resolve_deck(cls, deck_text: str):
-        return cls.resolve_cards(parse_deck(deck_text))
+    def resolve_decklist(cls, deck_text: str):
+        deck_cards, sideboard_cards = parse_deck(deck_text)
+        deck, errors = cls.resolve_cards(deck_cards)
+        sideboard, side_errors = cls.resolve_cards(sideboard_cards)
+        if errors + side_errors:
+            raise GameException("Deck Error(s):\n\t" + "\n\t".join(str(e) for e in errors + side_errors))
+        return deck, sideboard
 
 
-def parse_deck(deck_text: str) -> List[Tuple[str, Optional[str], Optional[str]]]:
+def parse_deck(deck_text: str) -> Tuple[List[DeckListCard], List[DeckListCard]]:
     """Returns name,set,number tuples with the commander first if there is one."""
-    cards = []
+    deck, sideboard = [], []
     lines = deck_text.strip().splitlines()
     lines = lines[:250]  # limit to 250 different cards in the deck
     # put CMDR first if present
     lines = [_ for _ in lines if "*CMDR*" in _] + [_ for _ in lines if "*CMDR*" not in _]
     errors = []
+    current_list = deck
     for line in lines:
+        if len(line.strip()) == 0 or line.lower().startswith("sideboard"):
+            # blank line separates deck from sideboard
+            current_list = sideboard
+            continue  # no card to parse in this line
         try:
             count, card = parse_line(line)
             for _ in range(count):
-                cards.append(card)
+                current_list.append(card)
         except Exception as e:
             errors.append((line, e))
     if errors:
         raise GameException(f"Error(s) parsing cards: "+" ".join(f"{line} > {e}" for (line, e) in errors))
-    return cards
+    return deck, sideboard
 
 
-def parse_line(line: str) -> Tuple[int, Optional[Tuple[str, Optional[str], Optional[str]]]]:
+def parse_line(line: str) -> Tuple[int, Optional[DeckListCard]]:
     """
     NOTE name doesn't have '*', '[', ' - ', or '(' except un-sets or Japanese full art lands
     """
     card_parts = line.strip().split(" ")
     if len(card_parts) < 2:
-        return 0, None  # blanks separate sideboard sometimes
+        raise GameException(f'Unable to parse line in deck list: "{line}".')
     if card_parts[0] == "SB:":
-        card_parts.pop(0)  # XMage sideboard thing
+        card_parts.pop(0)  # XMage sideboard thing, just ignore for now
     if card_parts[0].startswith('///'):
         return 0, None  # .dec file and non-scryfall id on this line
 
@@ -225,5 +241,5 @@ def parse_line(line: str) -> Tuple[int, Optional[Tuple[str, Optional[str], Optio
         set_name = set_name_or_number  # TappedOut without num
 
     name = " ".join(name_words)
-    return count, (name, set_name, set_number)
+    return count, DeckListCard(name, set_name, set_number)
 
