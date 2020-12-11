@@ -197,21 +197,12 @@ const GameView: React.FC<GameViewProps> = ({sessionId, gameId}) => {
     const hiddenPlayers = useSelector((state: ClientState) => state.hiddenPlaymats)
 
     const nextPlayerTurn = () => {
-        if (whoseTurn === null || userName === whoseTurn) {
-            let playerIsNext = false;
-            let next = '';
-            for (const playerName in players) {
-                if (hiddenPlayers.includes(playerName)) {
-                    continue // skip those out of the game
-                }
-                if(playerIsNext) {
-                    next = playerName
-                }
-                playerIsNext = playerName === (whoseTurn ? whoseTurn : userName) // if null assume it's our turn
-            }
-            if (playerIsNext) {  // wrap around
-                next = Object.keys(players)[0]  // ES2015 garauntees string keys iterated in insertion order
-            }
+        // ES2015 garauntees string keys iterated in insertion order
+        const visiblePlayers = Object.keys(players).filter(pn => !hiddenPlayers.includes(pn))
+        if (whoseTurn === null || whoseTurn === userName || hiddenPlayers.includes(whoseTurn)) {
+            let idxTurn = visiblePlayers.indexOf(whoseTurn ? whoseTurn as string : userName as string)
+            let nextIdx = (idxTurn + 1) % visiblePlayers.length // wrap around
+            let next = visiblePlayers[nextIdx]
             infoDispatch('next_turn', nextTurn(next))
         }
     }
