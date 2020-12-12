@@ -48,24 +48,15 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
     for (const c of choices) {
         const parts = c.split(' ')
         const elementParts = []
+        let buttonWord = "";
         if (parts.find(p => p.match(/^[_*$]/))) {
-            // use first word as button, rest as label(s) for input field(s)
-            elementParts.push(
-                <button key={c}
-                    style={{
-                        marginLeft: "0.5em", marginRight: "0.5em", marginTop: "1em", marginBottom: "1em"
-                    }}
-                    onClick={() => onSubmit({ choice: c, n: valueN, s: valueS })}>
-                    {parts[0]}
-                </button>)
-            parts.splice(0, 1)
             for (let i = 0; i < parts.length; i++) {
                 let p = parts[i];
                 switch (p.charAt(0)) {
                     case '_':
                         elementParts.push(
                             <input className="DivButton" key={p}
-                                style={{ marginLeft: "0.5em", marginRight: "0.5em", marginTop: "1em", marginBottom: "1em" }}
+                                style={{ marginLeft: "0.5em", marginRight: "0.5em", marginTop: "1em", marginBottom: "1em", width:"5em" }}
                                 type="number" id="x" name="x" min="0" max="1000"
                                 value={valueN} onChange={e => setValueN(e.currentTarget.valueAsNumber)} />)
                         break;
@@ -100,9 +91,22 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
                         )
                         break;
                     default:
-                        elementParts.push(
-                            <span key={p}>&nbsp;{p}</span>
-                        )
+                        if (!buttonWord) {
+                        // use first word as button, rest as label(s) for input field(s)
+                            elementParts.push(
+                                <button key={c}
+                                    style={{
+                                        marginLeft: "0.5em", marginRight: "0.5em", marginTop: "1em", marginBottom: "1em"
+                                    }}
+                                    onClick={() => onSubmit({ choice: c, n: valueN, s: valueS })}>
+                                    {p}
+                                </button>)
+                            buttonWord = p
+                        } else {
+                            elementParts.push(
+                                <span key={p}>&nbsp;{p}</span>
+                            )
+                        }
                         break;
                 }
             }

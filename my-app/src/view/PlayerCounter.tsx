@@ -24,7 +24,7 @@ const PlayerCounter: React.FC<PlayerCounterP> = ({ player, kind, value }) => {
         confirmation({
             choices: ["▲", "Set to _", "▼"],
             catchOnCancel: true,
-            title: `Adjust ${label} ${value}`,
+            title: `Adjust ${label} from ${value} to `,
             description: "",
             location: { x: e.clientX, y: e.clientY },
             initialNumber: value

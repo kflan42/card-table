@@ -23,6 +23,7 @@ import Table from './Table';
 import CardDB, { parseDeckCard } from "../CardDB";
 import MySocket from "../MySocket";
 import { OptionsDialog } from './OptionsDialog';
+import { NoName } from './BFCard';
 
 interface GameViewProps {
     gameId: string|null
@@ -329,7 +330,7 @@ const GameView: React.FC<GameViewProps> = ({sessionId, gameId}) => {
 
     const counterPopup = (cardId: number) => {
         confirmation({
-            choices: ["+1/+1", "+1/+0", "-1/-1", "Create * _"],
+            choices: ["Create Name * Count _", "Create No-Name Count _", "+1/+1", "-1/-1"],
             catchOnCancel: true,
             title: "Create Counter",
             description: ""
@@ -342,8 +343,14 @@ const GameView: React.FC<GameViewProps> = ({sessionId, gameId}) => {
                     value: 0
                 }
                 switch (s.choice) {
-                    case "Create * _":
-                        newCounter.name = s.s
+                    case "Create Name * Count _":
+                        if (s.s.trim()) {
+                            newCounter.name = s.s
+                            newCounter.value = s.n
+                        }
+                        break;
+                    case "Create No-Name Count _":
+                        newCounter.name = NoName
                         newCounter.value = s.n
                         break;
                     default:
@@ -371,7 +378,8 @@ const GameView: React.FC<GameViewProps> = ({sessionId, gameId}) => {
         })
             .then((s: ConfirmationResult) => {
                 dispatch(togglePlaymat(s.choice))
-            });
+            })
+            .catch(()=>null);
     }
 
     function togglePopup() {

@@ -56,10 +56,11 @@ const Card: React.FC<CardProps> = ({ cardId, imageSize, cardHeight, showCollecto
             const text = showCollectorInfo
                 ? `${face?.name || sfCard.name} (${sfCard.set_name.toUpperCase()}) ${sfCard.number}`
                 : `${face?.name || sfCard.name}`
+            const tokenSuffix = tableCard.token ? " (Token)" : "";
             // small is 10.8k (memory cache after 1st). fuzzy text, hard to read. 146 x 204
             // normal is 75.7k (memory cache after 1st). readable. 488 x 680
             const img = imageSize === "small" ? face?.small : face?.normal
-            return img ? [text, img] : ["Card Image Not Found", logoSkewed]
+            return img ? [text + tokenSuffix, img] : ["Card Image Not Found", logoSkewed]
         } else
             return ["Card Not Found", logoSkewed]
     }

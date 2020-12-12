@@ -17,6 +17,7 @@ interface BFCardProps {
     fieldOwner: string,
 }
 
+export const NoName = "No-Name";
 const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
 
     const bfState = useSelector((state: ClientState) => state.game.battlefieldCards[bfId])
@@ -61,7 +62,7 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
         confirmation({
             choices: ["▲", "Set to _", "▼"],
             catchOnCancel: true,
-            title: `Adjust ${kind} x${value}`,
+            title: `Adjust ${kind} from ${value} to `,
             description: "",
             location: { x: e.clientX, y: e.clientY },
             initialNumber: value
@@ -102,20 +103,19 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
     const counters = [];
     for (const counter of bfState.counters) {
         const count = counter.value
-        let counterLabel = counter.name;
-        const m = counterLabel.match(/([+-])(\d+)\/([+-])(\d+)/)
-        let label = <> {counterLabel} </>
+        const m = counter.name.match(/([+-])(\d+)\/([+-])(\d+)/)
+        let label = <> {counter.name === NoName ? "" : counter.name} </>
         if (m) {
+            // e.g. show two +1/+1 counters as +2/+2
             const left = Number.parseInt(m[2]) * count
             const right = Number.parseInt(m[4]) * count
             label = <> <sup>{m[1]}{left}</sup>/<sub>{m[3]}{right}</sub> </>
         }
-        const labelmultiplier = m ? null
-            : count > 1 ? "x" + count
-                : null
+        const showCount = !m && (count > 1 || counter.name === NoName)
+        const labelmultiplier = showCount ? count : null
         counters.push(
             <div
-                key={counterLabel}
+                key={counter.name}
                 style={{
                     fontSize: "small",
                     fontFamily: "Arial",
@@ -124,10 +124,10 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
                     borderRadius: "25%",
                     width: "fit-content",
                     height: "fit-content",
-                    paddingLeft: "0.05em", paddingRight: "0.05em",
+                    padding: "0.1em",
                     margin: "0.05em",
                 }}
-                onClick={(e) => counterClick(e, counterLabel, count)}
+                onClick={(e) => counterClick(e, counter.name, count)}
             >
                 {label} {labelmultiplier}
             </div>
