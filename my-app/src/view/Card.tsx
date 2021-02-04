@@ -31,7 +31,7 @@ const Card: React.FC<CardProps> = ({ cardId, imageSize, cardHeight, showCollecto
     const dispatch = useDispatch()
     const { info: infoDispatch } = usePlayerActions()
 
-    if (!card) {
+    if (!card || !tableCard) {
         return <div className={`Card cardtooltip c-${cardId}`}>{`Card ${cardId}`}</div>
     }
     const sfCard = CardDB.getCard(tableCard?.sf_id);

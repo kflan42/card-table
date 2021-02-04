@@ -9,7 +9,7 @@ pip3 install -r requirements.txt
 
 # Cloud cards update
 cd scryfall; python3 updateCards.py; extractCards.sh
-gsutil cp -r cards gs://${GOOGLE_CLOUD_PROJECT}.appspot.com
+gsutil cp -r ../my-server/cards gs://${GOOGLE_CLOUD_PROJECT}.appspot.com
 
 
 # Cloud frontend update

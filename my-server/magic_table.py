@@ -167,12 +167,14 @@ class MagicTable:
         if not is_test(self.name):  # don't save test tables
             # only save if it was an action worth adding to the log (e.g. not hand re-ordering or bf re-arranging)
             # only save at most every 10s
+            # always save if need to add a table card
             now = time.time()
-            if game_updates_i.log_updates and now > self.last_save + 10:
+            new_table_cards = len(game_updates_i.card_updates) > 0
+            if new_table_cards or (game_updates_i.log_updates and now > self.last_save + 10):
                 self.last_save = now
                 # only need to save sf cards on join
                 # only need to save table cards if new ones created.
-                self.save(sf_cards=False, table_cards=len(game_updates_i.card_updates) > 0)
+                self.save(sf_cards=False, table_cards=new_table_cards)
         game_updates = game_updates_i.to_game()
         return game_updates, game_updates_i.log_updates, game_updates_i.card_updates
 
