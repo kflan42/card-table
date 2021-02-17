@@ -5,26 +5,44 @@ import unittest
 
 from magic_models import JoinRequest
 from magic_table import MagicTable
-from magic_cards import MagicCards, parse_deck
-from test_table import arena_deck, txt_deck, test_table, xmage_deck, tcgplayer_deck
+from magic_cards import MagicCards, parse_deck, parse_line
+from test_table import arena_deck, txt_deck, test_table, xmage_deck, tcgplayer_deck, archi_deck, archi_txt, deck_w_side, \
+    pioneer_60, tapped_out
 
 logging.basicConfig(format='%(asctime)s %(message)s', stream=sys.stdout, level=logging.DEBUG)
 
 
 class MyTestCase(unittest.TestCase):
 
+    def test_archi_card_parsing(self):
+        c, card, sb = parse_line("1x Nissa, Vastwood Seer // Nissa, Sage Animist (ori) [Pricey{noDeck}{noPrice}]")
+        self.assertEqual(c, 1)
+        self.assertEqual(card.name, "Nissa, Vastwood Seer // Nissa, Sage Animist")
+        self.assertEqual(card.set_name, "ori")
+        self.assertEqual(sb, True)
+
     def test_deck_parsing(self):
         deck0, side0 = parse_deck(arena_deck)
         deck1, side1 = parse_deck(txt_deck)
         deck2, side2 = parse_deck(xmage_deck)
         deck3, side3 = parse_deck(tcgplayer_deck)
-        print(deck0, side0)
-        print(deck1, side1)
-        print(deck2, side2)
-        print(deck3, side3)
-        self.assertEqual(len(deck0), len(deck1))
-        self.assertEqual(len(deck0), len(deck2))
-        self.assertEqual(len(deck0), len(deck3))
+        deck4, side4 = parse_deck(deck_w_side)
+        deck5, side5 = parse_deck(pioneer_60)
+        deck6, side6 = parse_deck(tapped_out)
+        arch_deck1, arch_side1 = parse_deck(archi_deck)
+        arch_deck2, arch_side2 = parse_deck(archi_txt)
+        self.assertEqual(100, len(deck0))
+        self.assertEqual(100, len(deck1))
+        self.assertEqual(100, len(deck2 + side2))  # xmage cmdr lands in sideboard
+        self.assertEqual(100, len(deck3))
+        self.assertEqual(100, len(deck4))
+        self.assertEqual(60, len(deck5))
+        self.assertEqual(14, len(side5))
+        self.assertEqual(100, len(deck6))
+        self.assertEqual(100, len(arch_deck1))
+        self.assertEqual(100, len(arch_deck2))
+        self.assertEqual(arch_deck1[0].name, arch_deck2[0].name)
+
 
     def test_load_tokens(self):
         print(MagicCards.get_all_tokens()[-1])

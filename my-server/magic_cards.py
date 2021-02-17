@@ -162,18 +162,26 @@ def parse_deck(deck_text: str) -> Tuple[List[DeckListCard], List[DeckListCard]]:
     lines = deck_text.strip().splitlines()
     lines = lines[:250]  # limit to 250 different cards in the deck
     # put CMDR first if present
-    lines = [_ for _ in lines if "*CMDR*" in _] + [_ for _ in lines if "*CMDR*" not in _]
+    def cmdr_line(line): return "*CMDR*" in line or "[Commander" in line
+    lines = [_ for _ in lines if cmdr_line(_)] + [_ for _ in lines if not cmdr_line(_)]
     errors = []
-    current_list = deck
+    in_sideboard = False
     for line in lines:
-        if len(line.strip()) == 0 or line.lower().startswith("sideboard"):
-            # blank line separates deck from sideboard
-            current_list = sideboard
+        if len(line.strip()) == 0 \
+                or line.lower().startswith("sideboard")\
+                or line.lower().startswith("maybeboard"):
+            # blank line separates deck from sideboard or maybeboard
+            in_sideboard = True
             continue  # no card to parse in this line
+        if in_sideboard and " " not in line:
+            continue  # skip sideboard category names
         try:
-            count, card = parse_line(line)
+            count, card, sideboard_card = parse_line(line)
             for _ in range(count):
-                current_list.append(card)
+                if sideboard_card or in_sideboard:
+                    sideboard.append(card)
+                else:
+                    deck.append(card)
         except Exception as e:
             errors.append((line, e))
     if errors:
@@ -181,65 +189,68 @@ def parse_deck(deck_text: str) -> Tuple[List[DeckListCard], List[DeckListCard]]:
     return deck, sideboard
 
 
-def parse_line(line: str) -> Tuple[int, Optional[DeckListCard]]:
-    """
-    NOTE name doesn't have '*', '[', ' - ', or '(' except un-sets or Japanese full art lands
-    """
-    card_parts = line.strip().split(" ")
-    if len(card_parts) < 2:
-        raise GameException(f'Unable to parse line in deck list: "{line}".')
-    if card_parts[0] == "SB:":
-        card_parts.pop(0)  # XMage sideboard thing, just ignore for now
-    if card_parts[0].startswith('///'):
-        return 0, None  # .dec file and non-scryfall id on this line
+basic_pattern = re.compile(r"^(\d+)[xX]? ((?: ?[\w',\-]+| //)+)")
+xmage_p = re.compile(r"(?P<SB>SB: )?(\d+) \[(\w+):(\w+)] ((?: ?[\w',\-]+)+)")
+tcg_p = re.compile(r"\((\d+)\)(?: -[\w ]+)?(?: ?\[(\w+)])?")
+set_bracket_p = re.compile(r"\[(\w+)]")
+set_num_p = re.compile(r"\((\w+)\)(?: ?(\d+))?")
+categories_p = re.compile(r"(?P<F>\*F\* +)?\[[\w\- ]+(?P<noDeck>{noDeck})?(?P<noPrice>{noPrice})?]")
 
-    # minimum listing is count "name"
-    m = re.match(r'[rx]?(\d+)[rx]?', card_parts[0])
+
+def parse_line(line: str) -> Tuple[int, Optional[DeckListCard], bool]:
+    # check XMage first since it's weird
+    m_x = re.match(xmage_p, line)
+    if m_x:
+        count = int(m_x[2])
+        set_name = m_x[3]  # XMage [set:
+        set_number = m_x[4]  # Xmage :num]
+        name = m_x[5]
+        return count, DeckListCard(name, set_name, set_number), bool(m_x['SB'])
+
+    # now try the rest
+    m = re.match(basic_pattern, line)
     if m:
         count = int(m[1])
-    else:
-        return 0, None
+        name = m[2]
+        suffix = line.replace(m[0], "").strip()
+        # try various suffix formats in an order that avoids ambiguity
+        set_name, set_number = parse_suffix_tcg(suffix)
+        if set_name:
+            return count, DeckListCard(name, set_name, set_number), False
+        set_name, set_number, sideboard = parse_suffix_paren_set(suffix)
+        return count, DeckListCard(name, set_name, set_number), sideboard
 
-    # ALL count "name ... name"
-    # TappedOut (set) num | TCGPlayer (num) [set] | XMage [set:num]
-    set_name = None  # scryfall set names are lowercase
+    # Give up
+    raise GameException(f'Unable to parse line in deck list: "{line}".')
+
+
+def parse_suffix_tcg(suffix):
+    """TCGPlayer: (num) - blah blah [set] | [set]"""
+    set_name = None
     set_number = None
-    set_name_or_number = None
-    name_words = []
-    ignoring = False
-    for _, word in enumerate(card_parts[1:]):
-        m_p = re.match(r'\((\w+)\)', word)
-        m_b = re.match(r'\[(\w+)]', word)
-        m_x = re.match(r'\[(\w+):(\w+)]', word)
-        if m_p:
-            if set_name_or_number is None:
-                set_name_or_number = m_p[1]  # TappedOut (set) or TCGPlayer (num)
-        elif m_b:
-            set_name = m_b[1]  # TCGPlayer [set]
-            if set_name_or_number:
-                set_number = set_name_or_number
-        elif m_x:
-            set_name = m_x[1]  # XMage [set:
-            set_number = m_x[2]  # Xmage :num]
-        elif word == "-":
-            ignoring = True  # TCGPlayer can have " - Full Art" before [set] for special prints
-        elif word[0] == "(":
-            ignoring = True
-        elif word[-1] == ")":
-            ignoring = False
-        elif not ignoring:
-            if set_name_or_number:  # TappedOut num
-                set_name = set_name_or_number
-                set_number = word  # TappedOut
-                set_name_or_number = None
-            elif word == "/":
-                name_words.append("//")  # some deck formats use single slash instead of double like scryfall
-            elif word[0] != '*':
-                name_words.append(word)
+    m = re.match(tcg_p, suffix)
+    if m:
+        set_number = int(m[1])
+        set_name = m[2]
+    m = re.match(set_bracket_p, suffix)
+    if m:
+        set_name = m[1]
+    return set_name, set_number
 
-    if set_name_or_number and not set_name:
-        set_name = set_name_or_number  # TappedOut without num
 
-    name = " ".join(name_words)
-    return count, DeckListCard(name, set_name, set_number)
+def parse_suffix_paren_set(suffix):
+    """TappedOut: (set) num | Archidekt: (set) num *F* [label label{noDeck}{noPrice}]"""
+    set_name = None
+    set_number = None
+    sideboard = False
+    m = re.match(set_num_p, suffix)
+    if m:
+        set_name = m[1]
+        if len(m.groups()) > 2:
+            set_number = m[2]
+        categories = suffix.replace(m[0], "").strip()
+        m = re.match(categories_p, categories)
+        if m and m['noDeck']:
+           sideboard = True
+    return set_name, set_number, sideboard
 
