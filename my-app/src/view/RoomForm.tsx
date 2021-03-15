@@ -251,6 +251,10 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
             setErrorMsg("Please pick a sleeve color before joining.");
             return;
         }
+        if (joinRequest.name.length < 1) {
+            setErrorMsg("Player name too short.");
+            return;
+        }
         if (joinRequest.name.length > 32) {
             setErrorMsg("Player name too long.");
             return;
