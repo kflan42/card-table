@@ -144,6 +144,30 @@
   background-color: transparent;
 }
 
+.fadeInOut-enter {
+  opacity: 0.0;
+}
+
+.fadeInOut-enter-active {
+  opacity: 0.5;
+}
+
+.fadeInOut-enter-done {
+  opacity: 1;
+}
+
+.fadeInOut-exit {
+  opacity: 1;
+}
+
+.fadeInOut-exit-active {
+  opacity: 0.5;
+}
+
+.fadeInOut-exit-done {
+  opacity: 0.0;
+}
+
 .Card > img {
   border-width: 0.15em;
   border-style: solid;

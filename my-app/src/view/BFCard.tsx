@@ -142,10 +142,12 @@ const BFCard: React.FC<BFCardProps> = ({ bfId, fieldOwner }) => {
                 position: "absolute",
                 top: bfState.y + "%",
                 left: bfState.x + "%",
-                transform: "rotate("+ ((bfState.tapped ? 90 : 0) + (bfState.flipped ? 180: 0)) + "deg)",
-                transition: "top 0.5s, left 0.5s, transform 0.5s, background-image 0.5s",
+                transform: bfState.tapped || bfState.flipped ? 
+                            "rotate("+ ((bfState.tapped ? 90 : 0) + (bfState.flipped ? 180: 0)) + "deg)" :
+                            undefined,
+                transition: "top 0.25s, left 0.25s, transform 0.25s, opacity 0.25s",
                 transitionTimingFunction: "ease-in",
-                opacity: isDragging ? 0.25 : undefined,
+                opacity: isDragging ? 0.5 : undefined,
             }}
             onMouseOver={() => dispatch(hoveredBFCard(bfId, cardProps.cardId))}
             onMouseOut={() => dispatch(hoveredBFCard(null))}

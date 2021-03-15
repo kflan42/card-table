@@ -8,6 +8,7 @@ import {useDrop, XYCoord} from 'react-dnd';
 import {ItemTypes, DragCard} from "./DnDUtils";
 import {MOVE_CARD, hoveredBattlefield} from '../Actions';
 import {usePlayerActions} from '../PlayerDispatch';
+import { TransitionGroup, CSSTransition } from 'react-transition-group';
 
 /** Takes px and returns %. */
 export function snapToGrid(c: HTMLDivElement, sourceClientOffset: XYCoord, clipToBounds: boolean) {
@@ -85,7 +86,7 @@ const Battlefield: React.FC<BFP> = ({player}) => {
         }
     })
 
-    const listItems = []
+    var listItems: JSX.Element[] = []
     try {
         if (zoneState) {
             for (const bfId of zoneState.cards) {
@@ -98,6 +99,8 @@ const Battlefield: React.FC<BFP> = ({player}) => {
         }
         // sort most recent changes to last so they end up on top
         listItems.sort((a, b) => bfCardsState[a.props.bfId].last_touched - bfCardsState[b.props.bfId].last_touched)
+        // wrap each element in a transition handler
+        listItems = listItems.map(e => <CSSTransition key={player + "_" + e.props.bfId} timeout={250} classNames="fadeInOut">{e}</CSSTransition>)
     } catch (e) {
         console.error(e, zoneState.cards, bfCardsState)
     }
@@ -107,7 +110,9 @@ const Battlefield: React.FC<BFP> = ({player}) => {
             flexGrow: 1,
         }}>
             <div ref={drop} className="Battlefield">
-                {listItems}
+                <TransitionGroup>
+                    {listItems}
+                </TransitionGroup>
             </div>
         </div>
     )
