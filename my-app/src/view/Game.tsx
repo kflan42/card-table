@@ -382,13 +382,13 @@ const GameView: React.FC<GameViewProps> = ({sessionId, gameId}) => {
             .catch(()=>null);
     }
 
-    function togglePopup() {
+    function togglePopup(transform:boolean) {
         if (cardPopupShown === hoveredCard.cardId || (cardPopupShown != null && !isHoveredCard)) {
             setCardPopupShown(null) // view again to close or event anywhere to close
             return true;
         } else if (isHoveredCard) {
             setCardPopupShown(hoveredCard.cardId)
-            setCardPopupTransformed(false)
+            setCardPopupTransformed(transform)
             return true;
         }
         return false;
@@ -403,7 +403,10 @@ const GameView: React.FC<GameViewProps> = ({sessionId, gameId}) => {
 
         switch (event.key) {
             case 'v':
-                if (togglePopup()) event.preventDefault();
+                if (togglePopup(false)) event.preventDefault();
+                break;
+            case 'V':
+                if (togglePopup(true)) event.preventDefault();
                 break;
             case 'T':
                 if (isHoveredCard) {
@@ -495,7 +498,7 @@ const GameView: React.FC<GameViewProps> = ({sessionId, gameId}) => {
 
     const onContextMenu = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
         if (event.button === 2 && rightClickPopup) {
-            if (togglePopup()) event.preventDefault();
+            if (togglePopup(event.ctrlKey)) event.preventDefault();
         }
     }
 

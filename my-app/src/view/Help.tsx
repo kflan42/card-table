@@ -39,6 +39,7 @@ const Help: React.FC = () => {
                         <tr><td></td><td>----</td></tr>
                         <tr><td><b>^</b></td><td>vote to reset the game, counters and tokens will vanish and cards not in sideboard will go to library</td></tr>
                         <tr><td><b>v</b></td><td>view a large popup of the card under the cursor, press again to close</td></tr>
+                        <tr><td><b>V</b></td><td>view a large popup of the other side of the card under the cursor</td></tr>
                         <tr><td><b>H</b></td><td>hide a player (or show a hidden one) via a dialog</td></tr>
                         <tr><td><b>O</b></td><td>open the options dialog to configure stuff</td></tr>
                     </tbody>

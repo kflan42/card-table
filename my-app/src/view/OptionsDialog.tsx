@@ -37,7 +37,7 @@ export const OptionsDialog: React.FC<OptionsDialogProps> = ({
             <div style={{
                 display: "flex", alignItems: "center"
             }} key="rightClickPopup">
-                Right Click to toggle Card Popup
+                <p>Right-Click to toggle Card Popup. 
                 <input className="DivButton"
                     style={{ marginLeft: "0.5em", marginRight: "0.5em", marginTop: "1em", marginBottom: "1em" }}
                     type="checkbox" id="x" name="x"
@@ -45,6 +45,8 @@ export const OptionsDialog: React.FC<OptionsDialogProps> = ({
                         const rightClickPopup = e.currentTarget.checked
                         setPrefs({ ...prefs, rightClickPopup })
                     }} />
+                    <br/>
+                    <i> Ctrl + Right-Click to see other side of card.</i></p>
             </div>
 
             <div style={{

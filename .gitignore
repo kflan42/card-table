@@ -146,3 +146,4 @@ scryfall/samples/
 /my-server/logs/
 /my-server/tables/
 /my-server/*_key.json
+my-app/.vscode/settings.json

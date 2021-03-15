@@ -15,10 +15,11 @@ export interface CardProps {
     borderStyle?: string,
     imageSize?: string,
     cardHeight?: number,
-    showCollectorInfo?: boolean
+    showCollectorInfo?: boolean,
+    showTransformed?: boolean
 }
 
-const Card: React.FC<CardProps> = ({ cardId, imageSize, cardHeight, showCollectorInfo }) => {
+const Card: React.FC<CardProps> = ({ cardId, imageSize, cardHeight, showCollectorInfo, showTransformed }) => {
 
     const card = useSelector((state: ClientState) => state.game.cards[cardId])
     const tableCard = useSelector((state: ClientState) => state.game.tableCards[cardId])
@@ -47,7 +48,8 @@ const Card: React.FC<CardProps> = ({ cardId, imageSize, cardHeight, showCollecto
         if (sfCard) {
             let face = sfCard.face
             if (sfCard.faces.length > 0) {
-                face = card.transformed ? sfCard.faces[1] : sfCard.faces[0]
+                // xor to allow seeing the other side of card upon request
+                face = ((card.transformed || showTransformed) && !(card.transformed && showTransformed))? sfCard.faces[1] : sfCard.faces[0]
                 // split cards have faces but only main face has images
                 if (!face.normal) {
                     face = sfCard.face
