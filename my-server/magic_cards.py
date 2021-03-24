@@ -198,6 +198,14 @@ categories_p = re.compile(r"(?P<F>\*F\* +)?\[[\w\- ]+(?P<noDeck>{noDeck})?(?P<no
 
 
 def parse_line(line: str) -> Tuple[int, Optional[DeckListCard], bool]:
+
+    # .dek file from "Decked" app
+    if line.startswith('//'):  # ///mvid:##### unique to the app
+        return 0, None, False
+    sideboard_prefix = line.startswith('SB:')
+    if sideboard_prefix:
+        line = line[3:].lstrip()
+
     # check XMage first since it's weird
     m_x = re.match(xmage_p, line)
     if m_x:
@@ -217,8 +225,9 @@ def parse_line(line: str) -> Tuple[int, Optional[DeckListCard], bool]:
         set_name, set_number = parse_suffix_tcg(suffix)
         if set_name:
             return count, DeckListCard(name, set_name, set_number), False
-        set_name, set_number, sideboard = parse_suffix_paren_set(suffix)
-        return count, DeckListCard(name, set_name, set_number), sideboard
+        set_name, set_number, sideboard_suffix = parse_suffix_paren_set(suffix)
+        return count, DeckListCard(name, set_name, set_number), \
+            sideboard_prefix or sideboard_suffix
 
     # Give up
     raise GameException(f'Unable to parse line in deck list: "{line}".')

@@ -438,7 +438,7 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
                     <textarea style={{ gridColumn: "3/5", backgroundColor: "beige", border: "0.125em solid darkblue" }}
                         value={cardsList} readOnly={true} cols={25} rows={25} />
                     <ul style={{ gridColumn: "1/5" }}>
-                        <li>This understands formats used by Arena, TappedOut, TCGPlayer, XMage, and others. </li > 
+                        <li>Supports most formats used by Archidekt, TappedOut, Arena, TCGPlayer, Decked, XMage, and others. </li > 
                         <ul>
                             <li style={{fontFamily:"monospace"}}>quantity Card Name</li>
                             <li style={{fontFamily:"monospace"}}>quantity Card Name (set) number</li>

@@ -6,8 +6,7 @@ import unittest
 from magic_models import JoinRequest
 from magic_table import MagicTable
 from magic_cards import MagicCards, parse_deck, parse_line
-from test_table import arena_deck, txt_deck, test_table, xmage_deck, tcgplayer_deck, archi_deck, archi_txt, deck_w_side, \
-    pioneer_60, tapped_out
+from test_table import test_table, test_deck
 
 logging.basicConfig(format='%(asctime)s %(message)s', stream=sys.stdout, level=logging.DEBUG)
 
@@ -22,15 +21,16 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(sb, True)
 
     def test_deck_parsing(self):
-        deck0, side0 = parse_deck(arena_deck)
-        deck1, side1 = parse_deck(txt_deck)
-        deck2, side2 = parse_deck(xmage_deck)
-        deck3, side3 = parse_deck(tcgplayer_deck)
-        deck4, side4 = parse_deck(deck_w_side)
-        deck5, side5 = parse_deck(pioneer_60)
-        deck6, side6 = parse_deck(tapped_out)
-        arch_deck1, arch_side1 = parse_deck(archi_deck)
-        arch_deck2, arch_side2 = parse_deck(archi_txt)
+        deck0, side0 = parse_deck(test_deck('arena_deck'))
+        deck1, side1 = parse_deck(test_deck('txt_deck'))
+        deck2, side2 = parse_deck(test_deck('xmage_deck'))
+        deck3, side3 = parse_deck(test_deck('tcgplayer_deck'))
+        deck4, side4 = parse_deck(test_deck('deck_w_side'))
+        deck5, side5 = parse_deck(test_deck('pioneer_60'))
+        deck6, side6 = parse_deck(test_deck('tapped_out'))
+        arch_deck1, arch_side1 = parse_deck(test_deck('archi_deck'))
+        arch_deck2, arch_side2 = parse_deck(test_deck('archi_txt'))
+        dek_deck, dek_side = parse_deck(test_deck('dek_deck'))
         self.assertEqual(100, len(deck0))
         self.assertEqual(100, len(deck1))
         self.assertEqual(100, len(deck2 + side2))  # xmage cmdr lands in sideboard
@@ -42,6 +42,8 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(100, len(arch_deck1))
         self.assertEqual(100, len(arch_deck2))
         self.assertEqual(arch_deck1[0].name, arch_deck2[0].name)
+        self.assertEqual(100, len(dek_deck))
+        self.assertEqual(10, len(dek_side))
 
 
     def test_load_tokens(self):
@@ -66,7 +68,7 @@ class MyTestCase(unittest.TestCase):
         print(lim_duls_vault)
 
     def test_add_player(self):
-        arena_deck_cards, side = MagicCards.resolve_decklist(arena_deck)
+        arena_deck_cards, side = MagicCards.resolve_decklist(test_deck('arena_deck'))
         player = JoinRequest(name='kerran', table='test1', deck=arena_deck_cards, sideboard=side, color='OliveDrab')
         table = MagicTable(player.table)
         table.add_player(player)
