@@ -438,12 +438,10 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
                     <textarea style={{ gridColumn: "3/5", backgroundColor: "beige", border: "0.125em solid darkblue" }}
                         value={cardsList} readOnly={true} cols={25} rows={25} />
                     <ul style={{ gridColumn: "1/5" }}>
-                        <li>Supports most formats used by Archidekt, TappedOut, Arena, TCGPlayer, Decked, XMage, and others. </li > 
+                        <li>Supports most formats used by Arena, Archidekt, Decked, TappedOut, TCGPlayer, XMage, et al. e.g.</li > 
                         <ul>
-                            <li style={{fontFamily:"monospace"}}>quantity Card Name</li>
-                            <li style={{fontFamily:"monospace"}}>quantity Card Name (set) number</li>
-                            <li style={{fontFamily:"monospace"}}>quantity Card Name (number) [set]</li>
-                            <li style={{fontFamily:"monospace"}}>quantity Card Name [set:number]</li>
+                            <li style={{fontFamily:"monospace"}}>1 Grizzly Bears</li>
+                            <li style={{fontFamily:"monospace"}}>1x Grizzly Bears (7ED) 251</li>
                             <li>Set and collector number will be randomly selected if not provided.</li>
                         </ul>
                         <li>Any cards below a blank line will be put in your Sideboard. 📒</li>
