@@ -1,0 +1,23 @@
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# local data
+cards/
+logs/
+tables/
+
+# don't need build since serving it from bucket
+build/
+
+.vscode/
+.gitignore
+*~
+*_key.json
+NOTES.txt
+__pycache__/

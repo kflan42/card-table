@@ -2,12 +2,11 @@ import json
 import os
 
 from google.cloud import storage
-
-# Configure this environment variable via app.yaml
 from google.cloud.storage import Client, Bucket
 
 from utils import logger
 
+# Configure this environment variable via app.yaml
 GOOGLE_CLOUD_PROJECT = os.environ.get('GOOGLE_CLOUD_PROJECT', None)
 
 BUCKET = (GOOGLE_CLOUD_PROJECT + ".appspot.com") if GOOGLE_CLOUD_PROJECT else None

@@ -1,0 +1,4 @@
+cron:
+#- description: "daily summary job"
+#  url: /table-admin/update-cards
+#  schedule: every day 08:00

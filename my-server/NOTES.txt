@@ -22,6 +22,9 @@ gsutil web set -m index.html -e index.html gs://$FRONTEND_BUCKET
 # Cloud server update
 cd my-server
 gcloud app deploy --version VERSION --verbosity info
+gcloud app deploy dispatch.yaml
+gcloud app deploy cron.yaml
+# repeat for table-admin-server
 
 # for local debug
 export FLASK_DEV True; export BASE_IP localhost; export BASE_PORT 5000
