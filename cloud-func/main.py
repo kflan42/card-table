@@ -1,17 +1,26 @@
-"""
-Runs with system python packages, no other dependencies.
-"""
-
 import json
 import os
-import urllib.request
 from datetime import datetime
+import urllib.request
+
+from flask import escape
+from google.cloud import storage
+import jq
 
 from utils import logger
 
-logger.info("hello from logger")
 
-# todo do a cloud function instead, this is taking around 2+ GB of RAM to run, exceeding GAE limits
+def card_update(request):
+    """HTTP Cloud Function."""
+
+    GOOGLE_CLOUD_PROJECT = os.environ.get('MY_CLOUD_PROJECT')
+    BUCKET = (GOOGLE_CLOUD_PROJECT + ".appspot.com")
+
+    downloaded_cards = download_cards()
+    cards, tokens = extract_cards(downloaded_cards)
+    result = save_cards(cards, tokens, BUCKET)
+
+    return result
 
 
 def download_cards():
@@ -29,53 +38,39 @@ def download_cards():
     logger.info(f"downloading {download_uri} ...")
     with urllib.request.urlopen(download_uri) as f:
         all_cards = f.read().decode('UTF-8')
-        # cards = json.loads(all_cards) # parsing this all in is too slow
 
     logger.info("download complete")
 
     return all_cards
 
 
+# test to filter for "Official sets always have a three-letter set code". weird cards have 4 letter. tokens have "t..."
+CORE = 'sf_id: .id, name: .name, set_name: .set, number: .collector_number'
+CARD = f'''
+{{{CORE},
+ face: (if.image_uris then
+        .image_uris | {{normal:.normal, small:.small}}
+        else
+        null
+        end),
+faces: (if.card_faces then
+        [.card_faces[] | {{name:.name, normal:.image_uris.normal, small:.image_uris.small}}]
+        else
+        []
+        end),
+}}'''
+# All official sets are 3 characters and token sets prepend T, so filter down to those.
+# Stick to English since it's unfortunately the only language I'm fluent in.
+# Avoid digital only cards since they often have bad print pictures.
+C_FILTER = 'select( (.set|test("^...$")) and (.lang|test("en")) and (.digital != true) )'
+T_FILTER = 'select( (.set|test("^t...$")) and (.lang|test("en")) and (.digital != true) )'
+
+
 def extract_cards(all_cards):
-
     # use jq to extract fields we care about
-
     # see https://scryfall.com/docs/api/cards and https://scryfall.com/docs/api/images
-
-    # subject 2 from line number to get array index for examples
-    # jq "[.[12,2135,10399] | ...
-
-    # test to filter for "Official sets always have a three-letter set code". weird cards have 4 letter. tokens have "t..."
-
-    CORE = 'sf_id: .id, name: .name, set_name: .set, number: .collector_number'
-
-    CARD = f'''
-    {{{CORE},
-     face: (if.image_uris then
-            .image_uris | {{normal:.normal, small:.small}}
-            else
-            null
-            end),
-    faces: (if.card_faces then
-            [.card_faces[] | {{name:.name, normal:.image_uris.normal, small:.image_uris.small}}]
-            else
-            []
-            end),
-    }}'''
-
-    # All official sets are 3 characters and token sets prepend T, so filter down to those.
-    # Stick to English since it's unfortunately the only language I'm fluent in.
-    # Avoid digital only cards since they often have bad print pictures.
-    C_FILTER = 'select( (.set|test("^...$")) and (.lang|test("en")) and (.digital != true) )'
-    T_FILTER = 'select( (.set|test("^t...$")) and (.lang|test("en")) and (.digital != true) )'
-
-    import jq
-
-    logger.info("selecting cards via jq")
-    cards_text1 = jq.compile(f'[.[] | {C_FILTER} ]').input(text=all_cards).text()
     logger.info("extracting card fields via jq")
-    cards_text = jq.compile(f'[.[] | {CARD}]').input(text=cards_text1).text()
-
+    cards_text = jq.compile(f'[.[] | {C_FILTER} | {CARD}]').input(text=all_cards).text()
     logger.info("extracting token fields via jq")
     tokens_text = jq.compile(f'[.[] | {T_FILTER} | {CARD}]').input(text=all_cards).text()
 
@@ -83,18 +78,13 @@ def extract_cards(all_cards):
     return cards_text, tokens_text
 
 
-def save_cards(cards_text, tokens_text):
+def save_cards(cards_text, tokens_text, bucket_name):
     # save them to bucket
-
-    GOOGLE_CLOUD_PROJECT = os.environ.get('GOOGLE_CLOUD_PROJECT')
-    BUCKET = (GOOGLE_CLOUD_PROJECT + ".appspot.com")
     _storage_client = None
     _bucket = None
 
-    from google.cloud import storage
-
     # Get the bucket that the file will be uploaded to.
-    bucket = storage.Client().get_bucket(BUCKET)
+    bucket = storage.Client().get_bucket(bucket_name)
 
     # Create a new blob and upload the file's content.
     blob = bucket.blob("cards/cards.json")

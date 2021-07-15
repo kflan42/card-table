@@ -24,7 +24,13 @@ cd my-server
 gcloud app deploy --version VERSION --verbosity info
 gcloud app deploy dispatch.yaml
 gcloud app deploy cron.yaml
-# repeat for table-admin-server
+# repeat for table-admin-server, except it is currently unused
+
+# Cloud Func update
+cd cloud-func
+gcloud functions deploy card_update --runtime python39 --trigger-http --region $REGION --update-env-vars MY_CLOUD_PROJECT=$GOOGLE_CLOUD_PROJECT
+# setup cloud scheduler job to call it, give it 2GB (might need more), 120s, setup service account to call it
+# https://cloud.google.com/scheduler/docs/http-target-auth#using-the-console
 
 # for local debug
 export FLASK_DEV True; export BASE_IP localhost; export BASE_PORT 5000
