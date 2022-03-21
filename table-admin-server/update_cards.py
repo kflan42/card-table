@@ -11,7 +11,7 @@ from utils import logger
 
 logger.info("hello from logger")
 
-# todo do a cloud function instead, this is taking around 2+ GB of RAM to run, exceeding GAE limits
+# did a cloud function instead, this is taking around 2+ GB of RAM to run, exceeding GAE limits
 
 
 def download_cards():
@@ -23,8 +23,6 @@ def download_cards():
     latest = datetime.fromisoformat(j1['updated_at']).replace(tzinfo=None)
     logger.info(f'latest cards from {latest}')
     download_uri = j1['download_uri']
-
-    # TODO check update time on cards in bucket, avoid updating more than 1x per day
 
     logger.info(f"downloading {download_uri} ...")
     with urllib.request.urlopen(download_uri) as f:

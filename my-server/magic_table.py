@@ -454,8 +454,8 @@ class MagicTable:
             src_zone.cards.remove(card_move.card_id)
             game_updates.zones[card_move.src_owner + "-" + card_move.src_zone] = src_zone
             # TODO optimization: remove battlefield cards when cards no longer on battlefield
-            # add to tgt
 
+            # add to tgt
             if card_move.src_zone == BATTLEFIELD and not same_zone:
                 # leaving battlefield logic
                 bf_card = self.indexed_game.battlefield_cards[card_id]

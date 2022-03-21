@@ -3,7 +3,6 @@ import os
 from datetime import datetime
 import urllib.request
 
-from flask import escape
 from google.cloud import storage
 import jq
 
@@ -32,8 +31,6 @@ def download_cards():
     latest = datetime.fromisoformat(j1['updated_at']).replace(tzinfo=None)
     logger.info(f'latest cards from {latest}')
     download_uri = j1['download_uri']
-
-    # TODO check update time on cards in bucket, avoid updating more than 1x per day
 
     logger.info(f"downloading {download_uri} ...")
     with urllib.request.urlopen(download_uri) as f:
