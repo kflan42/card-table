@@ -12,7 +12,7 @@ cd scryfall; python3 updateCards.py; extractCards.sh
 gsutil cp -r ../my-server/cards gs://${GOOGLE_CLOUD_PROJECT}.appspot.com
 
 # Cloud frontend update
-cd my-app; npm install;
+cd my-app; npm install; 
 ./rebuildForServer.sh $MY_API_SERVER_URL
 gsutil cp -r build/*  gs://$FRONTEND_BUCKET
 gsutil iam ch allUsers:legacyObjectReader gs://$FRONTEND_BUCKET
@@ -33,10 +33,13 @@ gcloud functions deploy card_update --runtime python39 --trigger-http --region $
 # https://cloud.google.com/scheduler/docs/http-target-auth#using-the-console
 
 # for local debug
-export FLASK_DEV True; export BASE_IP localhost; export BASE_PORT 5000
+export FLASK_DEV=True; export BASE_IP=localhost; export BASE_PORT=5000
 python3 hello.py
-# Optionally run a dev ui from
+## Optionally run a dev ui from
 cd my-app; npm start
+## or a production build ui via
+cd my-app; ./rebuildForServer.sh http://localhost:5000
+cd build; python3 -m http.server 3000
 
 # Local run using cloud storage
 export GOOGLE_APPLICATION_CREDENTIALS=$$$_key.json
