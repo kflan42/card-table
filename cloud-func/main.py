@@ -4,11 +4,12 @@ from datetime import datetime
 import urllib.request
 
 from google.cloud import storage
+import functions_framework
 import jq
 
 from utils import logger
 
-
+@functions_framework.http
 def card_update(request):
     """HTTP Cloud Function."""
 

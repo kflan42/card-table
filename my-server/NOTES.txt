@@ -28,7 +28,8 @@ gcloud app deploy cron.yaml
 # Cloud Func update
 cd cloud-func
 gcloud functions deploy card_update --runtime python39 --trigger-http --region $REGION --update-env-vars MY_CLOUD_PROJECT=$GOOGLE_CLOUD_PROJECT
-# setup cloud scheduler job to call it, give it 2GB (might need more), 120s, setup service account to call it
+# give it 4GB of memory and 120s max runtime, it currently uses ~2GB and runs in ~60s.
+# setup cloud scheduler job and service account to call it
 # https://cloud.google.com/scheduler/docs/http-target-auth#using-the-console
 
 # for local debug
