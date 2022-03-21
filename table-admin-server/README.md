@@ -5,4 +5,4 @@ However, the python-based processing of card data proved too memory intensive to
 I was unable to find a nice python library allowing streaming processing of json data.
 Therefore, this service was abandoned and is not currently used.
 
-Instead, I utilzed a Cloud Function.
+Instead, I utilized a Cloud Function.
