@@ -1,8 +1,6 @@
 # card-table
 My first serious side project! A React front end and Flask back end for a multiplayer card game.
 
-A design doc is at [diagrams.net](https://app.diagrams.net/#G1VzVYroTFGN9OCPzqnnTsSIXlY-MaFofX), though there might be a few updates that weren't added to it.
-
 ![card-table-busy-game](https://user-images.githubusercontent.com/29559579/158732762-fe4509d3-08af-4eb5-8f6b-606f1128a52d.jpg)
 
 ## Features
