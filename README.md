@@ -1,6 +1,10 @@
 # card-table
 My first serious side project! A React front end and Flask back end for a multiplayer card game.
 
+If you'd like to play with the code, I recommend first having a look at the [design diagrams](design.md).
+
+If you're here for gaming, read on.
+
 ![card-table-busy-game](https://user-images.githubusercontent.com/29559579/158732762-fe4509d3-08af-4eb5-8f6b-606f1128a52d.jpg)
 
 ## Features
@@ -28,7 +32,7 @@ The Flask server can handle serving the frontend assets and backend API requests
 
 To stay on top of new card releases, I setup a Cloud Scheduler triggered Cloud Function to reload the card data.
 
-See `my-server/NOTES.txt` for deployment instructions.
+See [my-server/NOTES.txt](my-server/NOTES.txt) for deployment instructions.
 
 ## Instructions for Play
 
