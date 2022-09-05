@@ -11,7 +11,7 @@ Everything you need for a night of a table top card game with friends, assuming 
 
 One can:
 
- * create rooms with _security by obscurity_.
+ * create rooms with _privacy by obscurity_.
  * create tables within the rooms, play 1 game per table.
  * load your cards based on an imported deck list.
  * chose your name and your sleeve color.
@@ -30,7 +30,7 @@ The Flask server can handle serving the frontend assets and backend API requests
 
 To stay on top of new card releases, I setup a Cloud Scheduler triggered Cloud Function to reload the card data.
 
-See my-server/NOTES.txt for instructions.
+See `my-server/NOTES.txt` for deployment instructions.
 
 ## Instructions for Play
 
@@ -42,7 +42,7 @@ Drag and drop cards for most things. Click on a card to tap/untap it.
 
 Keyboard actions:
 ```
-key	 action
+key	action
 a	to draw a line from your 1st click on a card/player to your 2nd click on a card/player
 A	clear your lines
 n	pass turn to next player
@@ -71,3 +71,9 @@ Click on the table to focus input there then press the key.
 Click on the 🎲 to simulate die rolls or coin flips.
 
 Click on the ➕ to add a Player Counter such as Poison or Commander Damage.
+
+----
+
+_Portions of Card-Table are unofficial Fan Content permitted under the [Fan Content Policy](https://company.wizards.com/en/legal/fancontentpolicy). Not approved/endorsed by Wizards. Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC._
+
+_[Scryfall](https://scryfall.com/) is used as a data source. Not approved/endorsed by Scryfall._
