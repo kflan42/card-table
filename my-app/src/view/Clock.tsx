@@ -45,7 +45,7 @@ const Clock: React.FC = () => {
     }).then((s: ConfirmationResult) => {
         switch(s.choice) {
             case "Leave Table":
-                routeChanger(`/room?sessionId=${sessionId}`)
+                routeChanger(`?sessionId=${sessionId}`)
             break;
         }
     }).catch(()=>null)

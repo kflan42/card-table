@@ -208,7 +208,7 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
                     const error = data || response.status;
                     return Promise.reject(error);
                 }
-                routeChanger(`/table?sessionId=${sessionId}&name=${joinRequest.table}`)
+                routeChanger(`?sessionId=${sessionId}&name=${joinRequest.table}`)
             })
             .catch(error => {
                 console.error('There was an error!', error);
@@ -290,7 +290,7 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
                 // set user name in app memory
                 dispatch(setUserPrefs({ name: joinRequest.name }))
                 // route over to table
-                routeChanger(`/table?sessionId=${sessionId}&name=${joinRequest.table}`)
+                routeChanger(`?sessionId=${sessionId}&name=${joinRequest.table}`)
             })
             .catch(error => {
                 console.error('submission error', error);

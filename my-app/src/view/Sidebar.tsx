@@ -46,7 +46,7 @@ const Sidebar: React.FC = () => {
         });
         const ageS = new Date().getTime() / 1000 - loadTime
         if(elapsedS > 900 &&  ageS > 180) {
-            routeChanger('/')  // leave game and close socket so api server will spin down
+            routeChanger('.')  // leave game and close socket so api server will spin down
         }
     }
 

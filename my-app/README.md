@@ -1,3 +1,32 @@
+# To deploy from a fresh checkout
+
+### build
+```
+npm install
+./rebuildForServer.sh $MY_API_SERVER_URL
+```
+
+### deploy to either to the root of a bucket
+```
+gsutil rm -r gs://$FRONTEND_BUCKET
+gsutil cp -r build/*  gs://$FRONTEND_BUCKET
+gsutil iam ch allUsers:legacyObjectReader gs://$FRONTEND_BUCKET
+gsutil web set -m index.html -e index.html gs://$FRONTEND_BUCKET
+```
+
+### or to a folder inside a bucket
+```
+gsutil rm -r gs://$FRONTEND_BUCKET/$FOLDER
+gsutil cp -r build/*  gs://$FRONTEND_BUCKET/$FOLDER
+gsutil acl ch -r -u AllUsers:R gs://$FRONTEND_BUCKET/$FOLDER
+gsutil web set -m $FOLDER/index.html -e $FOLDER/index.html gs://$FRONTEND_BUCKET
+```
+
+While testing, use `gsutil setmeta -h Cache-Control:60 -r gs://$FRONTEND_BUCKET/$FOLDER` 
+else the 3600s default cache will mandate long breaks between tests. Be sure to set it back when done testing otherwise the page reloads will be annoying during gameplay.
+
+----
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts

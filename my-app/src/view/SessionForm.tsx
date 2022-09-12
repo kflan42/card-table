@@ -33,7 +33,7 @@ export const SessionForm: React.FC = () => {
             return
         }
         localStorage.setItem('sessionId', sessionId)
-        routeChanger('/room?sessionId=' + sessionId)
+        routeChanger('?sessionId=' + sessionId)
     }
 
     return (
