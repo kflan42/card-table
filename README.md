@@ -32,7 +32,7 @@ The Flask server can handle serving the frontend assets and backend API requests
 
 To stay on top of new card releases, I setup a Cloud Scheduler triggered Cloud Function to reload the card data.
 
-See [my-server/NOTES.txt](my-server/NOTES.txt) for deployment instructions.
+See [my-server/README.md](my-server/README.md) for deployment instructions.
 
 ## Instructions for Play
 
