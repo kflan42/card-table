@@ -6,7 +6,12 @@ npm install
 ./rebuildForServer.sh $MY_API_SERVER_URL
 ```
 
+`MY_API_SERVER_URL` is based on your Google App Engine project name and region, or your local host.
+
 ### deploy to either to the root of a bucket
+
+Serving static files from a bucket lightens the load on the backend. Here are the [official docs](https://cloud.google.com/appengine/docs/standard/serving-static-files?tab=python#serving_files_from).
+
 ```
 gsutil rm -r gs://$FRONTEND_BUCKET
 gsutil cp -r build/*  gs://$FRONTEND_BUCKET

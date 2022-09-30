@@ -16,6 +16,9 @@ Then do the local part of cards update and frontend build.
 The are 4 pieces to deploy to the cloud: card data, frontend, backend, and the function for updating cards.
 
 ### Cloud cards update
+
+Set `GOOGLE_CLOUD_PROJECT` to the name of your project.
+
 ```
 cd scryfall; python3 updateCards.py; extractCards.sh
 gsutil cp -r ../my-server/cards gs://${GOOGLE_CLOUD_PROJECT}.appspot.com
@@ -25,15 +28,24 @@ gsutil cp -r ../my-server/cards gs://${GOOGLE_CLOUD_PROJECT}.appspot.com
 See [../my-app/README.md](../my-app/README.md)
 
 ### Cloud backend server update
+
+This is based on the [Google App Engine Docs](https://cloud.google.com/appengine/docs/standard/python3/building-app).
+
+Set `VERSION` to something meaningful to you.
+
 ```
 cd my-server
 gcloud app deploy --version VERSION --verbosity info
 gcloud app deploy dispatch.yaml
 gcloud app deploy cron.yaml
 ```
-same for table-admin-server, except it is currently unused
+
+The same applies for the `table-admin-server`, except it is currently unused and might have bit-rotted.
 
 ### Cloud Func update
+
+`REGION` should be local to your project.
+
 ```
 cd cloud-func
 gcloud functions deploy card_update --runtime python39 --trigger-http --region $REGION --update-env-vars MY_CLOUD_PROJECT=$GOOGLE_CLOUD_PROJECT
