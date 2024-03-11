@@ -27,9 +27,6 @@ One can:
 
 I run it in the Google App Engine's Free Tier for my friends - sorry I can't fit more players on the tiny backend! You'll need to host it yourself if you want to play.
 
-I've deployed the frontend to a GCS Bucket, but doing so is not a hard requirement. 
-The Flask server can handle serving the frontend assets and backend API requests, although it is currently configured to only do the latter.
-
 To stay on top of new card releases, I setup a Cloud Scheduler triggered Cloud Function to reload the card data.
 
 See [my-server/README.md](my-server/README.md) for deployment instructions.
