@@ -10,7 +10,7 @@ export default class MySocket {
             let hostPort = window.location.host
             if (process.env.NODE_ENV === "development") {
                 hostPort = hostPort.replace(RegExp(':\\d+$'), "")
-                    + ":" + (process.env.REACT_APP_DYNAMIC_PORT || 5000);
+                    + ":" + (process.env.REACT_APP_DYNAMIC_PORT || 9000);
             }
             let socketIOUrl = window.location.protocol
                 + "//" + hostPort

@@ -27,12 +27,14 @@ export function gameReducer(
             break
         case UPDATE_GAME:
             let indexedUpdates = indexGame(gameUpdate.game, gameUpdate.tableCards, gameUpdate.logLines);
-            newState.players = {...newState.players, ...indexedUpdates.players}
-            newState.cards = {...newState.cards, ...indexedUpdates.cards}
-            newState.battlefieldCards = {...newState.battlefieldCards, ...indexedUpdates.battlefieldCards}
-            newState.zones = {...newState.zones, ...indexedUpdates.zones}
-            newState.tableCards = {...newState.tableCards, ...indexedUpdates.tableCards}
-            newState.actionLog = [...newState.actionLog, ...indexedUpdates.actionLog]
+            newState = {
+                players: {...newState.players, ...indexedUpdates.players},
+                cards: {...newState.cards, ...indexedUpdates.cards},
+                battlefieldCards: {...newState.battlefieldCards, ...indexedUpdates.battlefieldCards},
+                zones: {...newState.zones, ...indexedUpdates.zones},
+                tableCards: {...newState.tableCards, ...indexedUpdates.tableCards},
+                actionLog: [...newState.actionLog, ...indexedUpdates.actionLog],
+            }
             break
     }
 

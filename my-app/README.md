@@ -8,7 +8,11 @@ npm install
 
 `MY_API_SERVER_URL` is based on your Google App Engine project name and region, or your local host.
 
-### deploy to either to the root of a bucket
+### deploy to the GAE server
+
+https://cloud.google.com/appengine/docs/standard/serving-static-files?tab=python#serving_from_your_application
+
+#### or deploy to the root of a bucket
 
 Serving static files from a bucket lightens the load on the backend. Here are the [official docs](https://cloud.google.com/appengine/docs/standard/serving-static-files?tab=python#serving_files_from).
 
@@ -19,7 +23,7 @@ gsutil iam ch allUsers:legacyObjectReader gs://$FRONTEND_BUCKET
 gsutil web set -m index.html -e index.html gs://$FRONTEND_BUCKET
 ```
 
-### or to a folder inside a bucket
+#### or deploy to a folder inside a bucket
 ```
 gsutil rm -r gs://$FRONTEND_BUCKET/$FOLDER
 gsutil cp -r build/*  gs://$FRONTEND_BUCKET/$FOLDER

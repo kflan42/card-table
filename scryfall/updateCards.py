@@ -33,7 +33,8 @@ if reload:
     with open(filename, mode="wb") as o:
         # json.dump(data1, o, ensure_ascii=False)  # some card names are unicode
         o.write(data1)
-    os.rename(default_cards_json, 'scryfall-default-cards.json.bk')
+    if os.path.exists(default_cards_json):
+        os.rename(default_cards_json, 'scryfall-default-cards.json.bk')
     shutil.copyfile(filename, default_cards_json)
     print("complete")
 else:

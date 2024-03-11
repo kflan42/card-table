@@ -11,6 +11,10 @@ interface RoomViewProps {
     sessionId: string|null
 }
 
+interface TableInfoMsg {
+    data: TableInfo[]
+}
+
 export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
     const routeChanger = useRouteChanger()
     const dispatch = useDispatch()
@@ -82,9 +86,9 @@ export const RoomForm: React.FC<RoomViewProps> = ({sessionId}) => {
             // now that game is loaded, register for updates to it
             MySocket.get_socket().emit('join_room', { session: sessionId })
             MySocket.get_socket().on('room_update', function (msg: object) {
-                const tableInfos = msg as TableInfo[]
-                console.log('received room_update', tableInfos)
-                handleTableInfos(tableInfos)
+                const tableInfos = msg as TableInfoMsg
+                console.log('received room_update', tableInfos.data)
+                handleTableInfos(tableInfos.data)
             })
             MySocket.get_socket().on('disconnect', () => {
                 // socket corrupt after server restart

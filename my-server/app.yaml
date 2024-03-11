@@ -1,4 +1,4 @@
-runtime: python38
+runtime: python311
 
 entrypoint: gunicorn -b :$PORT --worker-class eventlet --workers 1 hello:app
 
@@ -25,3 +25,38 @@ inbound_services:
   - warmup
 
 service: default
+
+handlers:
+  - url: /favicon\.ico
+    static_files: public/favicon.ico
+    upload: public/favicon\.ico
+
+  - url: /index\.html
+    static_files: public/index.html
+    upload: public/index\.html
+
+  - url: /manifest\.json
+    static_files: public/manifest.json
+    upload: public/manifest\.json
+
+  - url: /logo192\.png
+    static_files: public/logo192.png
+    upload: public/logo192\.png
+
+  - url: /logo512\.png
+    static_files: public/logo512.png
+    upload: public/logo512\.png
+
+    # I should figure out how to move the logos into the static/ directory
+
+  - url: /robots\.txt
+    static_files: public/robots.txt
+    upload: public/robots\.txt
+
+  - url: /static
+    static_dir: public/static
+
+  - url: /.*
+    secure: always
+    redirect_http_response_code: 301
+    script: auto
