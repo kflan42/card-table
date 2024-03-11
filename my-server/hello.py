@@ -72,17 +72,12 @@ def parse_deck_list():
 @app.route('/api/session/<path:session_id>/tables', methods=['GET'])
 def get_tables_info(session_id: str):
     tables_info = magic_rooms.setdefault(session_id, MagicRoom(session_id)).get_tables_info()
-    # for ti in tables_info:
-    #     if ti.date == 'today':
-    #         k = session_id+'/'+ti.table
-    #         if k in active_players:
-    #             ti.active = len(active_players[k])
     return TableInfo.schema().dumps(tables_info, many=True)
 
 
 @app.route('/api/session/<path:session_id>/tables/<path:table_name>', methods=['PUT'])
 def create_table(table_name: str, session_id: str):
-    table_name = table_name.lower()  # lower case table names since windows filesystem case insensitive
+    table_name = table_name.lower()  # lower case table names since windows filesystem case-insensitive
     r = magic_rooms.setdefault(session_id, MagicRoom(session_id)).create_table(table_name)
     _emit_tables_update(session_id)
     return r
@@ -90,12 +85,13 @@ def create_table(table_name: str, session_id: str):
 
 def _emit_tables_update(session_id):
     tables_info = magic_rooms[session_id].get_tables_info()
-    socketio.emit('room_update', [ti.to_dict() for ti in tables_info], room=session_id)
+    socketio.emit('room_update', {'data': [ti.to_dict() for ti in tables_info]}, room=session_id)
+    logger.info(f"emitted room_update to room={session_id}")
 
 
 @app.route('/api/session/<path:session_id>/table/<path:table_name>', methods=['GET', 'PUT'])
 def join_table(table_name: str, session_id: str):
-    table_name = table_name.lower()  # lower case table names since windows filesystem case insensitive
+    table_name = table_name.lower()  # lower case table names since windows filesystem case-insensitive
     if request.method == 'PUT':
         try:
             logger.info(request.data.decode('utf-8'))
@@ -141,12 +137,12 @@ def _remove_player(sid):
 
 @socketio.on('connect')
 def test_connect():
-    logger.info(f'Client connected via {request.referrer} from {request.remote_addr}')
+    logger.info(f'Client {request.sid} connected via {request.referrer} from {request.remote_addr}')
 
 
 @socketio.on('disconnect')
 def test_disconnect():
-    logger.info(f'Client disconnected via {request.referrer} from {request.remote_addr}')
+    logger.info(f'Client {request.sid} disconnected via {request.referrer} from {request.remote_addr}')
     _remove_player(request.sid)
 
 
@@ -174,7 +170,7 @@ def on_player_draw(data) -> bool:
 
 
 @socketio.on('next_turn')
-def on_player_draw(data) -> bool:
+def on_next_turn(data) -> bool:
     return on_info_event('next_turn', data)
 
 
@@ -203,6 +199,7 @@ def on_join_room(data):
     # put client into socket.io room
     join_room(session_id)
     _add_player(session_id, request.sid)
+    logger.info(f"{request.sid} joined room for {session_id}")
 
 
 @socketio.on('join_table')
@@ -220,18 +217,20 @@ def on_join_table(data):
 @app.route('/_ah/warmup')
 def warmup():
     # google cloud will call this, return then kick off card data load in background
-    Thread(target=lambda _: logger.info(f"Loaded Forest: {MagicCards.find_card('Forest')}")).run()
+    Thread(target=lambda: logger.info(f"Loaded Forest: {MagicCards.find_card('Forest')}")).run()
     return '', 200, {}
 
 
 def main():
-    base_ip = os.environ.get('BASE_IP', 'localhost')  # 0.0.0.0 to listen on external network interface instead
-    base_port = os.environ.get('BASE_PORT', 5000)
-    debug = os.environ.get('FLASK_DEV', False)
+    base_ip = os.environ.get('BASE_IP', '0.0.0.0')
+    base_port = int(os.environ.get('BASE_PORT', 9000))
+    debug = bool(os.environ.get('FLASK_DEV', False))
 
     logger.info(f"starting up at http://{base_ip}:{base_port}")
     socketio.run(app,
                  debug=debug,
+                 log_output=debug,
+                 use_reloader=False,
                  host=base_ip,
                  port=base_port)
 

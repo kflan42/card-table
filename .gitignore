@@ -142,6 +142,7 @@ scryfall/samples/
 #
 .vscode/settings.json
 /my-server/build/
+/my-server/public/
 /my-server/cards/
 /my-server/logs/
 /my-server/tables/

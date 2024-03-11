@@ -13,7 +13,7 @@ Then do the local part of cards update and frontend build.
 
 ## Cloud Deployment
 
-The are 4 pieces to deploy to the cloud: card data, frontend, backend, and the function for updating cards.
+There are 4 pieces to deploy to the cloud: card data, frontend, backend, and the function for updating cards.
 
 ### Cloud cards update
 
@@ -36,23 +36,7 @@ Set `VERSION` to something meaningful to you.
 ```
 cd my-server
 gcloud app deploy --version VERSION --verbosity info
-gcloud app deploy dispatch.yaml
-gcloud app deploy cron.yaml
 ```
-
-The same applies for the `table-admin-server`, except it is currently unused and might have bit-rotted.
-
-### Cloud Func update
-
-`REGION` should be local to your project.
-
-```
-cd cloud-func
-gcloud functions deploy card_update --runtime python39 --trigger-http --region $REGION --update-env-vars MY_CLOUD_PROJECT=$GOOGLE_CLOUD_PROJECT
-```
- * give it 4GB of memory and 120s max runtime, it currently uses ~2GB and runs in ~60s.
- * setup cloud scheduler job and service account to call it
- * see https://cloud.google.com/scheduler/docs/http-target-auth#using-the-console
 
 ## Local Deployment
 For development or local hosting.
